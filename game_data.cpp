@@ -128,7 +128,8 @@ t_coordinates game_data::get_next_piece(t_coordinates current_coordinate, int pi
         {-1, 0}  // left
     };
 
-    for (int i = 0; i < 4; i++)
+    int i = 0;
+    while (i < 4)
     {
         int nx = current_coordinate.x + dirs[i][0];
         int ny = current_coordinate.y + dirs[i][1];
@@ -138,32 +139,45 @@ t_coordinates game_data::get_next_piece(t_coordinates current_coordinate, int pi
             if (this->_wrap_around_edges)
                 nx = static_cast<int>(width) - 1;
             else
+            {
+                ++i;
                 continue;
+            }
         }
         if (nx >= static_cast<int>(width))
         {
             if (this->_wrap_around_edges)
                 nx = 0;
             else
+            {
+                ++i;
                 continue;
+            }
         }
         if (ny < 0)
         {
             if (this->_wrap_around_edges)
                 ny = static_cast<int>(height) - 1;
             else
+            {
+                ++i;
                 continue;
+            }
         }
         if (ny >= static_cast<int>(height))
         {
             if (this->_wrap_around_edges)
                 ny = 0;
             else
+            {
+                ++i;
                 continue;
+            }
         }
 
         if (this->_map.get(static_cast<size_t>(nx), static_cast<size_t>(ny), 2) == next_id)
             return ((t_coordinates){nx, ny});
+        ++i;
     }
 
     return ((t_coordinates){-1, -1});
@@ -242,19 +256,25 @@ int     game_data::update_snake_position(int player_head)
 
 void game_data::reset_board()
 {
-    for (size_t y = 0; y < this->_map.get_height(); ++y)
+    size_t y = 0;
+    while (y < this->_map.get_height())
     {
-        for (size_t x = 0; x < this->_map.get_width(); ++x)
+        size_t x = 0;
+        while (x < this->_map.get_width())
         {
             this->_map.set(x, y, 0, GAME_TILE_EMPTY);
             this->_map.set(x, y, 1, 0);
             this->_map.set(x, y, 2, 0);
+            ++x;
         }
+        ++y;
     }
-    for (int i = 0; i < 4; ++i)
+    int i = 0;
+    while (i < 4)
     {
         this->_direction_moving[i] = 0;
         this->_direction_moving_ice[i] = 0;
+        ++i;
     }
     this->_amount_players_dead = 0;
     int mid_x = static_cast<int>(this->_map.get_width() / 2);
@@ -264,12 +284,11 @@ void game_data::reset_board()
 
 void game_data::resize_board(int width, int height)
 {
-    ft_map3d new_map(width, height, 3);
-    if (new_map.get_error())
+    this->_map.resize(width, height, 3);
+    if (this->_map.get_error())
     {
-        this->_error = new_map.get_error();
+        this->_error = this->_map.get_error();
         return;
     }
-    this->_map = new_map;
     this->reset_board();
 }
