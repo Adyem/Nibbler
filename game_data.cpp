@@ -3,7 +3,7 @@
 #include "libft/Game/map3d.hpp"
 
 game_data::game_data(int width, int height) :
-	_error(0), _wrap_around_edges(0), _amount_players_dead(0),
+        _error(0), _wrap_around_edges(0), _amount_players_dead(0),
         _map(width, height, 3), _character()
 {
 	if (this->_map.get_error())
@@ -19,6 +19,54 @@ game_data::game_data(int width, int height) :
         }
         this->reset_board();
         return ;
+}
+
+int game_data::get_error() const
+{
+    return this->_error;
+}
+
+void game_data::set_wrap_around_edges(int value)
+{
+    this->_wrap_around_edges = value;
+}
+
+int game_data::get_wrap_around_edges() const
+{
+    return this->_wrap_around_edges;
+}
+
+void game_data::set_direction_moving(int player, int direction)
+{
+    if (player >= 0 && player < 4)
+        this->_direction_moving[player] = direction;
+}
+
+int game_data::get_direction_moving(int player) const
+{
+    if (player >= 0 && player < 4)
+        return this->_direction_moving[player];
+    return 0;
+}
+
+void game_data::set_map_value(int x, int y, int layer, int value)
+{
+    this->_map.set(x, y, layer, value);
+}
+
+int game_data::get_map_value(int x, int y, int layer) const
+{
+    return this->_map.get(x, y, layer);
+}
+
+size_t game_data::get_width() const
+{
+    return this->_map.get_width();
+}
+
+size_t game_data::get_height() const
+{
+    return this->_map.get_height();
 }
 
 t_coordinates game_data::get_head_coordinate(int head_to_find)

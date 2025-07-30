@@ -6,12 +6,12 @@
 static void print_layer(const game_data &gd)
 {
     size_t y = 0;
-    while (y < gd._map.get_height())
+    while (y < gd.get_height())
     {
         size_t x = 0;
-        while (x < gd._map.get_width())
+        while (x < gd.get_width())
         {
-            std::cout << std::setw(8) << gd._map.get(x, y, 2);
+            std::cout << std::setw(8) << gd.get_map_value(static_cast<int>(x), static_cast<int>(y), 2);
             ++x;
         }
         std::cout << "\n";
@@ -19,18 +19,18 @@ static void print_layer(const game_data &gd)
     }
 }
 
-int test_game_data()
+static int test_game_data()
 {
     game_data gd(3, 3);
-    if (gd._error)
-	{
-        std::cerr << "Initialization error: " << gd._error << std::endl;
+    if (gd.get_error())
+    {
+        std::cerr << "Initialization error: " << gd.get_error() << std::endl;
         return 1;
     }
-    gd._map.set(0, 0, 2, SNAKE_HEAD_PLAYER_1);
-    gd._direction_moving[0] = DIRECTION_RIGHT;
-    if (gd.update_snake_position(SNAKE_HEAD_PLAYER_1))
-	{
+    gd.set_map_value(0, 0, 2, SNAKE_HEAD_PLAYER_1);
+    gd.set_direction_moving(0, DIRECTION_RIGHT);
+    if (gd.update_game_map())
+    {
         std::cerr << "Update failed" << std::endl;
         return 1;
     }
@@ -45,15 +45,15 @@ int test_game_data()
     return 0;
 }
 
-int test_wrap_around_edges()
+static int test_wrap_around_edges()
 {
     game_data gd(2, 2);
-    if (gd._error)
+    if (gd.get_error())
         return 1;
-    gd._wrap_around_edges = 1;
-    gd._map.set(1, 0, 2, SNAKE_HEAD_PLAYER_1);
-    gd._direction_moving[0] = DIRECTION_RIGHT;
-    if (gd.update_snake_position(SNAKE_HEAD_PLAYER_1))
+    gd.set_wrap_around_edges(1);
+    gd.set_map_value(1, 0, 2, SNAKE_HEAD_PLAYER_1);
+    gd.set_direction_moving(0, DIRECTION_RIGHT);
+    if (gd.update_game_map())
         return 1;
     t_coordinates head = gd.get_head_coordinate(SNAKE_HEAD_PLAYER_1);
     if (head.x != 0 || head.y != 0)
@@ -61,39 +61,39 @@ int test_wrap_around_edges()
     return 0;
 }
 
-int test_invalid_move_wall()
+static int test_invalid_move_wall()
 {
     game_data gd(2, 2);
-    if (gd._error)
+    if (gd.get_error())
         return 1;
-    gd._map.set(1, 0, 0, GAME_TILE_WALL);
-    gd._map.set(0, 0, 2, SNAKE_HEAD_PLAYER_1);
-    gd._direction_moving[0] = DIRECTION_RIGHT;
+    gd.set_map_value(1, 0, 0, GAME_TILE_WALL);
+    gd.set_map_value(0, 0, 2, SNAKE_HEAD_PLAYER_1);
+    gd.set_direction_moving(0, DIRECTION_RIGHT);
     if (gd.is_valid_move(SNAKE_HEAD_PLAYER_1) == 0)
         return 1;
-    if (gd.update_snake_position(SNAKE_HEAD_PLAYER_1) == 0)
+    if (gd.update_game_map() == 0)
         return 1;
     return 0;
 }
 
-int test_self_collision()
+static int test_self_collision()
 {
     game_data gd(3, 1);
-    if (gd._error)
+    if (gd.get_error())
         return 1;
-    gd._map.set(1, 0, 2, SNAKE_HEAD_PLAYER_1);
-    gd._map.set(0, 0, 2, SNAKE_HEAD_PLAYER_1 + 1);
-    gd._direction_moving[0] = DIRECTION_LEFT;
+    gd.set_map_value(1, 0, 2, SNAKE_HEAD_PLAYER_1);
+    gd.set_map_value(0, 0, 2, SNAKE_HEAD_PLAYER_1 + 1);
+    gd.set_direction_moving(0, DIRECTION_LEFT);
     if (gd.is_valid_move(SNAKE_HEAD_PLAYER_1) == 0)
         return 1;
-    if (gd.update_snake_position(SNAKE_HEAD_PLAYER_1) == 0)
+    if (gd.update_game_map() == 0)
         return 1;
     return 0;
 }
 
-int test_reset_board() {
+static int test_reset_board() {
     game_data gd(5, 5);
-    if (gd._error)
+    if (gd.get_error())
         return 1;
     gd.reset_board();
     t_coordinates head = gd.get_head_coordinate(SNAKE_HEAD_PLAYER_1);
@@ -102,28 +102,17 @@ int test_reset_board() {
     return 0;
 }
 
-int test_resize_board() {
+static int test_resize_board() {
     game_data gd(3, 3);
-    if (gd._error)
+    if (gd.get_error())
         return 1;
     gd.resize_board(4, 4);
-    if (gd._map.get_width() != 4 || gd._map.get_height() != 4)
+    if (gd.get_width() != 4 || gd.get_height() != 4)
         return 1;
     t_coordinates head = gd.get_head_coordinate(SNAKE_HEAD_PLAYER_1);
     if (head.x != 2 || head.y != 2)
         return 1;
     return 0;
-}
-
-int run_all_tests() {
-    int failed = 0;
-    failed += test_game_data();
-    failed += test_wrap_around_edges();
-    failed += test_invalid_move_wall();
-    failed += test_self_collision();
-    failed += test_reset_board();
-    failed += test_resize_board();
-    return failed;
 }
 
 int run_all_tests_with_report()
