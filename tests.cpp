@@ -5,11 +5,17 @@
 
 static void print_layer(const game_data &gd)
 {
-    for (size_t y = 0; y < gd._map.get_height(); ++y)
-	{
-        for (size_t x = 0; x < gd._map.get_width(); ++x)
+    size_t y = 0;
+    while (y < gd._map.get_height())
+    {
+        size_t x = 0;
+        while (x < gd._map.get_width())
+        {
             std::cout << std::setw(8) << gd._map.get(x, y, 2);
+            ++x;
+        }
         std::cout << "\n";
+        ++y;
     }
 }
 
@@ -138,14 +144,17 @@ int run_all_tests_with_report()
     };
 
     int failed = 0;
-    for (const auto &t : tests)
-	{
+    size_t idx = 0;
+    while (idx < sizeof(tests) / sizeof(tests[0]))
+    {
+        const auto &t = tests[idx];
         int ret = t.func();
         if (ret)
             std::cerr << t.name << " failed" << std::endl;
         else
             std::cout << t.name << " passed" << std::endl;
         failed += ret;
+        ++idx;
     }
 	if (failed != 0)
         std::cerr << "Tests failed: " << failed << " test(s)" << std::endl;
