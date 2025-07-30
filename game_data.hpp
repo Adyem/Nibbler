@@ -28,7 +28,8 @@ typedef struct s_coordinates
 
 class game_data
 {
-	public:
+        public:
+                game_data(int width, int height);
 		mutable int		_error;
 		int				_wrap_around_edges;
 		int				_amount_players_dead;
@@ -46,6 +47,5 @@ class game_data
 		t_coordinates	get_next_piece(t_coordinates current_coordinate, int piece_id);
 
 	private:
-		game_data(int wdith, int height);
 		int	update_game_map();
 };
