@@ -1,6 +1,7 @@
 #include "game_data.hpp"
 #include "libft/Game/character.hpp"
 #include "libft/Game/map3d.hpp"
+#include "libft/RNG/dice_roll.hpp"
 
 game_data::game_data(int width, int height) :
         _error(0), _wrap_around_edges(0), _amount_players_dead(0),
@@ -15,6 +16,7 @@ game_data::game_data(int width, int height) :
         {
                 this->_direction_moving_ice[index] = 0;
                 this->_direction_moving[index] = 0;
+                this->_snake_length[index] = 1;
                 index++;
         }
         this->reset_board();
@@ -155,7 +157,8 @@ int game_data::is_valid_move(int player_head)
         }
     }
 
-    if (this->_map.get(target_x, target_y, 2) != 0)
+    int target_val = this->_map.get(target_x, target_y, 2);
+    if (target_val != 0 && target_val != FOOD)
         return (1);
     if (this->_map.get(target_x, target_y, 0) == GAME_TILE_WALL)
         return (1);
@@ -290,15 +293,21 @@ int     game_data::update_snake_position(int player_head)
         while (x < width)
         {
             int val = this->_map.get(x, y, 2);
-            if (val >= offset + 1 && val < offset + MAX_SNAKE_LENGTH)
+            if (val >= offset + 1 && val < offset + this->_snake_length[player_number])
                 this->_map.set(x, y, 2, val + 1);
-            else if (val >= offset + MAX_SNAKE_LENGTH)
+            else if (val >= offset + this->_snake_length[player_number])
                 this->_map.set(x, y, 2, 0);
             x++;
         }
         y++;
     }
+
+    bool ate_food = (this->_map.get(target_x, target_y, 2) == FOOD);
+    if (ate_food && this->_snake_length[player_number] < MAX_SNAKE_LENGTH)
+        this->_snake_length[player_number]++;
     this->_map.set(target_x, target_y, 2, offset + 1);
+    if (ate_food)
+        spawn_food();
     return (0);
 }
 
@@ -322,12 +331,14 @@ void game_data::reset_board()
     {
         this->_direction_moving[i] = 0;
         this->_direction_moving_ice[i] = 0;
+        this->_snake_length[i] = 1;
         ++i;
     }
     this->_amount_players_dead = 0;
     int mid_x = static_cast<int>(this->_map.get_width() / 2);
     int mid_y = static_cast<int>(this->_map.get_height() / 2);
     this->_map.set(mid_x, mid_y, 2, SNAKE_HEAD_PLAYER_1);
+    spawn_food();
 }
 
 void game_data::resize_board(int width, int height)
@@ -339,4 +350,23 @@ void game_data::resize_board(int width, int height)
         return;
     }
     this->reset_board();
+}
+
+void game_data::spawn_food()
+{
+    size_t width = this->_map.get_width();
+    size_t height = this->_map.get_height();
+    if (width == 0 || height == 0)
+        return;
+    for (int attempts = 0; attempts < 1000; ++attempts)
+    {
+        int x = ft_dice_roll(1, static_cast<int>(width)) - 1;
+        int y = ft_dice_roll(1, static_cast<int>(height)) - 1;
+        if (this->_map.get(x, y, 2) == 0 &&
+            this->_map.get(x, y, 0) != GAME_TILE_WALL)
+        {
+            this->_map.set(x, y, 2, FOOD);
+            return;
+        }
+    }
 }
