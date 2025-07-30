@@ -5,6 +5,8 @@ int test_game_data();
 int test_wrap_around_edges();
 int test_invalid_move_wall();
 int test_self_collision();
+int test_reset_board();
+int test_resize_board();
 int run_all_tests();
 int run_all_tests_with_report();
 
