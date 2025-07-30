@@ -29,23 +29,24 @@ typedef struct s_coordinates
 class game_data
 {
         public:
-                game_data(int width, int height);
-		mutable int		_error;
-		int				_wrap_around_edges;
-		int				_amount_players_dead;
-		int				_direction_moving[4];
-		int				_direction_moving_ice[4];
+            game_data(int width, int height);
+			mutable int		_error;
+			int				_wrap_around_edges;
+			int				_amount_players_dead;
+			int				_direction_moving[4];
+			int				_direction_moving_ice[4];
 
-		ft_map3d		_map;
-		ft_character	_character;
+			ft_map3d		_map;
+			ft_character	_character;
 
-		t_coordinates 	get_head_coordinate(int head_to_find);
-		int				is_valid_move(int player_head);
-		int				update_snake_position(int player_head);
-		int				determine_player_number(int player_head);
+			t_coordinates 	get_head_coordinate(int head_to_find);
+			int				is_valid_move(int player_head);
+			int				update_snake_position(int player_head);
+			int				determine_player_number(int player_head);
 
-		t_coordinates	get_next_piece(t_coordinates current_coordinate, int piece_id);
+			t_coordinates	get_next_piece(t_coordinates current_coordinate,
+								int piece_id);
 
 	private:
-		int	update_game_map();
+			int	update_game_map();
 };

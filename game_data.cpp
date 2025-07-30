@@ -22,19 +22,20 @@ game_data::game_data(int width, int height) :
 
 t_coordinates game_data::get_head_coordinate(int head_to_find)
 {
-        size_t index_y = 0;
-        while (index_y < this->_map.get_height())
+    size_t index_y = 0;
+    while (index_y < this->_map.get_height())
+    {
+        size_t index_x = 0;
+        while (index_x < this->_map.get_width())
         {
-                size_t index_x = 0;
-                while (index_x < this->_map.get_width())
-                {
-                        if (this->_map.get(index_x, index_y, 2) == head_to_find)
-                                return ((t_coordinates){static_cast<int>(index_x), static_cast<int>(index_y)});
-                        index_x++;
-                }
-                index_y++;
+            if (this->_map.get(index_x, index_y, 2) == head_to_find)
+                return ((t_coordinates){static_cast<int>(index_x),
+					static_cast<int>(index_y)});
+            index_x++;
         }
-        return ((t_coordinates){0, 0});
+        index_y++;
+    }
+    return ((t_coordinates){0, 0});
 }
 
 int game_data::determine_player_number(int player_head)
@@ -237,4 +238,3 @@ int     game_data::update_snake_position(int player_head)
     this->_map.set(target_x, target_y, 2, offset + 1);
     return (0);
 }
-
