@@ -115,6 +115,30 @@ static int test_resize_board() {
     return 0;
 }
 
+static int test_eat_food() {
+    game_data gd(3, 1);
+    if (gd.get_error())
+        return 1;
+    gd.set_map_value(0, 0, 2, SNAKE_HEAD_PLAYER_1);
+    gd.set_map_value(1, 0, 2, FOOD);
+    gd.set_direction_moving(0, DIRECTION_RIGHT);
+    if (gd.update_game_map())
+        return 1;
+    if (gd.get_map_value(0, 0, 2) == 0)
+        return 1;
+    t_coordinates head = gd.get_head_coordinate(SNAKE_HEAD_PLAYER_1);
+    if (head.x != 1 || head.y != 0)
+        return 1;
+    bool food_found = false;
+    for (size_t y = 0; y < gd.get_height(); ++y)
+        for (size_t x = 0; x < gd.get_width(); ++x)
+            if (gd.get_map_value(static_cast<int>(x), static_cast<int>(y), 2) == FOOD)
+                food_found = true;
+    if (!food_found)
+        return 1;
+    return 0;
+}
+
 int run_all_tests_with_report()
 {
     struct test_entry
@@ -130,6 +154,7 @@ int run_all_tests_with_report()
         {"test_self_collision", test_self_collision},
         {"test_reset_board", test_reset_board},
         {"test_resize_board", test_resize_board},
+        {"test_eat_food", test_eat_food},
     };
 
     int failed = 0;

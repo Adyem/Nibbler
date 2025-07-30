@@ -19,6 +19,7 @@
 #define FAILURE 1
 
 static const int MAX_SNAKE_LENGTH = 40000;
+#define FOOD 1
 
 typedef struct s_coordinates
 {
@@ -44,6 +45,8 @@ public:
     size_t get_width() const;
     size_t get_height() const;
 
+    void spawn_food();
+
     t_coordinates get_head_coordinate(int head_to_find);
     int           is_valid_move(int player_head);
     int           update_snake_position(int player_head);
@@ -58,6 +61,7 @@ private:
     int         _amount_players_dead;
     int         _direction_moving[4];
     int         _direction_moving_ice[4];
+    int         _snake_length[4];
 
     ft_map3d     _map;
     ft_character _character;
