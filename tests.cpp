@@ -86,9 +86,29 @@ int run_all_tests() {
 }
 
 int run_all_tests_with_report() {
-    int failed = run_all_tests();
+    struct test_entry {
+        const char *name;
+        int (*func)();
+    } tests[] = {
+        {"test_game_data", test_game_data},
+        {"test_wrap_around_edges", test_wrap_around_edges},
+        {"test_invalid_move_wall", test_invalid_move_wall},
+        {"test_self_collision", test_self_collision},
+    };
+
+    int failed = 0;
+    for (const auto &t : tests) {
+        int ret = t.func();
+        if (ret) {
+            std::cerr << t.name << " failed" << std::endl;
+        } else {
+            std::cout << t.name << " passed" << std::endl;
+        }
+        failed += ret;
+    }
+
     if (failed != 0) {
-        std::cerr << "Tests failed" << std::endl;
+        std::cerr << "Tests failed: " << failed << " test(s)" << std::endl;
     } else {
         std::cout << "All tests passed" << std::endl;
     }
