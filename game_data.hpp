@@ -30,6 +30,9 @@ class game_data
 {
         public:
             game_data(int width, int height);
+            void reset_board();
+            void resize_board(int width, int height);
+
 			mutable int		_error;
 			int				_wrap_around_edges;
 			int				_amount_players_dead;
