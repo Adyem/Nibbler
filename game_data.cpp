@@ -115,25 +115,56 @@ int game_data::is_valid_move(int player_head)
 
 t_coordinates game_data::get_next_piece(t_coordinates current_coordinate, int piece_id)
 {
-    t_coordinates next_piece;
-    next_piece.x = -1;
-    next_piece.y = -1;
     int next_id = piece_id + 1;
-    int width = this->_map.get_width();
-    int height = this->_map.get_height();
-    int y = 0;
-    while (y < height)
+    size_t width = this->_map.get_width();
+    size_t height = this->_map.get_height();
+
+    const int dirs[4][2] = {
+        {0, 1},  // up
+        {1, 0},  // right
+        {0, -1}, // down
+        {-1, 0}  // left
+    };
+
+    for (int i = 0; i < 4; i++)
     {
-        int x = 0;
-        while (x < width)
+        int nx = current_coordinate.x + dirs[i][0];
+        int ny = current_coordinate.y + dirs[i][1];
+
+        if (nx < 0)
         {
-            if (this->_map.get(x, y, 2) == next_id)
-                return ((t_coordinates){x, y});
-            x++;
+            if (this->_wrap_around_edges)
+                nx = width - 1;
+            else
+                continue;
         }
-        y++;
+        if (nx >= static_cast<int>(width))
+        {
+            if (this->_wrap_around_edges)
+                nx = 0;
+            else
+                continue;
+        }
+        if (ny < 0)
+        {
+            if (this->_wrap_around_edges)
+                ny = height - 1;
+            else
+                continue;
+        }
+        if (ny >= static_cast<int>(height))
+        {
+            if (this->_wrap_around_edges)
+                ny = 0;
+            else
+                continue;
+        }
+
+        if (this->_map.get(static_cast<size_t>(nx), static_cast<size_t>(ny), 2) == next_id)
+            return ((t_coordinates){nx, ny});
     }
-    return (next_piece);
+
+    return ((t_coordinates){-1, -1});
 }
 
 
