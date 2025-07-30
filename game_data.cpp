@@ -10,14 +10,15 @@ game_data::game_data(int width, int height) :
 		this->_error = this->_map.get_error();
 	else if (this->_character.get_error())
 		this->_error = this->_character.get_error();
-	int index = 0;
-	while (index < 4)
-	{
-		this->_direction_moving_ice[index] = 0;
-		this->_direction_moving[index] = 0;
-		index++;
-	}
-	return ;
+        int index = 0;
+        while (index < 4)
+        {
+                this->_direction_moving_ice[index] = 0;
+                this->_direction_moving[index] = 0;
+                index++;
+        }
+        this->reset_board();
+        return ;
 }
 
 t_coordinates game_data::get_head_coordinate(int head_to_find)
@@ -236,5 +237,39 @@ int     game_data::update_snake_position(int player_head)
     }
     this->_map.set(target_x, target_y, 2, offset + 1);
     return (0);
+}
+
+void game_data::reset_board()
+{
+    for (size_t y = 0; y < this->_map.get_height(); ++y)
+    {
+        for (size_t x = 0; x < this->_map.get_width(); ++x)
+        {
+            this->_map.set(x, y, 0, GAME_TILE_EMPTY);
+            this->_map.set(x, y, 1, 0);
+            this->_map.set(x, y, 2, 0);
+        }
+    }
+    for (int i = 0; i < 4; ++i)
+    {
+        this->_direction_moving[i] = 0;
+        this->_direction_moving_ice[i] = 0;
+    }
+    this->_amount_players_dead = 0;
+    int mid_x = static_cast<int>(this->_map.get_width() / 2);
+    int mid_y = static_cast<int>(this->_map.get_height() / 2);
+    this->_map.set(mid_x, mid_y, 2, SNAKE_HEAD_PLAYER_1);
+}
+
+void game_data::resize_board(int width, int height)
+{
+    ft_map3d new_map(width, height, 3);
+    if (new_map.get_error())
+    {
+        this->_error = new_map.get_error();
+        return;
+    }
+    this->_map = new_map;
+    this->reset_board();
 }
 

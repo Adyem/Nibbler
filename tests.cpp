@@ -76,12 +76,38 @@ int test_self_collision() {
     return 0;
 }
 
+int test_reset_board() {
+    game_data gd(5, 5);
+    if (gd._error)
+        return 1;
+    gd.reset_board();
+    t_coordinates head = gd.get_head_coordinate(SNAKE_HEAD_PLAYER_1);
+    if (head.x != 2 || head.y != 2)
+        return 1;
+    return 0;
+}
+
+int test_resize_board() {
+    game_data gd(3, 3);
+    if (gd._error)
+        return 1;
+    gd.resize_board(4, 4);
+    if (gd._map.get_width() != 4 || gd._map.get_height() != 4)
+        return 1;
+    t_coordinates head = gd.get_head_coordinate(SNAKE_HEAD_PLAYER_1);
+    if (head.x != 2 || head.y != 2)
+        return 1;
+    return 0;
+}
+
 int run_all_tests() {
     int failed = 0;
     failed += test_game_data();
     failed += test_wrap_around_edges();
     failed += test_invalid_move_wall();
     failed += test_self_collision();
+    failed += test_reset_board();
+    failed += test_resize_board();
     return failed;
 }
 
@@ -94,6 +120,8 @@ int run_all_tests_with_report() {
         {"test_wrap_around_edges", test_wrap_around_edges},
         {"test_invalid_move_wall", test_invalid_move_wall},
         {"test_self_collision", test_self_collision},
+        {"test_reset_board", test_reset_board},
+        {"test_resize_board", test_resize_board},
     };
 
     int failed = 0;
