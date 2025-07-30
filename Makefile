@@ -7,9 +7,9 @@ endif
 NAME        = dnd_tools$(EXE_EXT)
 NAME_DEBUG  = dnd_tools_debug$(EXE_EXT)
 
-HEADER      = game_data.hpp \
+HEADER      = game_data.hpp tests.hpp \
 
-SRC         = game_data.cpp \
+SRC         = game_data.cpp main.cpp tests.cpp \
 
 CC          = g++
 

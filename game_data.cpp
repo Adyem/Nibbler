@@ -4,7 +4,7 @@
 
 game_data::game_data(int width, int height) :
 	_error(0), _wrap_around_edges(0), _amount_players_dead(0),
-	_map(width, height, 2), _character()
+        _map(width, height, 3), _character()
 {
 	if (this->_map.get_error())
 		this->_error = this->_map.get_error();
@@ -22,19 +22,19 @@ game_data::game_data(int width, int height) :
 
 t_coordinates game_data::get_head_coordinate(int head_to_find)
 {
-	int index_y = 0;
-	while (index_y < this->_map.get_height())
-	{
-		int index_x = 0;
-		while (index_x < this->_map.get_width())
-		{
-			if (this->_map.get(index_x, index_y, 2) == head_to_find)
-				return ((t_coordinates){index_x, index_y});
-			index_x++;
-		}
-		index_y++;
-	}
-	return ((t_coordinates){0, 0});
+        size_t index_y = 0;
+        while (index_y < this->_map.get_height())
+        {
+                size_t index_x = 0;
+                while (index_x < this->_map.get_width())
+                {
+                        if (this->_map.get(index_x, index_y, 2) == head_to_find)
+                                return ((t_coordinates){static_cast<int>(index_x), static_cast<int>(index_y)});
+                        index_x++;
+                }
+                index_y++;
+        }
+        return ((t_coordinates){0, 0});
 }
 
 int game_data::determine_player_number(int player_head)
@@ -51,8 +51,8 @@ int game_data::is_valid_move(int player_head)
     if (this->_map.get(head.x, head.y, 0) == GAME_TILE_ICE)
         direction_moving = this->_direction_moving_ice[player_number];
 
-    int width  = this->_map.get_width();
-    int height = this->_map.get_height();
+    int width  = static_cast<int>(this->_map.get_width());
+    int height = static_cast<int>(this->_map.get_height());
 
     if (head.x < 0 || head.x >= width || head.y < 0 || head.y >= height)
         return (1);
@@ -134,7 +134,7 @@ t_coordinates game_data::get_next_piece(t_coordinates current_coordinate, int pi
         if (nx < 0)
         {
             if (this->_wrap_around_edges)
-                nx = width - 1;
+                nx = static_cast<int>(width) - 1;
             else
                 continue;
         }
@@ -148,7 +148,7 @@ t_coordinates game_data::get_next_piece(t_coordinates current_coordinate, int pi
         if (ny < 0)
         {
             if (this->_wrap_around_edges)
-                ny = height - 1;
+                ny = static_cast<int>(height) - 1;
             else
                 continue;
         }
@@ -183,8 +183,8 @@ int     game_data::update_snake_position(int player_head)
     int direction_moving = this->_direction_moving[player_number];
     if (this->_map.get(current_coords.x, current_coords.y, 0) == GAME_TILE_ICE)
         direction_moving = this->_direction_moving_ice[player_number];
-    int width  = this->_map.get_width();
-    int height = this->_map.get_height();
+    int width  = static_cast<int>(this->_map.get_width());
+    int height = static_cast<int>(this->_map.get_height());
     int target_x = current_coords.x;
     int target_y = current_coords.y;
     if (direction_moving == DIRECTION_UP)
