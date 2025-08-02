@@ -245,7 +245,8 @@ t_coordinates game_data::get_next_piece(t_coordinates current_coordinate, int pi
             }
         }
 
-        if (this->_map.get(static_cast<size_t>(nx), static_cast<size_t>(ny), 2) == next_id)
+        if (this->_map.get(static_cast<size_t>(nx),
+					static_cast<size_t>(ny), 2) == next_id)
             return ((t_coordinates){nx, ny});
         ++i;
     }
@@ -407,12 +408,15 @@ const ft_string &game_data::get_profile_name() const
 int game_data::save_game() const
 {
     ensure_save_dir_exists();
-    std::filesystem::path file = get_save_dir() / (std::string(this->_profile_name.c_str()) + ".json");
+    std::filesystem::path file = get_save_dir() /
+		(std::string(this->_profile_name.c_str()) + ".json");
     json_group *group = json_create_json_group("game");
     if (!group)
         return (1);
-    json_add_item_to_group(group, json_create_item("snake_length", this->_snake_length[0]));
-    json_add_item_to_group(group, json_create_item("achievement_snake50", this->_achievement_snake50));
+    json_add_item_to_group(group, json_create_item
+			("snake_length", this->_snake_length[0]));
+    json_add_item_to_group(group, json_create_item
+			("achievement_snake50", this->_achievement_snake50));
     int ret = json_write_to_file(file.c_str(), group);
     json_free_groups(group);
     return (ret);
@@ -421,7 +425,8 @@ int game_data::save_game() const
 int game_data::load_game()
 {
     ensure_save_dir_exists();
-    std::filesystem::path file = get_save_dir() / (std::string(this->_profile_name.c_str()) + ".json");
+    std::filesystem::path file = get_save_dir() /
+		(std::string(this->_profile_name.c_str()) + ".json");
     json_group *root = json_read_from_file(file.c_str());
     if (!root)
         return (1);
@@ -436,7 +441,8 @@ int game_data::load_game()
         this->_snake_length[0] = std::atoi(len->value);
     json_item *ach = json_find_item(group, "achievement_snake50");
     if (ach)
-        this->_achievement_snake50 = (std::strcmp(ach->value, "true") == 0 || std::strcmp(ach->value, "1") == 0);
+        this->_achievement_snake50 = (std::strcmp(ach->value, "true")
+				== 0 || std::strcmp(ach->value, "1") == 0);
     json_free_groups(root);
     return (0);
 }

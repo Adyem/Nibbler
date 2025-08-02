@@ -30,7 +30,7 @@ typedef struct s_coordinates
 
 class game_data
 {
-        public:
+    public:
         game_data(int width, int height);
         void reset_board();
     	void resize_board(int width, int height);
@@ -60,7 +60,7 @@ class game_data
         int         get_snake_length(int player) const;
         bool        get_achievement_snake50() const;
 
-        private:
+    private:
         t_coordinates get_next_piece(t_coordinates current_coordinate, int piece_id);
         int           determine_player_number(int player_head);
 
