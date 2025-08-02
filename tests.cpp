@@ -139,6 +139,40 @@ static int test_eat_food() {
     return 0;
 }
 
+static int test_save_load_and_achievement()
+{
+    game_data gd(100, 1);
+    if (gd.get_error())
+        return 1;
+    ft_string profile("profile1");
+    gd.set_profile_name(profile);
+    for (int i = 0; i < 49; ++i)
+    {
+        t_coordinates head = gd.get_head_coordinate(SNAKE_HEAD_PLAYER_1);
+        gd.set_map_value(head.x + 1, head.y, 2, FOOD);
+        gd.set_direction_moving(0, DIRECTION_RIGHT);
+        if (gd.update_game_map())
+            return 1;
+    }
+    if (gd.get_snake_length(0) != 50)
+        return 1;
+    if (!gd.get_achievement_snake50())
+        return 1;
+    if (gd.save_game())
+        return 1;
+    game_data gd2(100, 1);
+    if (gd2.get_error())
+        return 1;
+    gd2.set_profile_name(profile);
+    if (gd2.load_game())
+        return 1;
+    if (gd2.get_snake_length(0) != 50)
+        return 1;
+    if (!gd2.get_achievement_snake50())
+        return 1;
+    return 0;
+}
+
 int run_all_tests_with_report()
 {
     struct test_entry
@@ -155,6 +189,7 @@ int run_all_tests_with_report()
         {"test_reset_board", test_reset_board},
         {"test_resize_board", test_resize_board},
         {"test_eat_food", test_eat_food},
+        {"test_save_load_and_achievement", test_save_load_and_achievement},
     };
 
     int failed = 0;
