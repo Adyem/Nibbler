@@ -17,8 +17,10 @@ static void ensure_save_dir_exists()
 {
     std::filesystem::path dir = get_save_dir();
     if (!std::filesystem::exists(dir))
+    {
         std::filesystem::create_directories(dir);
-	return ;
+    }
+    return ;
 }
 
 game_data::game_data(int width, int height) :
@@ -62,8 +64,10 @@ int game_data::get_wrap_around_edges() const
 void game_data::set_direction_moving(int player, int direction)
 {
     if (player >= 0 && player < 4)
+    {
         this->_direction_moving[player] = direction;
-	return ;
+    }
+    return ;
 }
 
 int game_data::get_direction_moving(int player) const
@@ -75,13 +79,92 @@ int game_data::get_direction_moving(int player) const
 
 void game_data::set_map_value(int x, int y, int layer, int value)
 {
+    int prev_val = this->_map.get(x, y, layer);
     this->_map.set(x, y, layer, value);
-	return ;
+    if (layer == 2)
+    {
+        if (prev_val == 0 && value != 0)
+            remove_empty_cell(x, y);
+        else if (prev_val != 0 && value == 0 &&
+                 this->_map.get(x, y, 0) != GAME_TILE_WALL)
+            add_empty_cell(x, y);
+    }
+    else if (layer == 0)
+    {
+        if (value == GAME_TILE_WALL)
+            remove_empty_cell(x, y);
+        else if (prev_val == GAME_TILE_WALL &&
+                 this->_map.get(x, y, 2) == 0)
+            add_empty_cell(x, y);
+    }
+        return ;
 }
 
 int game_data::get_map_value(int x, int y, int layer) const
 {
     return (this->_map.get(x, y, layer));
+}
+
+void game_data::add_empty_cell(int x, int y)
+{
+    size_t width = this->_map.get_width();
+    int flat = y * static_cast<int>(width) + x;
+    if (flat < 0 || flat >= static_cast<int>(this->_empty_cell_indices.size()))
+        return ;
+    if (this->_empty_cell_indices[flat] != -1)
+        return ;
+    this->_empty_cells.push_back((t_coordinates){x, y});
+    this->_empty_cell_indices[flat] = static_cast<int>(this->_empty_cells.size() - 1);
+        return ;
+}
+
+void game_data::remove_empty_cell(int x, int y)
+{
+    size_t width = this->_map.get_width();
+    int flat = y * static_cast<int>(width) + x;
+    if (flat < 0 || flat >= static_cast<int>(this->_empty_cell_indices.size()))
+        return ;
+    int idx = this->_empty_cell_indices[flat];
+    if (idx == -1)
+        return ;
+    int last = static_cast<int>(this->_empty_cells.size() - 1);
+    if (idx != last)
+    {
+        this->_empty_cells[idx] = this->_empty_cells[last];
+        int flat_last = this->_empty_cells[idx].y * static_cast<int>(width) +
+                        this->_empty_cells[idx].x;
+        this->_empty_cell_indices[flat_last] = idx;
+    }
+    this->_empty_cells.pop_back();
+    this->_empty_cell_indices[flat] = -1;
+        return ;
+}
+
+void game_data::initialize_empty_cells()
+{
+    size_t width = this->_map.get_width();
+    size_t height = this->_map.get_height();
+    this->_empty_cells.clear();
+    this->_empty_cell_indices.assign(width * height, -1);
+    size_t y = 0;
+    while (y < height)
+    {
+        size_t x = 0;
+        while (x < width)
+        {
+            if (this->_map.get(x, y, 2) == 0 &&
+                this->_map.get(x, y, 0) != GAME_TILE_WALL)
+            {
+                this->_empty_cells.push_back((t_coordinates){static_cast<int>(x),
+                                                            static_cast<int>(y)});
+                this->_empty_cell_indices[y * width + x] =
+                        static_cast<int>(this->_empty_cells.size() - 1);
+            }
+            ++x;
+        }
+        ++y;
+    }
+        return ;
 }
 
 size_t game_data::get_width() const
@@ -310,6 +393,8 @@ int     game_data::update_snake_position(int player_head)
     else if (on_ice_now && !on_ice_next)
         this->_direction_moving_ice[player_number] = 0;
     int offset = (player_head / 1000000) * 1000000;
+    bool ate_food = (this->_map.get(target_x, target_y, 2) == FOOD);
+    int limit = this->_snake_length[player_number] + (ate_food ? 1 : 0);
     int y = 0;
     while (y < height)
     {
@@ -317,22 +402,25 @@ int     game_data::update_snake_position(int player_head)
         while (x < width)
         {
             int val = this->_map.get(x, y, 2);
-            if (val >= offset + 1 && val < offset + this->_snake_length[player_number])
+            if (val >= offset + 1 && val < offset + limit)
                 this->_map.set(x, y, 2, val + 1);
-            else if (val >= offset + this->_snake_length[player_number])
+            else if (val >= offset + limit)
+            {
                 this->_map.set(x, y, 2, 0);
+                add_empty_cell(x, y);
+            }
             x++;
         }
         y++;
     }
 
-    bool ate_food = (this->_map.get(target_x, target_y, 2) == FOOD);
     if (ate_food && this->_snake_length[player_number] < MAX_SNAKE_LENGTH)
     {
         this->_snake_length[player_number]++;
         if (this->_snake_length[player_number] >= 50)
             this->_achievement_snake50 = true;
     }
+    remove_empty_cell(target_x, target_y);
     this->_map.set(target_x, target_y, 2, offset + 1);
     if (ate_food)
         spawn_food();
@@ -363,11 +451,13 @@ void game_data::reset_board()
         ++i;
     }
     this->_amount_players_dead = 0;
+    initialize_empty_cells();
     int mid_x = static_cast<int>(this->_map.get_width() / 2);
     int mid_y = static_cast<int>(this->_map.get_height() / 2);
     this->_map.set(mid_x, mid_y, 2, SNAKE_HEAD_PLAYER_1);
+    remove_empty_cell(mid_x, mid_y);
     spawn_food();
-	return ;
+        return ;
 }
 
 void game_data::resize_board(int width, int height)
@@ -384,22 +474,13 @@ void game_data::resize_board(int width, int height)
 
 void game_data::spawn_food()
 {
-    size_t width = this->_map.get_width();
-    size_t height = this->_map.get_height();
-    if (width == 0 || height == 0)
+    if (this->_empty_cells.empty())
         return ;
-    for (int attempts = 0; attempts < 1000; ++attempts)
-    {
-        int x = ft_dice_roll(1, static_cast<int>(width)) - 1;
-        int y = ft_dice_roll(1, static_cast<int>(height)) - 1;
-        if (this->_map.get(x, y, 2) == 0 &&
-            this->_map.get(x, y, 0) != GAME_TILE_WALL)
-        {
-            this->_map.set(x, y, 2, FOOD);
-            return ;
-        }
-    }
-	return ;
+    int idx = ft_dice_roll(1, static_cast<int>(this->_empty_cells.size())) - 1;
+    t_coordinates coord = this->_empty_cells[idx];
+    this->_map.set(coord.x, coord.y, 2, FOOD);
+    remove_empty_cell(coord.x, coord.y);
+        return ;
 }
 
 void game_data::set_profile_name(const ft_string &name)
