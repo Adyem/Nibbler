@@ -26,7 +26,7 @@ int game_data::determine_player_number(int player_head)
 int game_data::is_valid_move(int player_head)
 {
     t_coordinates head = this->get_head_coordinate(player_head);
-    int player_number = determine_player_number(player_head);
+    int player_number = this->determine_player_number(player_head);
 
     int direction_moving = this->_direction_moving[player_number];
     if (this->_map.get(head.x, head.y, 0) == GAME_TILE_ICE)
@@ -181,7 +181,7 @@ int game_data::update_game_map()
             if (this->_update_counter[i] >= 60)
             {
                 this->_update_counter[i] = 0;
-                if (update_snake_position(heads[i]))
+                if (this->update_snake_position(heads[i]))
                     ret = 1;
             }
         }
@@ -192,10 +192,10 @@ int game_data::update_game_map()
 
 int game_data::update_snake_position(int player_head)
 {
-    t_coordinates current_coords = get_head_coordinate(player_head);
-    int player_number = determine_player_number(player_head);
+    t_coordinates current_coords = this->get_head_coordinate(player_head);
+    int player_number = this->determine_player_number(player_head);
 
-    if (is_valid_move(player_head))
+    if (this->is_valid_move(player_head))
         return (1);
     int direction_moving = this->_direction_moving[player_number];
     if (this->_map.get(current_coords.x, current_coords.y, 0) == GAME_TILE_ICE)
@@ -250,7 +250,7 @@ int game_data::update_snake_position(int player_head)
             else if (val >= offset + limit)
             {
                 this->_map.set(x, y, 2, 0);
-                add_empty_cell(x, y);
+                this->add_empty_cell(x, y);
             }
             x++;
         }
@@ -263,10 +263,10 @@ int game_data::update_snake_position(int player_head)
         if (this->_snake_length[player_number] >= 50)
             this->_achievement_snake50 = true;
     }
-    remove_empty_cell(target_x, target_y);
+    this->remove_empty_cell(target_x, target_y);
     this->_map.set(target_x, target_y, 2, offset + 1);
     if (ate_food)
-        spawn_food();
+        this->spawn_food();
     return (0);
 }
 
