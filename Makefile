@@ -9,7 +9,7 @@ NAME_DEBUG  = dnd_tools_debug$(EXE_EXT)
 
 HEADER      = game_data.hpp tests.hpp \
 
-SRC         = game_data.cpp main.cpp tests.cpp \
+SRC         = game_data_core.cpp game_data_board.cpp game_data_movement.cpp game_data_io.cpp main.cpp tests.cpp \
 
 CC          = g++
 
