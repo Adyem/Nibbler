@@ -10,7 +10,7 @@
 
 static std::filesystem::path get_save_dir()
 {
-    return std::filesystem::current_path() / "save_data";
+    return (std::filesystem::current_path() / "save_data");
 }
 
 static void ensure_save_dir_exists()
@@ -18,6 +18,7 @@ static void ensure_save_dir_exists()
     std::filesystem::path dir = get_save_dir();
     if (!std::filesystem::exists(dir))
         std::filesystem::create_directories(dir);
+	return ;
 }
 
 game_data::game_data(int width, int height) :
@@ -44,50 +45,53 @@ game_data::game_data(int width, int height) :
 
 int game_data::get_error() const
 {
-    return this->_error;
+    return (this->_error);
 }
 
 void game_data::set_wrap_around_edges(int value)
 {
     this->_wrap_around_edges = value;
+	return ;
 }
 
 int game_data::get_wrap_around_edges() const
 {
-    return this->_wrap_around_edges;
+    return (this->_wrap_around_edges);
 }
 
 void game_data::set_direction_moving(int player, int direction)
 {
     if (player >= 0 && player < 4)
         this->_direction_moving[player] = direction;
+	return ;
 }
 
 int game_data::get_direction_moving(int player) const
 {
     if (player >= 0 && player < 4)
-        return this->_direction_moving[player];
-    return 0;
+        return (this->_direction_moving[player]);
+    return (0);
 }
 
 void game_data::set_map_value(int x, int y, int layer, int value)
 {
     this->_map.set(x, y, layer, value);
+	return ;
 }
 
 int game_data::get_map_value(int x, int y, int layer) const
 {
-    return this->_map.get(x, y, layer);
+    return (this->_map.get(x, y, layer));
 }
 
 size_t game_data::get_width() const
 {
-    return this->_map.get_width();
+    return (this->_map.get_width());
 }
 
 size_t game_data::get_height() const
 {
-    return this->_map.get_height();
+    return (this->_map.get_height());
 }
 
 t_coordinates game_data::get_head_coordinate(int head_to_find)
@@ -192,10 +196,10 @@ t_coordinates game_data::get_next_piece(t_coordinates current_coordinate, int pi
     size_t height = this->_map.get_height();
 
     const int dirs[4][2] = {
-        {0, 1},  // up
-        {1, 0},  // right
-        {0, -1}, // down
-        {-1, 0}  // left
+        {0, 1},
+        {1, 0},
+        {0, -1},
+        {-1, 0}
     };
 
     int i = 0;
@@ -363,6 +367,7 @@ void game_data::reset_board()
     int mid_y = static_cast<int>(this->_map.get_height() / 2);
     this->_map.set(mid_x, mid_y, 2, SNAKE_HEAD_PLAYER_1);
     spawn_food();
+	return ;
 }
 
 void game_data::resize_board(int width, int height)
@@ -371,9 +376,10 @@ void game_data::resize_board(int width, int height)
     if (this->_map.get_error())
     {
         this->_error = this->_map.get_error();
-        return;
+        return ;
     }
     this->reset_board();
+	return ;
 }
 
 void game_data::spawn_food()
@@ -381,7 +387,7 @@ void game_data::spawn_food()
     size_t width = this->_map.get_width();
     size_t height = this->_map.get_height();
     if (width == 0 || height == 0)
-        return;
+        return ;
     for (int attempts = 0; attempts < 1000; ++attempts)
     {
         int x = ft_dice_roll(1, static_cast<int>(width)) - 1;
@@ -390,19 +396,21 @@ void game_data::spawn_food()
             this->_map.get(x, y, 0) != GAME_TILE_WALL)
         {
             this->_map.set(x, y, 2, FOOD);
-            return;
+            return ;
         }
     }
+	return ;
 }
 
 void game_data::set_profile_name(const ft_string &name)
 {
     this->_profile_name = name;
+	return ;
 }
 
 const ft_string &game_data::get_profile_name() const
 {
-    return this->_profile_name;
+    return (this->_profile_name);
 }
 
 int game_data::save_game() const
@@ -451,10 +459,10 @@ int game_data::get_snake_length(int player) const
 {
     if (player >= 0 && player < 4)
         return this->_snake_length[player];
-    return 0;
+    return (0);
 }
 
 bool game_data::get_achievement_snake50() const
 {
-    return this->_achievement_snake50;
+    return (this->_achievement_snake50);
 }
