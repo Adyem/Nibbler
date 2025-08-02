@@ -35,6 +35,7 @@ game_data::game_data(int width, int height) :
                 this->_direction_moving_ice[index] = 0;
                 this->_direction_moving[index] = 0;
                 this->_snake_length[index] = 1;
+                this->_update_counter[index] = 0;
                 index++;
         }
         ensure_save_dir_exists();

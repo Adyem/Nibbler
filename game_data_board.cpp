@@ -122,6 +122,7 @@ void game_data::reset_board()
         this->_direction_moving[i] = 0;
         this->_direction_moving_ice[i] = 0;
         this->_snake_length[i] = 1;
+        this->_update_counter[i] = 0;
         ++i;
     }
     this->_amount_players_dead = 0;

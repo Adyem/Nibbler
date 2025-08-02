@@ -74,6 +74,7 @@ class game_data
         int         _direction_moving[4];
         int         _direction_moving_ice[4];
         int         _snake_length[4];
+        int         _update_counter[4];
         ft_string   _profile_name;
         bool        _achievement_snake50;
 
