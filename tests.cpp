@@ -11,7 +11,8 @@ static void print_layer(const game_data &gd)
         size_t x = 0;
         while (x < gd.get_width())
         {
-            std::cout << std::setw(8) << gd.get_map_value(static_cast<int>(x), static_cast<int>(y), 2);
+            std::cout << std::setw(8) << gd.get_map_value(static_cast<int>(x),
+					static_cast<int>(y), 2);
             ++x;
         }
         std::cout << "\n";
