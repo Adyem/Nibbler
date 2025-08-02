@@ -21,6 +21,20 @@ static void print_layer(const game_data &gd)
 	return ;
 }
 
+static int perform_updates(game_data &gd, int expected)
+{
+    int i = 0;
+    while (i < 59)
+    {
+        if (gd.update_game_map())
+            return (1);
+        ++i;
+    }
+    if (gd.update_game_map() != expected)
+        return (1);
+    return (0);
+}
+
 static int test_game_data()
 {
     game_data gd(3, 3);
@@ -31,7 +45,7 @@ static int test_game_data()
     }
     gd.set_map_value(0, 0, 2, SNAKE_HEAD_PLAYER_1);
     gd.set_direction_moving(0, DIRECTION_RIGHT);
-    if (gd.update_game_map())
+    if (perform_updates(gd, 0))
     {
         std::cerr << "Update failed" << std::endl;
         return (1);
@@ -55,7 +69,7 @@ static int test_wrap_around_edges()
     gd.set_wrap_around_edges(1);
     gd.set_map_value(1, 0, 2, SNAKE_HEAD_PLAYER_1);
     gd.set_direction_moving(0, DIRECTION_RIGHT);
-    if (gd.update_game_map())
+    if (perform_updates(gd, 0))
         return (1);
     t_coordinates head = gd.get_head_coordinate(SNAKE_HEAD_PLAYER_1);
     if (head.x != 0 || head.y != 0)
@@ -73,7 +87,7 @@ static int test_invalid_move_wall()
     gd.set_direction_moving(0, DIRECTION_RIGHT);
     if (gd.is_valid_move(SNAKE_HEAD_PLAYER_1) == 0)
         return (1);
-    if (gd.update_game_map() == 0)
+    if (perform_updates(gd, 1) == 0)
         return (1);
     return (0);
 }
@@ -88,7 +102,7 @@ static int test_self_collision()
     gd.set_direction_moving(0, DIRECTION_LEFT);
     if (gd.is_valid_move(SNAKE_HEAD_PLAYER_1) == 0)
         return (1);
-    if (gd.update_game_map() == 0)
+    if (perform_updates(gd, 1) == 0)
         return (1);
     return (0);
 }
@@ -124,7 +138,7 @@ static int test_eat_food() {
     gd.set_map_value(0, 0, 2, SNAKE_HEAD_PLAYER_1);
     gd.set_map_value(1, 0, 2, FOOD);
     gd.set_direction_moving(0, DIRECTION_RIGHT);
-    if (gd.update_game_map())
+    if (perform_updates(gd, 0))
         return (1);
     if (gd.get_map_value(0, 0, 2) == 0)
         return (1);
@@ -153,7 +167,7 @@ static int test_save_load_and_achievement()
         t_coordinates head = gd.get_head_coordinate(SNAKE_HEAD_PLAYER_1);
         gd.set_map_value(head.x + 1, head.y, 2, FOOD);
         gd.set_direction_moving(0, DIRECTION_RIGHT);
-        if (gd.update_game_map())
+        if (perform_updates(gd, 0))
             return (1);
     }
     if (gd.get_snake_length(0) != 50)

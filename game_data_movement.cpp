@@ -166,7 +166,28 @@ t_coordinates game_data::get_next_piece(t_coordinates current_coordinate, int pi
 
 int game_data::update_game_map()
 {
-    return (update_snake_position(SNAKE_HEAD_PLAYER_1));
+    int ret = 0;
+    int heads[4] = {
+        SNAKE_HEAD_PLAYER_1,
+        SNAKE_HEAD_PLAYER_2,
+        SNAKE_HEAD_PLAYER_3,
+        SNAKE_HEAD_PLAYER_4};
+    int i = 0;
+    while (i < 4)
+    {
+        if (this->_snake_length[i] > 0)
+        {
+            this->_update_counter[i]++;
+            if (this->_update_counter[i] >= 60)
+            {
+                this->_update_counter[i] = 0;
+                if (update_snake_position(heads[i]))
+                    ret = 1;
+            }
+        }
+        ++i;
+    }
+    return (ret);
 }
 
 int game_data::update_snake_position(int player_head)
