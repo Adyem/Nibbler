@@ -19,9 +19,7 @@ int game_data::get_wrap_around_edges() const
 void game_data::set_direction_moving(int player, int direction)
 {
     if (player >= 0 && player < 4)
-    {
         this->_direction_moving[player] = direction;
-    }
     return ;
 }
 
@@ -54,4 +52,3 @@ bool game_data::get_achievement_snake50() const
 {
     return (this->_achievement_snake50);
 }
-
