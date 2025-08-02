@@ -29,40 +29,40 @@ typedef struct s_coordinates
 
 class game_data
 {
-public:
-    game_data(int width, int height);
-    void reset_board();
-    void resize_board(int width, int height);
+	public:
+    	game_data(int width, int height);
+    	void reset_board();
+    	void resize_board(int width, int height);
 
-    int  get_error() const;
-    void set_wrap_around_edges(int value);
-    int  get_wrap_around_edges() const;
-    void set_direction_moving(int player, int direction);
-    int  get_direction_moving(int player) const;
+    	int  get_error() const;
+    	void set_wrap_around_edges(int value);
+    	int  get_wrap_around_edges() const;
+    	void set_direction_moving(int player, int direction);
+    	int  get_direction_moving(int player) const;
 
-    void   set_map_value(int x, int y, int layer, int value);
-    int    get_map_value(int x, int y, int layer) const;
-    size_t get_width() const;
-    size_t get_height() const;
+    	void   set_map_value(int x, int y, int layer, int value);
+    	int    get_map_value(int x, int y, int layer) const;
+    	size_t get_width() const;
+    	size_t get_height() const;
 
-    void spawn_food();
+    	void spawn_food();
 
-    t_coordinates get_head_coordinate(int head_to_find);
-    int           is_valid_move(int player_head);
-    int           update_snake_position(int player_head);
-    int           update_game_map();
+    	t_coordinates get_head_coordinate(int head_to_find);
+    	int           is_valid_move(int player_head);
+    	int           update_snake_position(int player_head);
+    	int           update_game_map();
 
-private:
-    t_coordinates get_next_piece(t_coordinates current_coordinate, int piece_id);
-    int           determine_player_number(int player_head);
+	private:
+    	t_coordinates get_next_piece(t_coordinates current_coordinate, int piece_id);
+    	int           determine_player_number(int player_head);
 
-    mutable int _error;
-    int         _wrap_around_edges;
-    int         _amount_players_dead;
-    int         _direction_moving[4];
-    int         _direction_moving_ice[4];
-    int         _snake_length[4];
+    	mutable int _error;
+    	int         _wrap_around_edges;
+    	int         _amount_players_dead;
+    	int         _direction_moving[4];
+    	int         _direction_moving_ice[4];
+    	int         _snake_length[4];
 
-    ft_map3d     _map;
-    ft_character _character;
+    	ft_map3d     _map;
+    	ft_character _character;
 };
