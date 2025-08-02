@@ -1,6 +1,7 @@
 #include "libft/Game/character.hpp"
 #include "libft/Game/map3d.hpp"
 #include "libft/CPP_class/string_class.hpp"
+#include <vector>
 
 #define GAME_TILE_EMPTY 0
 #define GAME_TILE_WALL 1
@@ -58,11 +59,14 @@ class game_data
         int         save_game() const;
         int         load_game();
         int         get_snake_length(int player) const;
-        bool        get_achievement_snake50() const;
+    bool        get_achievement_snake50() const;
 
     private:
         t_coordinates get_next_piece(t_coordinates current_coordinate, int piece_id);
         int           determine_player_number(int player_head);
+        void          add_empty_cell(int x, int y);
+        void          remove_empty_cell(int x, int y);
+        void          initialize_empty_cells();
 
     	mutable int _error;
     	int         _wrap_around_edges;
@@ -75,4 +79,6 @@ class game_data
 
         ft_map3d     _map;
         ft_character _character;
+        std::vector<t_coordinates> _empty_cells;
+        std::vector<int>           _empty_cell_indices;
 };
