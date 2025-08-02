@@ -8,18 +8,18 @@ void game_data::set_map_value(int x, int y, int layer, int value)
     if (layer == 2)
     {
         if (prev_val == 0 && value != 0)
-            remove_empty_cell(x, y);
+            this->remove_empty_cell(x, y);
         else if (prev_val != 0 && value == 0 &&
                  this->_map.get(x, y, 0) != GAME_TILE_WALL)
-            add_empty_cell(x, y);
+            this->add_empty_cell(x, y);
     }
     else if (layer == 0)
     {
         if (value == GAME_TILE_WALL)
-            remove_empty_cell(x, y);
+            this->remove_empty_cell(x, y);
         else if (prev_val == GAME_TILE_WALL &&
                  this->_map.get(x, y, 2) == 0)
-            add_empty_cell(x, y);
+            this->add_empty_cell(x, y);
     }
     return ;
 }
@@ -126,12 +126,12 @@ void game_data::reset_board()
         ++i;
     }
     this->_amount_players_dead = 0;
-    initialize_empty_cells();
+    this->initialize_empty_cells();
     int mid_x = static_cast<int>(this->_map.get_width() / 2);
     int mid_y = static_cast<int>(this->_map.get_height() / 2);
     this->_map.set(mid_x, mid_y, 2, SNAKE_HEAD_PLAYER_1);
-    remove_empty_cell(mid_x, mid_y);
-    spawn_food();
+    this->remove_empty_cell(mid_x, mid_y);
+    this->spawn_food();
     return ;
 }
 
@@ -154,7 +154,7 @@ void game_data::spawn_food()
     int idx = ft_dice_roll(1, static_cast<int>(this->_empty_cells.size())) - 1;
     t_coordinates coord = this->_empty_cells[idx];
     this->_map.set(coord.x, coord.y, 2, FOOD);
-    remove_empty_cell(coord.x, coord.y);
+    this->remove_empty_cell(coord.x, coord.y);
     return ;
 }
 
