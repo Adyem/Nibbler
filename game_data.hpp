@@ -47,9 +47,7 @@ class game_data
     	size_t get_width() const;
     	size_t get_height() const;
 
-    	void spawn_food();
-
-        t_coordinates get_head_coordinate(int head_to_find);
+    	t_coordinates get_head_coordinate(int head_to_find);
 
         int           update_game_map();
 
@@ -79,6 +77,7 @@ class game_data
         int         _update_counter[4];
         ft_string   _profile_name;
         bool        _achievement_snake50;
+		void spawn_food();
 
         ft_map3d     _map;
         ft_character _character;
