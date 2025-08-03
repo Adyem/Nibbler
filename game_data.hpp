@@ -50,8 +50,7 @@ class game_data
     	void spawn_food();
 
         t_coordinates get_head_coordinate(int head_to_find);
-        int           is_valid_move(int player_head);
-        int           update_snake_position(int player_head);
+
         int           update_game_map();
 
         void        set_profile_name(const ft_string &name);
@@ -59,7 +58,7 @@ class game_data
         int         save_game() const;
         int         load_game();
         int         get_snake_length(int player) const;
-    bool        get_achievement_snake50() const;
+    	bool        get_achievement_snake50() const;
 
     private:
         t_coordinates get_next_piece(t_coordinates current_coordinate, int piece_id);
@@ -67,6 +66,9 @@ class game_data
         void          add_empty_cell(int x, int y);
         void          remove_empty_cell(int x, int y);
         void          initialize_empty_cells();
+
+        int           is_valid_move(int player_head);
+        int           update_snake_position(int player_head);
 
     	mutable int _error;
     	int         _wrap_around_edges;
