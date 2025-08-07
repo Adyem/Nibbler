@@ -32,6 +32,11 @@ int game_data::is_valid_move(int player_head)
     if (this->_map.get(head.x, head.y, 0) == GAME_TILE_ICE)
         direction_moving = this->_direction_moving_ice[player_number];
 
+    // If no direction is set, the move is valid but the snake won't move
+    // This is handled in update_snake_position()
+    if (direction_moving == DIRECTION_NONE)
+        return (0);
+
     int width  = static_cast<int>(this->_map.get_width());
     int height = static_cast<int>(this->_map.get_height());
 
@@ -43,11 +48,11 @@ int game_data::is_valid_move(int player_head)
 
     if (direction_moving == DIRECTION_UP)
     {
-        target_y = head.y + 1;
-        if (target_y >= height)
+        target_y = head.y - 1;  // UP decreases Y coordinate
+        if (target_y < 0)
         {
             if (this->_wrap_around_edges)
-                target_y = 0;
+                target_y = height - 1;
             else
                 return (1);
         }
@@ -65,11 +70,11 @@ int game_data::is_valid_move(int player_head)
     }
     else if (direction_moving == DIRECTION_DOWN)
     {
-        target_y = head.y - 1;
-        if (target_y < 0)
+        target_y = head.y + 1;  // DOWN increases Y coordinate
+        if (target_y >= height)
         {
             if (this->_wrap_around_edges)
-                target_y = height - 1;
+                target_y = 0;
             else
                 return (1);
         }
@@ -93,6 +98,12 @@ int game_data::is_valid_move(int player_head)
         return (1);
 
     return (0);
+}
+
+// Testing method - exposes private is_valid_move for unit tests
+int game_data::test_is_valid_move(int player_head)
+{
+    return (this->is_valid_move(player_head));
 }
 
 t_coordinates game_data::get_next_piece(t_coordinates current_coordinate, int piece_id)
@@ -169,7 +180,11 @@ int game_data::update_snake_position(int player_head)
     t_coordinates current_coords = this->get_head_coordinate(player_head);
     int player_number = this->determine_player_number(player_head);
 
-    if (this->is_valid_move(player_head))
+    // Check if no direction is set - if so, don't move but don't game over either
+    if (this->_direction_moving[player_number] == DIRECTION_NONE)
+        return (0);
+
+    if (this->is_valid_move(player_head) != 0)
         return (1);
     int direction_moving = this->_direction_moving[player_number];
     if (this->_map.get(current_coords.x, current_coords.y, 0) == GAME_TILE_ICE)
@@ -180,9 +195,9 @@ int game_data::update_snake_position(int player_head)
     int target_y = current_coords.y;
     if (direction_moving == DIRECTION_UP)
     {
-        target_y = current_coords.y + 1;
-        if (target_y >= height)
-            target_y = (this->_wrap_around_edges ? 0 : height);
+        target_y = current_coords.y - 1;  // UP decreases Y coordinate
+        if (target_y < 0)
+            target_y = (this->_wrap_around_edges ? height - 1 : -1);
     }
     else if (direction_moving == DIRECTION_RIGHT)
     {
@@ -192,9 +207,9 @@ int game_data::update_snake_position(int player_head)
     }
     else if (direction_moving == DIRECTION_DOWN)
     {
-        target_y = current_coords.y - 1;
-        if (target_y < 0)
-            target_y = (this->_wrap_around_edges ? height - 1 : -1);
+        target_y = current_coords.y + 1;  // DOWN increases Y coordinate
+        if (target_y >= height)
+            target_y = (this->_wrap_around_edges ? 0 : height);
     }
     else if (direction_moving == DIRECTION_LEFT)
     {
@@ -258,7 +273,7 @@ int game_data::update_game_map()
         if (this->_snake_length[i] > 0)
         {
             this->_update_counter[i]++;
-            if (this->_update_counter[i] >= 60)
+            if (this->_update_counter[i] >= 5)  // Move every 5 frames (12 times per second at 60 FPS)
             {
                 this->_update_counter[i] = 0;
                 if (this->update_snake_position(heads[i]))

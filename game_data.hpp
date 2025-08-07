@@ -1,3 +1,6 @@
+#ifndef GAME_DATA_HPP
+#define GAME_DATA_HPP
+
 #include "libft/Game/character.hpp"
 #include "libft/Game/map3d.hpp"
 #include "libft/CPP_class/string_class.hpp"
@@ -12,6 +15,7 @@
 #define SNAKE_HEAD_PLAYER_3 3000001
 #define SNAKE_HEAD_PLAYER_4 4000001
 
+#define DIRECTION_NONE -1
 #define DIRECTION_UP 0
 #define DIRECTION_RIGHT 1
 #define DIRECTION_DOWN 2
@@ -58,6 +62,9 @@ class game_data
         int         get_snake_length(int player) const;
     	bool        get_achievement_snake50() const;
 
+        // Testing method - exposes private is_valid_move for unit tests
+        int         test_is_valid_move(int player_head);
+
     private:
         t_coordinates get_next_piece(t_coordinates current_coordinate, int piece_id);
         int           determine_player_number(int player_head);
@@ -84,3 +91,5 @@ class game_data
         std::vector<t_coordinates> _empty_cells;
         std::vector<int>           _empty_cell_indices;
 };
+
+#endif // GAME_DATA_HPP

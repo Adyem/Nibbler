@@ -27,7 +27,7 @@ int game_data::get_direction_moving(int player) const
 {
     if (player >= 0 && player < 4)
         return (this->_direction_moving[player]);
-    return (0);
+    return (DIRECTION_NONE);
 }
 
 void game_data::set_profile_name(const ft_string &name)

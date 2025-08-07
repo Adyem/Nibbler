@@ -77,7 +77,7 @@ static int test_invalid_move_wall()
     gd.set_map_value(1, 0, 0, GAME_TILE_WALL);
     gd.set_map_value(0, 0, 2, SNAKE_HEAD_PLAYER_1);
     gd.set_direction_moving(0, DIRECTION_RIGHT);
-    if (gd.is_valid_move(SNAKE_HEAD_PLAYER_1) == 0)
+    if (gd.test_is_valid_move(SNAKE_HEAD_PLAYER_1) == 0)
         return (1);
     perform_updates(gd);
     return (0);
@@ -91,7 +91,7 @@ static int test_self_collision()
     gd.set_map_value(1, 0, 2, SNAKE_HEAD_PLAYER_1);
     gd.set_map_value(0, 0, 2, SNAKE_HEAD_PLAYER_1 + 1);
     gd.set_direction_moving(0, DIRECTION_LEFT);
-    if (gd.is_valid_move(SNAKE_HEAD_PLAYER_1) == 0)
+    if (gd.test_is_valid_move(SNAKE_HEAD_PLAYER_1) == 0)
         return (1);
     perform_updates(gd);
     return (0);

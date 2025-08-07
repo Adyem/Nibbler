@@ -33,8 +33,8 @@ game_data::game_data(int width, int height) :
         while (index < 4)
         {
                 this->_direction_moving_ice[index] = 0;
-                this->_direction_moving[index] = 0;
-                this->_snake_length[index] = 1;
+                this->_direction_moving[index] = DIRECTION_NONE;
+                this->_snake_length[index] = 4;  // Snake starts with size 4 as per game rules
                 this->_update_counter[index] = 0;
                 index++;
         }

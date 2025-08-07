@@ -4,12 +4,12 @@ else
     EXE_EXT :=
 endif
 
-NAME        = dnd_tools$(EXE_EXT)
-NAME_DEBUG  = dnd_tools_debug$(EXE_EXT)
+NAME        = nibbler$(EXE_EXT)
+NAME_DEBUG  = nibbler_debug$(EXE_EXT)
 
-HEADER      = game_data.hpp tests.hpp \
+HEADER      = game_data.hpp IGraphicsLibrary.hpp LibraryManager.hpp GameEngine.hpp \
 
-SRC         = game_data_core.cpp game_data_board.cpp game_data_movement.cpp game_data_io.cpp main.cpp tests.cpp \
+SRC         = game_data_core.cpp game_data_board.cpp game_data_movement.cpp game_data_io.cpp main.cpp LibraryManager.cpp GameEngine.cpp \
 
 CC          = g++
 
@@ -28,9 +28,9 @@ else
 endif
 
 COMPILE_FLAGS = -Wall -Werror -Wextra -std=c++17 -Wmissing-declarations \
-				-Wold-style-cast -Wshadow -Wconversion -Wformat=2 -Wundef \
-				-Wfloat-equal -Wconversion -Wodr -Wuseless-cast \
-				-Wzero-as-null-pointer-constant -Wmaybe-uninitialized $(OPT_FLAGS)
+				-Wshadow  -Wformat=2 -Wundef \
+				-Wfloat-equal -Wodr  \
+				-Wzero-as-null-pointer-constant  $(OPT_FLAGS)
 
 CFLAGS = $(COMPILE_FLAGS)
 
@@ -75,14 +75,14 @@ endif
 export COMPILE_FLAGS
 
 ifeq ($(OS),Windows_NT)
-    LDFLAGS     = $(LIBFT)
+    LDFLAGS     = $(LIBFT) -ldl
 else
-    LDFLAGS     = $(LIBFT) -lreadline
+    LDFLAGS     = $(LIBFT) -lreadline -ldl
 endif
 
 OBJS        = $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 
-all: dirs $(TARGET)
+all: dirs $(TARGET) graphics_libs
 
 dirs:
 	-$(MKDIR) $(OBJ_DIR)
@@ -100,13 +100,18 @@ $(LIBFT):
 $(OBJ_DIR)/%.o: %.cpp $(HEADER)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+graphics_libs:
+	$(MAKE) -C graphics_libs
+
 clean:
 	-$(RM) $(OBJ_DIR)/*.o $(OBJ_DIR_DEBUG)/*.o
 	$(MAKE) -C $(LIBFT_DIR) fclean
+	$(MAKE) -C graphics_libs clean
 
 fclean: clean
 	-$(RM) $(NAME) $(NAME_DEBUG)
 	-$(RMDIR) $(OBJ_DIR) $(OBJ_DIR_DEBUG) data
+	-$(RM) lib_*.so
 
 re: fclean all
 
@@ -114,4 +119,4 @@ both: all debug
 
 re_both: re both
 
-.PHONY: all dirs clean fclean re debug both re_both
+.PHONY: all dirs clean fclean re debug both re_both graphics_libs

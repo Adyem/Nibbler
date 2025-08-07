@@ -119,9 +119,9 @@ void game_data::reset_board()
     int i = 0;
     while (i < 4)
     {
-        this->_direction_moving[i] = 0;
+        this->_direction_moving[i] = DIRECTION_NONE;
         this->_direction_moving_ice[i] = 0;
-        this->_snake_length[i] = 1;
+        this->_snake_length[i] = 4;  // Snake starts with size 4 as per game rules
         this->_update_counter[i] = 0;
         ++i;
     }
@@ -129,8 +129,21 @@ void game_data::reset_board()
     this->initialize_empty_cells();
     int mid_x = static_cast<int>(this->_map.get_width() / 2);
     int mid_y = static_cast<int>(this->_map.get_height() / 2);
+
+    // Initialize snake with 4 segments in the middle
     this->_map.set(mid_x, mid_y, 2, SNAKE_HEAD_PLAYER_1);
     this->remove_empty_cell(mid_x, mid_y);
+
+    // Add 3 body segments to the left of the head
+    // Snake segments are numbered: head=1000001, body=1000002, 1000003, 1000004, etc.
+    for (int j = 1; j < 4; j++) {
+        int body_x = mid_x - j;
+        if (body_x >= 0) {
+            this->_map.set(body_x, mid_y, 2, SNAKE_HEAD_PLAYER_1 + j);
+            this->remove_empty_cell(body_x, mid_y);
+        }
+    }
+
     this->spawn_food();
     return ;
 }
