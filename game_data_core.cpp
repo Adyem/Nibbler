@@ -19,7 +19,36 @@ int game_data::get_wrap_around_edges() const
 void game_data::set_direction_moving(int player, int direction)
 {
     if (player >= 0 && player < 4)
-        this->_direction_moving[player] = direction;
+    {
+        // Prevent moving backwards into the snake's own body
+        int current_direction = this->_direction_moving[player];
+
+        // Only prevent backwards movement if the snake is already moving
+        if (current_direction != DIRECTION_NONE)
+        {
+            // Check if the new direction is opposite to the current direction
+            bool is_opposite = false;
+            if ((current_direction == DIRECTION_UP && direction == DIRECTION_DOWN) ||
+                (current_direction == DIRECTION_DOWN && direction == DIRECTION_UP) ||
+                (current_direction == DIRECTION_LEFT && direction == DIRECTION_RIGHT) ||
+                (current_direction == DIRECTION_RIGHT && direction == DIRECTION_LEFT))
+            {
+                is_opposite = true;
+            }
+
+            // If it's not an opposite direction, allow the change
+            if (!is_opposite)
+            {
+                this->_direction_moving[player] = direction;
+            }
+            // If it is opposite, ignore the input (don't change direction)
+        }
+        else
+        {
+            // If snake is not moving yet, allow any direction
+            this->_direction_moving[player] = direction;
+        }
+    }
     return ;
 }
 

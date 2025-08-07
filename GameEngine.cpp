@@ -226,18 +226,20 @@ void GameEngine::renderGame() {
 }
 
 int GameEngine::loadDefaultLibraries() {
-    // Try to load the NCurses library first (preferred)
+    // Try to load the NCurses library first (index 0)
     if (_libraryManager.loadLibrary("./lib_ncurses.so") != 0) {
         std::cerr << "Warning: Failed to load NCurses library: " << _libraryManager.getError() << std::endl;
     }
 
-    // Try to load the console library as fallback
-    if (_libraryManager.loadLibrary("./lib_console.so") != 0) {
-        std::cerr << "Warning: Failed to load console library: " << _libraryManager.getError() << std::endl;
+    // Try to load the SDL2 library (index 1)
+    if (_libraryManager.loadLibrary("./lib_sdl2.so") != 0) {
+        std::cerr << "Warning: Failed to load SDL2 library: " << _libraryManager.getError() << std::endl;
     }
 
-    // Try to load other libraries (these don't exist yet, so they'll fail silently)
-    _libraryManager.loadLibrary("./lib_sdl.so");      // Will be created later
+    // Try to load the SFML library (index 2)
+    if (_libraryManager.loadLibrary("./lib_sfml.so") != 0) {
+        std::cerr << "Warning: Failed to load SFML library: " << _libraryManager.getError() << std::endl;
+    }
 
     if (_libraryManager.getLibraryCount() == 0) {
         setError("No graphics libraries could be loaded");

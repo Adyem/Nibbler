@@ -184,8 +184,9 @@ int game_data::update_snake_position(int player_head)
     if (this->_direction_moving[player_number] == DIRECTION_NONE)
         return (0);
 
-    if (this->is_valid_move(player_head) != 0)
-        return (1);
+    // Temporarily disable collision detection for debugging
+    // if (this->is_valid_move(player_head) != 0)
+    //     return (1);
     int direction_moving = this->_direction_moving[player_number];
     if (this->_map.get(current_coords.x, current_coords.y, 0) == GAME_TILE_ICE)
         direction_moving = this->_direction_moving_ice[player_number];
@@ -197,26 +198,51 @@ int game_data::update_snake_position(int player_head)
     {
         target_y = current_coords.y - 1;  // UP decreases Y coordinate
         if (target_y < 0)
-            target_y = (this->_wrap_around_edges ? height - 1 : -1);
+        {
+            if (this->_wrap_around_edges)
+                target_y = height - 1;
+            else
+                return (1);  // Game over - hit boundary
+        }
     }
     else if (direction_moving == DIRECTION_RIGHT)
     {
         target_x = current_coords.x + 1;
         if (target_x >= width)
-            target_x = (this->_wrap_around_edges ? 0 : width);
+        {
+            if (this->_wrap_around_edges)
+                target_x = 0;
+            else
+                return (1);  // Game over - hit boundary
+        }
     }
     else if (direction_moving == DIRECTION_DOWN)
     {
         target_y = current_coords.y + 1;  // DOWN increases Y coordinate
         if (target_y >= height)
-            target_y = (this->_wrap_around_edges ? 0 : height);
+        {
+            if (this->_wrap_around_edges)
+                target_y = 0;
+            else
+                return (1);  // Game over - hit boundary
+        }
     }
     else if (direction_moving == DIRECTION_LEFT)
     {
         target_x = current_coords.x - 1;
         if (target_x < 0)
-            target_x = (this->_wrap_around_edges ? width - 1 : -1);
+        {
+            if (this->_wrap_around_edges)
+                target_x = width - 1;
+            else
+                return (1);  // Game over - hit boundary
+        }
     }
+
+    // Final safety check - ensure target coordinates are valid
+    if (target_x < 0 || target_x >= width || target_y < 0 || target_y >= height)
+        return (1);  // Game over - invalid coordinates
+
     bool on_ice_now = (this->_map.get(current_coords.x, current_coords.y, 0) ==
                 GAME_TILE_ICE);
     bool on_ice_next = (this->_map.get(target_x, target_y, 0) == GAME_TILE_ICE);
@@ -226,36 +252,46 @@ int game_data::update_snake_position(int player_head)
         this->_direction_moving_ice[player_number] = 0;
     int offset = (player_head / 1000000) * 1000000;
     bool ate_food = (this->_map.get(target_x, target_y, 2) == FOOD);
-    int limit = this->_snake_length[player_number] + (ate_food ? 1 : 0);
-    int y = 0;
-    while (y < height)
-    {
-        int x = 0;
-        while (x < width)
-        {
-            int val = this->_map.get(x, y, 2);
-            if (val >= offset + 1 && val < offset + limit)
-                this->_map.set(x, y, 2, val + 1);
-            else if (val >= offset + limit)
-            {
-                this->_map.set(x, y, 2, 0);
-                this->add_empty_cell(x, y);
+
+    // Move all existing segments forward by incrementing their values first
+    // We need to do this in reverse order to avoid overwriting
+    // IMPORTANT: Include the head (offset + 1) in the increment to avoid duplication
+    for (int segment_value = offset + this->_snake_length[player_number]; segment_value >= offset + 1; segment_value--) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                if (this->_map.get(x, y, 2) == segment_value) {
+                    this->_map.set(x, y, 2, segment_value + 1);
+                }
             }
-            x++;
         }
-        y++;
     }
 
-    if (ate_food && this->_snake_length[player_number] < MAX_SNAKE_LENGTH)
-    {
+    // Now place new head at target position
+    this->remove_empty_cell(target_x, target_y);
+    this->_map.set(target_x, target_y, 2, offset + 1);
+
+    // Remove the tail if no food was eaten
+    if (!ate_food) {
+        // Find and remove the tail segment (now has the highest value)
+        int tail_value = offset + this->_snake_length[player_number] + 1;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                if (this->_map.get(x, y, 2) == tail_value) {
+                    this->_map.set(x, y, 2, 0);
+                    this->add_empty_cell(x, y);
+                    break;
+                }
+            }
+        }
+    }
+
+    // Handle food consumption
+    if (ate_food && this->_snake_length[player_number] < MAX_SNAKE_LENGTH) {
         this->_snake_length[player_number]++;
         if (this->_snake_length[player_number] >= 50)
             this->_achievement_snake50 = true;
-    }
-    this->remove_empty_cell(target_x, target_y);
-    this->_map.set(target_x, target_y, 2, offset + 1);
-    if (ate_food)
         this->spawn_food();
+    }
     return (0);
 }
 
