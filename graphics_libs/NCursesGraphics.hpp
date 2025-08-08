@@ -2,6 +2,7 @@
 #define NCURSESGRAPHICS_HPP
 
 #include "../IGraphicsLibrary.hpp"
+#include "../MenuSystem.hpp"
 #include <ncurses.h>
 #include <string>
 
@@ -20,13 +21,29 @@ public:
     virtual void setFrameRate(int fps) override;
     virtual const char* getError() const override;
 
+    // Menu system support (override from IGraphicsLibrary)
+    virtual void setMenuSystem(MenuSystem* menuSystem) override { _menuSystem = menuSystem; }
+    MenuSystem* getMenuSystem() const { return _menuSystem; }
+
+    // Switch message support (override from IGraphicsLibrary)
+    virtual void setSwitchMessage(const std::string& message, int timer) override;
+    bool hasSwitchMessage() const { return _switchMessageTimer > 0; }
+
+    // Force input readiness
+    void forceInputReadiness();
+
 private:
     bool _initialized;
     bool _shouldContinue;
     int _frameRate;
     std::string _errorMessage;
     WINDOW* _gameWindow;
+
+    // Switch message display
+    std::string _switchMessage;
+    int _switchMessageTimer;
     WINDOW* _infoWindow;
+    MenuSystem* _menuSystem;
 
     // Color pairs
     enum ColorPairs {
@@ -48,6 +65,16 @@ private:
     int getColorFromGameTile(int x, int y, const game_data& game);
     void setError(const std::string& error);
     void clearError();
+
+    // Menu rendering methods
+    void renderMenu();
+    void renderMainMenu();
+    void renderSettingsMenu();
+    void renderCreditsPage();
+    void renderInstructionsPage();
+    void renderGameOverScreen();
+    void drawCenteredText(int y, const std::string& text, int colorPair = 0);
+    void drawMenuItems(const std::vector<MenuItem>& items, int selection, int startY);
 };
 
 #endif // NCURSESGRAPHICS_HPP

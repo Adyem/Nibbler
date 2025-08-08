@@ -2,8 +2,10 @@
 #define SDL2GRAPHICS_HPP
 
 #include "../IGraphicsLibrary.hpp"
+#include "../MenuSystem.hpp"
 #include <SDL.h>
 #include <string>
+#include <vector>
 
 class SDL2Graphics : public IGraphicsLibrary {
 public:
@@ -19,6 +21,8 @@ public:
     virtual bool shouldContinue() const override;
     virtual const char* getError() const override;
     virtual void setFrameRate(int fps) override;
+    virtual void setMenuSystem(MenuSystem* menuSystem) override;
+    virtual void setSwitchMessage(const std::string& message, int timer) override;
 
 private:
     bool _initialized;
@@ -30,6 +34,13 @@ private:
     // SDL objects
     SDL_Window* _window;
     SDL_Renderer* _renderer;
+
+    // Menu system
+    MenuSystem* _menuSystem;
+
+    // Switch message display
+    std::string _switchMessage;
+    int _switchMessageTimer;
 
     // Window dimensions
     static const int WINDOW_WIDTH = 800;
@@ -58,6 +69,16 @@ private:
     void drawText(const std::string& text, int x, int y);
     GameKey translateSDLKey(SDL_Keycode key);
     void calculateGameArea(const game_data& game, int& offsetX, int& offsetY, int& cellSize);
+
+    // Menu rendering methods
+    void renderMenu();
+    void renderMainMenu();
+    void renderSettingsMenu();
+    void renderCreditsMenu();
+    void renderInstructionsMenu();
+    void renderGameOverMenu();
+    void drawCenteredText(const std::string& text, int y, const Color& color = COLOR_TEXT);
+    void drawMenuItems(const std::vector<MenuItem>& items, int selectedIndex, int startY);
 };
 
 #endif // SDL2GRAPHICS_HPP

@@ -24,6 +24,9 @@ public:
     // Get the currently active graphics library
     IGraphicsLibrary* getCurrentLibrary() const;
 
+    // Get the current library index
+    int getCurrentLibraryIndex() const;
+
     // Get the number of loaded libraries
     size_t getLibraryCount() const;
 

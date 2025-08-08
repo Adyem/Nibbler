@@ -4,7 +4,8 @@
 
 NCursesGraphics::NCursesGraphics()
     : _initialized(false), _shouldContinue(true), _frameRate(60),
-      _gameWindow(nullptr), _infoWindow(nullptr) {
+      _gameWindow(nullptr), _switchMessageTimer(0), _infoWindow(nullptr),
+      _menuSystem(nullptr) {
     clearError();
 }
 
@@ -40,16 +41,28 @@ int NCursesGraphics::initialize() {
     nodelay(stdscr, TRUE); // Make getch() non-blocking
     curs_set(0);        // Hide cursor
 
+    // Force input focus and flush any pending input
+    flushinp();         // Clear input buffer
+
     // Initialize color pairs
     initializeColors();
 
-
-
-    // Clear screen
+    // Clear screen and force multiple refreshes to ensure proper initialization
     clear();
     refresh();
 
+    // Additional refresh to ensure terminal is ready for input
+    doupdate();
+
+    // Force the terminal to be ready for input
+    flushinp();  // Clear any stale input
+    refresh();   // Final refresh
+
     _initialized = true;
+
+    // Force input readiness
+    forceInputReadiness();
+
     return 0;
 }
 
@@ -80,6 +93,13 @@ void NCursesGraphics::render(const game_data& game) {
 
     // Clear screen
     clear();
+
+    // Check if we should render menu instead of game
+    if (_menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME) {
+        renderMenu();
+        refresh();
+        return;
+    }
 
     // Get terminal size
     int termHeight, termWidth;
@@ -130,6 +150,21 @@ void NCursesGraphics::render(const game_data& game) {
     // Draw game info
     drawInfo(game);
 
+    // Display switch message if active
+    if (_switchMessageTimer > 0) {
+        int termHeight, termWidth;
+        getmaxyx(stdscr, termHeight, termWidth);
+
+        // Display message at the bottom of the screen
+        attron(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
+        int messageX = (termWidth - static_cast<int>(_switchMessage.length())) / 2;
+        mvprintw(termHeight - 1, messageX, "%s", _switchMessage.c_str());
+        attroff(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
+
+        // Decrement timer
+        _switchMessageTimer--;
+    }
+
     // Refresh screen
     refresh();
 }
@@ -141,6 +176,78 @@ GameKey NCursesGraphics::getInput() {
 
     int ch = getch();
 
+    // Handle graphics switching first (works in any state)
+    switch (ch) {
+        case '1':
+            return GameKey::KEY_1;
+        case '2':
+            return GameKey::KEY_2;
+        case '3':
+            return GameKey::KEY_3;
+        case ERR:
+            return GameKey::NONE;
+    }
+
+    // Handle escape sequences manually if NCurses arrow keys don't work
+    if (ch == '[') {
+        // This might be part of an arrow key sequence like [A, [B, [C, [D
+        // Get the next character
+        int next_ch = getch();
+        if (next_ch != ERR) {
+
+            // Handle menu navigation if in menu mode
+            if (_menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME) {
+                switch (next_ch) {
+                    case 'A':  // Up arrow
+                        _menuSystem->navigateUp();
+                        return GameKey::NONE;
+                    case 'B':  // Down arrow
+                        _menuSystem->navigateDown();
+                        return GameKey::NONE;
+                    default:
+                        return GameKey::NONE;
+                }
+            }
+
+            // Handle game input
+            switch (next_ch) {
+                case 'A':  // Up arrow
+                    return GameKey::UP;
+                case 'B':  // Down arrow
+                    return GameKey::DOWN;
+                case 'C':  // Right arrow
+                    return GameKey::RIGHT;
+                case 'D':  // Left arrow
+                    return GameKey::LEFT;
+                default:
+                    return GameKey::NONE;
+            }
+        }
+    }
+
+    // Handle menu navigation if in menu mode
+    if (_menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME) {
+        switch (ch) {
+            case KEY_UP:
+                _menuSystem->navigateUp();
+                return GameKey::NONE;
+            case KEY_DOWN:
+                _menuSystem->navigateDown();
+                return GameKey::NONE;
+            case 10:    // ENTER key
+            case 13:    // ENTER key (alternative)
+            case ' ':   // SPACE key
+                _menuSystem->selectCurrentItem();
+                return GameKey::NONE;
+            case 27:    // ESC key
+                _menuSystem->goBack();
+                return GameKey::NONE;
+            default:
+                return GameKey::NONE;
+        }
+    }
+
+    // Handle game input
     switch (ch) {
         case ERR:           // No input available
             return GameKey::NONE;
@@ -208,23 +315,24 @@ void NCursesGraphics::drawInfo(const game_data& game) {
     mvprintw(termHeight - 4, 2, "Snake Length: %d", game.get_snake_length(0));
 
     // Check if game has started (snake is moving)
-    bool gameStarted = (game.get_direction_moving(0) != 0);
+    // bool gameStarted = (game.get_direction_moving(0) != 0);
 
-    if (!gameStarted) {
-        // Show start message
-        attron(COLOR_PAIR(COLOR_FOOD) | A_BOLD);
-        mvprintw(termHeight - 3, 2, ">>> PRESS ANY ARROW KEY TO START THE GAME <<<");
-        attroff(COLOR_PAIR(COLOR_FOOD) | A_BOLD);
-    } else {
-        // Show normal controls
-        mvprintw(termHeight - 3, 2, "Controls: Arrow keys=Move, 1/2/3=Switch graphics, ESC/Q=Quit");
-    }
+    // if (!gameStarted) {
+    //     // Show start message
+    //     attron(COLOR_PAIR(COLOR_FOOD) | A_BOLD);
+    //     mvprintw(termHeight - 3, 2, ">>> PRESS ANY ARROW KEY TO START THE GAME <<<");
+    //     attroff(COLOR_PAIR(COLOR_FOOD) | A_BOLD);
+    // }
+	// else {
+    //     // Show normal controls
+    //     mvprintw(termHeight - 3, 2, "Controls: Arrow keys=Move, 1/2/3=Switch graphics, ESC/Q=Quit");
+    // }
 
-    // Library name
-    mvprintw(termHeight - 2, 2, "Graphics: %s (60 FPS)", getName());
+    // // Library name
+    // mvprintw(termHeight - 2, 2, "Graphics: %s (60 FPS)", getName());
 
-    // Additional info
-    mvprintw(termHeight - 1, 2, "Nibbler - Snake Game with Dynamic Libraries");
+    // // Additional info
+    // mvprintw(termHeight - 1, 2, "Nibbler - Snake Game with Dynamic Libraries");
 
     attroff(COLOR_PAIR(COLOR_INFO));
 }
@@ -279,6 +387,245 @@ void NCursesGraphics::setError(const std::string& error) {
 
 void NCursesGraphics::clearError() {
     _errorMessage.clear();
+}
+
+void NCursesGraphics::setSwitchMessage(const std::string& message, int timer) {
+    _switchMessage = message;
+    _switchMessageTimer = timer;
+}
+
+void NCursesGraphics::forceInputReadiness() {
+    if (!_initialized) {
+        return;
+    }
+
+    // Force multiple refreshes to ensure terminal is ready
+    for (int i = 0; i < 3; i++) {
+        flushinp();     // Clear input buffer
+        refresh();      // Refresh display
+        doupdate();     // Force update
+
+        // Small delay between refreshes
+        napms(10);      // 10ms delay
+    }
+
+    // Final input buffer clear
+    flushinp();
+}
+
+// Menu rendering methods
+void NCursesGraphics::renderMenu() {
+    if (!_menuSystem) return;
+
+    switch (_menuSystem->getCurrentState()) {
+        case MenuState::MAIN_MENU:
+            renderMainMenu();
+            break;
+        case MenuState::SETTINGS_MENU:
+            renderSettingsMenu();
+            break;
+        case MenuState::CREDITS_PAGE:
+            renderCreditsPage();
+            break;
+        case MenuState::INSTRUCTIONS_PAGE:
+            renderInstructionsPage();
+            break;
+        case MenuState::GAME_OVER:
+            renderGameOverScreen();
+            break;
+        default:
+            break;
+    }
+}
+
+void NCursesGraphics::renderMainMenu() {
+    int termHeight, termWidth;
+    getmaxyx(stdscr, termHeight, termWidth);
+
+    // Draw title
+    attron(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
+    drawCenteredText(termHeight / 4, _menuSystem->getCurrentTitle());
+    attroff(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
+
+    // Draw subtitle
+    attron(COLOR_PAIR(COLOR_INFO));
+    drawCenteredText(termHeight / 4 + 2, "Dynamic Graphics Libraries Demo");
+    attroff(COLOR_PAIR(COLOR_INFO));
+
+    // Draw menu items
+    const auto& items = _menuSystem->getCurrentMenuItems();
+    int startY = termHeight / 2 - static_cast<int>(items.size()) / 2;
+    drawMenuItems(items, _menuSystem->getCurrentSelection(), startY);
+
+    // Draw footer
+    attron(COLOR_PAIR(COLOR_INFO));
+    drawCenteredText(termHeight - 3, "Use Arrow Keys to navigate, ENTER to select");
+    drawCenteredText(termHeight - 2, "Press 1/2/3 to switch graphics libraries");
+    attroff(COLOR_PAIR(COLOR_INFO));
+}
+
+void NCursesGraphics::renderSettingsMenu() {
+    int termHeight, termWidth;
+    getmaxyx(stdscr, termHeight, termWidth);
+
+    // Draw title
+    attron(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
+    drawCenteredText(3, _menuSystem->getCurrentTitle());
+    attroff(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
+
+    // Draw menu items
+    const auto& items = _menuSystem->getCurrentMenuItems();
+    int startY = 6;
+    drawMenuItems(items, _menuSystem->getCurrentSelection(), startY);
+
+    // Draw footer
+    attron(COLOR_PAIR(COLOR_INFO));
+    drawCenteredText(termHeight - 4, "Use Arrow Keys to navigate, ENTER to toggle/adjust");
+    drawCenteredText(termHeight - 3, "ESC to go back");
+    attroff(COLOR_PAIR(COLOR_INFO));
+}
+
+void NCursesGraphics::drawCenteredText(int y, const std::string& text, int colorPair) {
+    int termHeight, termWidth;
+    getmaxyx(stdscr, termHeight, termWidth);
+
+    if (y < 0 || y >= termHeight) return;
+
+    int x = (termWidth - static_cast<int>(text.length())) / 2;
+    if (x < 0) x = 0;
+
+    if (colorPair > 0) attron(COLOR_PAIR(colorPair));
+    mvprintw(y, x, "%s", text.c_str());
+    if (colorPair > 0) attroff(COLOR_PAIR(colorPair));
+}
+
+void NCursesGraphics::drawMenuItems(const std::vector<MenuItem>& items, int selection, int startY) {
+    int termHeight, termWidth;
+    getmaxyx(stdscr, termHeight, termWidth);
+
+    for (size_t i = 0; i < items.size(); ++i) {
+        int y = startY + static_cast<int>(i);
+        if (y >= termHeight - 1) break;
+
+        const MenuItem& item = items[i];
+        if (!item.selectable && item.text.empty()) continue; // Skip spacers
+
+        std::string displayText = item.text;
+        if (static_cast<int>(i) == selection && item.selectable) {
+            displayText = "> " + displayText + " <";
+            attron(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
+        } else if (item.selectable) {
+            displayText = "  " + displayText;
+            attron(COLOR_PAIR(COLOR_INFO));
+        } else {
+            attron(COLOR_PAIR(COLOR_BORDER));
+        }
+
+        drawCenteredText(y, displayText);
+        attroff(A_BOLD | COLOR_PAIR(COLOR_SNAKE_HEAD) | COLOR_PAIR(COLOR_INFO) | COLOR_PAIR(COLOR_BORDER));
+    }
+}
+
+void NCursesGraphics::renderCreditsPage() {
+    int termHeight, termWidth;
+    getmaxyx(stdscr, termHeight, termWidth);
+
+    // Draw title
+    attron(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
+    drawCenteredText(2, _menuSystem->getCurrentTitle());
+    attroff(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
+
+    // Draw content
+    auto content = _menuSystem->getCreditsContent();
+    int startY = 4;
+
+    for (size_t i = 0; i < content.size() && startY + static_cast<int>(i) < termHeight - 2; ++i) {
+        const std::string& line = content[i];
+        if (line.empty()) continue;
+
+        int colorPair = COLOR_INFO;
+        if (line.find("NIBBLER") != std::string::npos || line.find("LIBRARIES") != std::string::npos ||
+            line.find("DESIGN") != std::string::npos || line.find("BONUS") != std::string::npos) {
+            colorPair = COLOR_SNAKE_HEAD;
+        } else if (line.find("•") != std::string::npos) {
+            colorPair = COLOR_FOOD;
+        }
+
+        drawCenteredText(startY + static_cast<int>(i), line, colorPair);
+    }
+
+    // Draw footer
+    attron(COLOR_PAIR(COLOR_BORDER));
+    drawCenteredText(termHeight - 2, "Press ESC or ENTER to return to main menu");
+    attroff(COLOR_PAIR(COLOR_BORDER));
+}
+
+void NCursesGraphics::renderInstructionsPage() {
+    int termHeight, termWidth;
+    getmaxyx(stdscr, termHeight, termWidth);
+
+    // Draw title
+    attron(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
+    drawCenteredText(2, _menuSystem->getCurrentTitle());
+    attroff(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
+
+    // Draw content
+    auto content = _menuSystem->getInstructionsContent();
+    int startY = 4;
+
+    for (size_t i = 0; i < content.size() && startY + static_cast<int>(i) < termHeight - 2; ++i) {
+        const std::string& line = content[i];
+        if (line.empty()) continue;
+
+        int colorPair = COLOR_INFO;
+        if (line.find("HOW TO") != std::string::npos || line.find("MENU") != std::string::npos ||
+            line.find("GAME") != std::string::npos || line.find("SINGLE") != std::string::npos ||
+            line.find("MULTIPLAYER") != std::string::npos || line.find("GRAPHICS") != std::string::npos) {
+            colorPair = COLOR_SNAKE_HEAD;
+        } else if (line.find("•") != std::string::npos || line.find("Key") != std::string::npos) {
+            colorPair = COLOR_FOOD;
+        }
+
+        drawCenteredText(startY + static_cast<int>(i), line, colorPair);
+    }
+
+    // Draw footer
+    attron(COLOR_PAIR(COLOR_BORDER));
+    drawCenteredText(termHeight - 2, "Press ESC or ENTER to return to main menu");
+    attroff(COLOR_PAIR(COLOR_BORDER));
+}
+
+void NCursesGraphics::renderGameOverScreen() {
+    int termHeight, termWidth;
+    getmaxyx(stdscr, termHeight, termWidth);
+
+    // Draw title
+    attron(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
+    drawCenteredText(2, _menuSystem->getCurrentTitle());
+    attroff(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
+
+    // Draw game over message
+    attron(COLOR_PAIR(COLOR_FOOD) | A_BOLD);
+    drawCenteredText(4, "Your snake has collided!");
+    attroff(COLOR_PAIR(COLOR_FOOD) | A_BOLD);
+
+    // Draw final score
+    attron(COLOR_PAIR(COLOR_SNAKE_BODY));
+    std::string scoreText = "Final Score: " + std::to_string(_menuSystem->getGameOverScore());
+    drawCenteredText(6, scoreText);
+    attroff(COLOR_PAIR(COLOR_SNAKE_BODY));
+
+    // Draw menu items
+    const auto& items = _menuSystem->getCurrentMenuItems();
+    int selection = _menuSystem->getCurrentSelection();
+    drawMenuItems(items, selection, 9);
+
+    // Draw instructions
+    attron(COLOR_PAIR(COLOR_INFO));
+    drawCenteredText(termHeight - 4, "Use Arrow Keys to navigate, ENTER to select");
+    drawCenteredText(termHeight - 3, "Press ESC to quit the game");
+    drawCenteredText(termHeight - 2, "Press 1/2/3 to switch graphics libraries");
+    attroff(COLOR_PAIR(COLOR_INFO));
 }
 
 // C interface for dynamic library loading

@@ -7,9 +7,9 @@ endif
 NAME        = nibbler$(EXE_EXT)
 NAME_DEBUG  = nibbler_debug$(EXE_EXT)
 
-HEADER      = game_data.hpp IGraphicsLibrary.hpp LibraryManager.hpp GameEngine.hpp \
+HEADER      = game_data.hpp IGraphicsLibrary.hpp LibraryManager.hpp GameEngine.hpp MenuSystem.hpp \
 
-SRC         = game_data_core.cpp game_data_board.cpp game_data_movement.cpp game_data_io.cpp main.cpp LibraryManager.cpp GameEngine.cpp \
+SRC         = game_data_core.cpp game_data_board.cpp game_data_movement.cpp game_data_io.cpp main.cpp LibraryManager.cpp GameEngine.cpp MenuSystem.cpp \
 
 CC          = g++
 

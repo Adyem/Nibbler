@@ -7,6 +7,7 @@
 // Function prototypes
 int parseArguments(int argc, char** argv, int& width, int& height);
 void printUsage(const char* programName);
+int selectGraphicsLibrary();
 
 int main(int argc, char** argv)
 {
@@ -19,10 +20,16 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    // Let user select graphics library
+    int selectedLibrary = selectGraphicsLibrary();
+    if (selectedLibrary < 0) {
+        return 1;
+    }
+
     // Create and initialize game engine
     GameEngine engine(width, height);
 
-    int initResult = engine.initialize();
+    int initResult = engine.initialize(selectedLibrary);
     if (initResult != 0) {
         const char* error = engine.getError();
         if (error) {
@@ -84,6 +91,38 @@ void printUsage(const char* programName) {
     std::cout << "  Arrow keys: Move snake" << std::endl;
     std::cout << "  1, 2, 3:    Switch graphics libraries" << std::endl;
     std::cout << "  ESC:        Quit game" << std::endl;
+}
+
+int selectGraphicsLibrary() {
+    std::cout << "\n=== NIBBLER - Graphics Library Selection ===" << std::endl;
+    std::cout << "Choose your preferred graphics library:" << std::endl;
+    std::cout << "  1. NCurses (Terminal-based)" << std::endl;
+    std::cout << "  2. SDL2 (Window-based)" << std::endl;
+    std::cout << "  3. SFML (Window-based)" << std::endl;
+    std::cout << "Enter your choice (1-3): ";
+
+    std::string input;
+    std::getline(std::cin, input);
+
+    if (input.empty()) {
+        std::cout << "No selection made. Defaulting to NCurses." << std::endl;
+        return 0;
+    }
+
+    try {
+        int choice = std::stoi(input);
+        if (choice >= 1 && choice <= 3) {
+            const char* libNames[] = {"NCurses", "SDL2", "SFML"};
+            std::cout << "Selected: " << libNames[choice - 1] << std::endl;
+            return choice - 1; // Convert to 0-based index
+        } else {
+            std::cout << "Invalid choice. Defaulting to NCurses." << std::endl;
+            return 0;
+        }
+    } catch (const std::exception&) {
+        std::cout << "Invalid input. Defaulting to NCurses." << std::endl;
+        return 0;
+    }
 }
 
 

@@ -184,9 +184,9 @@ int game_data::update_snake_position(int player_head)
     if (this->_direction_moving[player_number] == DIRECTION_NONE)
         return (0);
 
-    // Temporarily disable collision detection for debugging
-    // if (this->is_valid_move(player_head) != 0)
-    //     return (1);
+    // Check for collisions before moving
+    if (this->is_valid_move(player_head) != 0)
+        return (1);
     int direction_moving = this->_direction_moving[player_number];
     if (this->_map.get(current_coords.x, current_coords.y, 0) == GAME_TILE_ICE)
         direction_moving = this->_direction_moving_ice[player_number];

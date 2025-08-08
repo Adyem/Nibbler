@@ -1,8 +1,11 @@
 #ifndef IGRAPHICSLIBRARY_HPP
 #define IGRAPHICSLIBRARY_HPP
 
-// Forward declaration
+#include <string>
+
+// Forward declarations
 class game_data;
+class MenuSystem;
 
 // Input keys that the game recognizes
 enum class GameKey {
@@ -51,6 +54,12 @@ public:
 
     // Get any error message from the library
     virtual const char* getError() const { return nullptr; }
+
+    // Set menu system (optional, for libraries that support menus)
+    virtual void setMenuSystem(MenuSystem* menuSystem) { (void)menuSystem; }
+
+    // Set switch message to display (optional, for libraries that support it)
+    virtual void setSwitchMessage(const std::string& message, int timer) { (void)message; (void)timer; }
 };
 
 // C interface for dynamic library loading

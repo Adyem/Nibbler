@@ -24,7 +24,7 @@ NCURSES_HEADERS = NCursesGraphics.hpp ../IGraphicsLibrary.hpp
 SFML_HEADERS = SFMLGraphics.hpp ../IGraphicsLibrary.hpp
 
 # Game data dependencies (we need these object files)
-GAME_DATA_OBJS = ../objs/game_data_core.o ../objs/game_data_board.o ../objs/game_data_movement.o ../objs/game_data_io.o
+GAME_DATA_OBJS = ../objs/game_data_core.o ../objs/game_data_board.o ../objs/game_data_movement.o ../objs/game_data_io.o ../objs/MenuSystem.o
 LIBFT = ../libft/Full_Libft.a
 
 # System libraries

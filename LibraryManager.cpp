@@ -100,6 +100,10 @@ IGraphicsLibrary* LibraryManager::getCurrentLibrary() const {
     return nullptr;
 }
 
+int LibraryManager::getCurrentLibraryIndex() const {
+    return _currentLibraryIndex;
+}
+
 size_t LibraryManager::getLibraryCount() const {
     return _libraries.size();
 }
