@@ -16,38 +16,59 @@ int game_data::get_wrap_around_edges() const
     return (this->_wrap_around_edges);
 }
 
+
 void game_data::set_direction_moving(int player, int direction)
 {
     if (player >= 0 && player < 4)
     {
-        // Prevent moving backwards into the snake's own body
-        int current_direction = this->_direction_moving[player];
+        int idx = player;
 
-        // Only prevent backwards movement if the snake is already moving
-        if (current_direction != DIRECTION_NONE)
+        // Determine if the requested direction would move into the second
+        // segment of the snake. If so, ignore the input to prevent the snake
+        // from reversing into itself.
+        if (this->_snake_length[idx] > 1)
         {
-            // Check if the new direction is opposite to the current direction
-            bool is_opposite = false;
-            if ((current_direction == DIRECTION_UP && direction == DIRECTION_DOWN) ||
-                (current_direction == DIRECTION_DOWN && direction == DIRECTION_UP) ||
-                (current_direction == DIRECTION_LEFT && direction == DIRECTION_RIGHT) ||
-                (current_direction == DIRECTION_RIGHT && direction == DIRECTION_LEFT))
-            {
-                is_opposite = true;
-            }
+            int head_ids[4] = {SNAKE_HEAD_PLAYER_1, SNAKE_HEAD_PLAYER_2,
+                               SNAKE_HEAD_PLAYER_3, SNAKE_HEAD_PLAYER_4};
+            t_coordinates head = this->get_head_coordinate(head_ids[idx]);
+            t_coordinates second = this->get_next_piece(head, head_ids[idx]);
 
-            // If it's not an opposite direction, allow the change
-            if (!is_opposite)
+            if (second.x != -1 && second.y != -1)
             {
-                this->_direction_moving[player] = direction;
+                int blocked_dir = DIRECTION_NONE;
+
+                if (this->_wrap_around_edges)
+                {
+                    int width = static_cast<int>(this->_map.get_width());
+                    int height = static_cast<int>(this->_map.get_height());
+
+                    if (second.x == (head.x - 1 + width) % width && second.y == head.y)
+                        blocked_dir = DIRECTION_LEFT;
+                    else if (second.x == (head.x + 1) % width && second.y == head.y)
+                        blocked_dir = DIRECTION_RIGHT;
+                    else if (second.y == (head.y - 1 + height) % height && second.x == head.x)
+                        blocked_dir = DIRECTION_UP;
+                    else if (second.y == (head.y + 1) % height && second.x == head.x)
+                        blocked_dir = DIRECTION_DOWN;
+                }
+                else
+                {
+                    if (second.x == head.x - 1 && second.y == head.y)
+                        blocked_dir = DIRECTION_LEFT;
+                    else if (second.x == head.x + 1 && second.y == head.y)
+                        blocked_dir = DIRECTION_RIGHT;
+                    else if (second.y == head.y - 1 && second.x == head.x)
+                        blocked_dir = DIRECTION_UP;
+                    else if (second.y == head.y + 1 && second.x == head.x)
+                        blocked_dir = DIRECTION_DOWN;
+                }
+
+                if (direction == blocked_dir)
+                    return ;
             }
-            // If it is opposite, ignore the input (don't change direction)
         }
-        else
-        {
-            // If snake is not moving yet, allow any direction
-            this->_direction_moving[player] = direction;
-        }
+
+        this->_direction_moving[idx] = direction;
     }
     return ;
 }
