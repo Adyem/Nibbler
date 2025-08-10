@@ -1,5 +1,5 @@
 #include "game_data.hpp"
-#include "libft/RNG/dice_roll.hpp"
+#include "libft/RNG/RNG.hpp"
 
 void game_data::set_map_value(int x, int y, int layer, int value)
 {
