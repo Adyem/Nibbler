@@ -14,9 +14,14 @@ const SDL2Graphics::Color SDL2Graphics::COLOR_SNAKE_BODY(30, 150, 30);     // Da
 const SDL2Graphics::Color SDL2Graphics::COLOR_FOOD(200, 50, 50);           // Red
 const SDL2Graphics::Color SDL2Graphics::COLOR_TEXT(255, 255, 255);         // White
 
+// Additional colors for better UI
+const SDL2Graphics::Color SDL2Graphics::COLOR_SELECTOR_BG(70, 130, 180);   // Steel blue for selector
+const SDL2Graphics::Color SDL2Graphics::COLOR_SELECTED_TEXT(255, 255, 255); // White text for selected items
+
 SDL2Graphics::SDL2Graphics()
     : _initialized(false), _shouldContinue(true), _targetFPS(60), _frameDelay(1000/60),
-      _window(nullptr), _renderer(nullptr), _menuSystem(nullptr), _switchMessageTimer(0) {
+      _window(nullptr), _renderer(nullptr), _fontLarge(nullptr), _fontMedium(nullptr),
+      _fontSmall(nullptr), _menuSystem(nullptr), _switchMessageTimer(0) {
 }
 
 SDL2Graphics::~SDL2Graphics() {
@@ -35,6 +40,13 @@ int SDL2Graphics::initialize() {
     // Initialize SDL - always try to create a real window
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         setError(std::string("SDL could not initialize: ") + SDL_GetError());
+        return 1;
+    }
+
+    // Initialize SDL_ttf
+    if (TTF_Init() == -1) {
+        setError(std::string("SDL_ttf could not initialize: ") + TTF_GetError());
+        SDL_Quit();
         return 1;
     }
 
@@ -64,9 +76,21 @@ int SDL2Graphics::initialize() {
             setError(std::string("Renderer could not be created: ") + SDL_GetError());
             SDL_DestroyWindow(_window);
             _window = nullptr;
+            TTF_Quit();
             SDL_Quit();
             return 1;
         }
+    }
+
+    // Initialize fonts
+    if (!initializeFonts()) {
+        SDL_DestroyRenderer(_renderer);
+        _renderer = nullptr;
+        SDL_DestroyWindow(_window);
+        _window = nullptr;
+        TTF_Quit();
+        SDL_Quit();
+        return 1;
     }
 
     _initialized = true;
@@ -95,7 +119,10 @@ void SDL2Graphics::shutdown() {
         // Just consume the events, don't process them
     }
 
-    // Destroy renderer first
+    // Shutdown fonts first
+    shutdownFonts();
+
+    // Destroy renderer
     if (_renderer) {
         SDL_DestroyRenderer(_renderer);
         _renderer = nullptr;
@@ -117,6 +144,7 @@ void SDL2Graphics::shutdown() {
     SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
 
     // Quit SDL subsystems
+    TTF_Quit();
     SDL_Quit();
 
     // Small delay to ensure window is fully closed
@@ -298,6 +326,21 @@ void SDL2Graphics::drawRect(int x, int y, int width, int height, bool filled) {
     }
 }
 
+void SDL2Graphics::drawTransparentRect(int x, int y, int width, int height, const Color& color, Uint8 alpha) {
+    // Set blend mode for transparency
+    SDL_SetRenderDrawBlendMode(_renderer, SDL_BLENDMODE_BLEND);
+
+    // Set color with alpha
+    SDL_SetRenderDrawColor(_renderer, color.r, color.g, color.b, alpha);
+
+    // Draw filled rectangle
+    SDL_Rect rect = {x, y, width, height};
+    SDL_RenderFillRect(_renderer, &rect);
+
+    // Reset blend mode to default
+    SDL_SetRenderDrawBlendMode(_renderer, SDL_BLENDMODE_NONE);
+}
+
 GameKey SDL2Graphics::translateSDLKey(SDL_Keycode key) {
     switch (key) {
         case SDLK_UP:
@@ -373,10 +416,7 @@ void SDL2Graphics::renderMenu() {
 
 void SDL2Graphics::renderMainMenu() {
     // Draw title
-    drawCenteredText(_menuSystem->getCurrentTitle(), 100, COLOR_SNAKE_HEAD);
-
-    // Draw subtitle
-    drawCenteredText("Dynamic Graphics Libraries Demo", 140, COLOR_TEXT);
+    drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 100, _fontLarge, COLOR_SNAKE_HEAD);
 
     // Draw menu items
     const auto& items = _menuSystem->getCurrentMenuItems();
@@ -384,13 +424,13 @@ void SDL2Graphics::renderMainMenu() {
     drawMenuItems(items, _menuSystem->getCurrentSelection(), startY);
 
     // Draw footer
-    drawCenteredText("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 80, COLOR_TEXT);
-    drawCenteredText("Press 1/2/3 to switch graphics libraries", WINDOW_HEIGHT - 60, COLOR_TEXT);
+    drawCenteredTextWithFont("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 80, _fontSmall, COLOR_TEXT);
+    drawCenteredTextWithFont("Press 1/2/3 to switch graphics libraries", WINDOW_HEIGHT - 60, _fontSmall, COLOR_TEXT);
 }
 
 void SDL2Graphics::renderSettingsMenu() {
     // Draw title
-    drawCenteredText(_menuSystem->getCurrentTitle(), 60, COLOR_SNAKE_HEAD);
+    drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 60, _fontLarge, COLOR_SNAKE_HEAD);
 
     // Draw menu items
     const auto& items = _menuSystem->getCurrentMenuItems();
@@ -398,13 +438,13 @@ void SDL2Graphics::renderSettingsMenu() {
     drawMenuItems(items, _menuSystem->getCurrentSelection(), startY);
 
     // Draw footer
-    drawCenteredText("Use Arrow Keys to navigate, ENTER to toggle/adjust", WINDOW_HEIGHT - 100, COLOR_TEXT);
-    drawCenteredText("ESC to go back", WINDOW_HEIGHT - 80, COLOR_TEXT);
+    drawCenteredTextWithFont("Use Arrow Keys to navigate, ENTER to toggle/adjust", WINDOW_HEIGHT - 100, _fontSmall, COLOR_TEXT);
+    drawCenteredTextWithFont("ESC to go back", WINDOW_HEIGHT - 80, _fontSmall, COLOR_TEXT);
 }
 
 void SDL2Graphics::renderCreditsMenu() {
     // Draw title
-    drawCenteredText(_menuSystem->getCurrentTitle(), 40, COLOR_SNAKE_HEAD);
+    drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 40, _fontLarge, COLOR_SNAKE_HEAD);
 
     // Draw content
     auto content = _menuSystem->getCreditsContent();
@@ -414,16 +454,16 @@ void SDL2Graphics::renderCreditsMenu() {
         const std::string& line = content[i];
         if (line.empty()) continue;
 
-        drawCenteredText(line, startY + static_cast<int>(i) * 25, COLOR_TEXT);
+        drawCenteredTextWithFont(line, startY + static_cast<int>(i) * 25, _fontMedium, COLOR_TEXT);
     }
 
     // Draw footer
-    drawCenteredText("ESC to go back", WINDOW_HEIGHT - 40, COLOR_TEXT);
+    drawCenteredTextWithFont("ESC to go back", WINDOW_HEIGHT - 40, _fontSmall, COLOR_TEXT);
 }
 
 void SDL2Graphics::renderInstructionsMenu() {
     // Draw title
-    drawCenteredText(_menuSystem->getCurrentTitle(), 40, COLOR_SNAKE_HEAD);
+    drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 40, _fontLarge, COLOR_SNAKE_HEAD);
 
     // Draw content
     auto content = _menuSystem->getInstructionsContent();
@@ -433,23 +473,23 @@ void SDL2Graphics::renderInstructionsMenu() {
         const std::string& line = content[i];
         if (line.empty()) continue;
 
-        drawCenteredText(line, startY + static_cast<int>(i) * 25, COLOR_TEXT);
+        drawCenteredTextWithFont(line, startY + static_cast<int>(i) * 25, _fontMedium, COLOR_TEXT);
     }
 
     // Draw footer
-    drawCenteredText("ESC to go back", WINDOW_HEIGHT - 40, COLOR_TEXT);
+    drawCenteredTextWithFont("ESC to go back", WINDOW_HEIGHT - 40, _fontSmall, COLOR_TEXT);
 }
 
 void SDL2Graphics::renderGameOverMenu() {
     // Draw title
-    drawCenteredText(_menuSystem->getCurrentTitle(), 40, COLOR_SNAKE_HEAD);
+    drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 40, _fontLarge, COLOR_SNAKE_HEAD);
 
     // Draw game over message
-    drawCenteredText("Your snake has collided!", 100, COLOR_FOOD);
+    drawCenteredTextWithFont("Your snake has collided!", 100, _fontMedium, COLOR_FOOD);
 
     // Draw final score
     std::string scoreText = "Final Score: " + std::to_string(_menuSystem->getGameOverScore());
-    drawCenteredText(scoreText, 140, COLOR_SNAKE_BODY);
+    drawCenteredTextWithFont(scoreText, 140, _fontMedium, COLOR_SNAKE_BODY);
 
     // Draw menu items
     const auto& items = _menuSystem->getCurrentMenuItems();
@@ -457,42 +497,170 @@ void SDL2Graphics::renderGameOverMenu() {
     drawMenuItems(items, selection, 200);
 
     // Draw instructions
-    drawCenteredText("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 80, COLOR_TEXT);
-    drawCenteredText("ESC to go back", WINDOW_HEIGHT - 60, COLOR_TEXT);
-}
-
-void SDL2Graphics::drawCenteredText(const std::string& text, int y, const Color& color) {
-    // For now, we'll draw simple rectangles to represent text
-    // In a full implementation, you'd use SDL_ttf for proper text rendering
-
-    // Calculate approximate text width (rough estimation)
-    int textWidth = static_cast<int>(text.length()) * 8; // 8 pixels per character
-    int x = (WINDOW_WIDTH - textWidth) / 2;
-
-    // Draw a simple representation of text using rectangles
-    setDrawColor(color);
-    drawRect(x, y, textWidth, 20, false); // Draw border to represent text
-
-    // Draw small rectangles to simulate characters
-    for (size_t i = 0; i < text.length() && i < 50; ++i) {
-        if (text[i] != ' ') {
-            drawRect(x + static_cast<int>(i) * 8 + 1, y + 2, 6, 16, true);
-        }
-    }
+    drawCenteredTextWithFont("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 80, _fontSmall, COLOR_TEXT);
+    drawCenteredTextWithFont("ESC to go back", WINDOW_HEIGHT - 60, _fontSmall, COLOR_TEXT);
 }
 
 void SDL2Graphics::drawMenuItems(const std::vector<MenuItem>& items, int selectedIndex, int startY) {
     for (size_t i = 0; i < items.size(); ++i) {
-        Color itemColor = (static_cast<int>(i) == selectedIndex) ? COLOR_SNAKE_HEAD : COLOR_TEXT;
+        bool isSelected = (static_cast<int>(i) == selectedIndex);
 
-        // Draw selection highlight
-        if (static_cast<int>(i) == selectedIndex) {
-            setDrawColor(COLOR_SNAKE_HEAD);
-            drawRect(50, startY + static_cast<int>(i) * 40 - 5, WINDOW_WIDTH - 100, 30, true);
+        // Draw selection highlight with transparency
+        if (isSelected) {
+            // Draw a semi-transparent background for the selected item
+            drawTransparentRect(50, startY + static_cast<int>(i) * 40 - 5, WINDOW_WIDTH - 100, 30, COLOR_SELECTOR_BG, 120);
+
+            // Draw a subtle border around the selected item
+            setDrawColor(COLOR_SELECTOR_BG);
+            drawRect(50, startY + static_cast<int>(i) * 40 - 5, WINDOW_WIDTH - 100, 30, false);
         }
 
-        drawCenteredText(items[i].text, startY + static_cast<int>(i) * 40, itemColor);
+        // Use white text for both selected and unselected items for better readability
+        Color itemColor = COLOR_SELECTED_TEXT;
+        drawCenteredTextWithFont(items[i].text, startY + static_cast<int>(i) * 40, _fontMedium, itemColor);
     }
+}
+
+// Font implementation methods
+bool SDL2Graphics::initializeFonts() {
+    // Try to load Arial font from common system locations
+    const char* fontPaths[] = {
+        // macOS - Arial fonts
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+        "/System/Library/Fonts/Arial.ttf",
+        "/Library/Fonts/Arial.ttf",
+        // macOS - Helvetica as fallback
+        "/System/Library/Fonts/HelveticaNeue.ttc",
+        "/System/Library/Fonts/Geneva.ttf",
+        // Windows
+        "C:/Windows/Fonts/arial.ttf",
+        // Linux
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/TTF/arial.ttf",
+        // Fallback - try to find any reasonable font
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        nullptr
+    };
+
+    TTF_Font* testFont = nullptr;
+    const char* selectedFontPath = nullptr;
+
+    // Find the first available font
+    for (int i = 0; fontPaths[i] != nullptr; ++i) {
+        testFont = TTF_OpenFont(fontPaths[i], 24);
+        if (testFont) {
+            selectedFontPath = fontPaths[i];
+            TTF_CloseFont(testFont);
+            break;
+        }
+    }
+
+    if (!selectedFontPath) {
+        setError("Could not find any suitable font file. Please install Arial or DejaVu Sans fonts.");
+        return false;
+    }
+
+    // Load fonts in different sizes
+    _fontLarge = TTF_OpenFont(selectedFontPath, 32);   // For titles
+    _fontMedium = TTF_OpenFont(selectedFontPath, 20);  // For menu items
+    _fontSmall = TTF_OpenFont(selectedFontPath, 16);   // For instructions
+
+    if (!_fontLarge || !_fontMedium || !_fontSmall) {
+        setError(std::string("Failed to load font: ") + TTF_GetError());
+        shutdownFonts();
+        return false;
+    }
+
+    return true;
+}
+
+void SDL2Graphics::shutdownFonts() {
+    if (_fontLarge) {
+        TTF_CloseFont(_fontLarge);
+        _fontLarge = nullptr;
+    }
+    if (_fontMedium) {
+        TTF_CloseFont(_fontMedium);
+        _fontMedium = nullptr;
+    }
+    if (_fontSmall) {
+        TTF_CloseFont(_fontSmall);
+        _fontSmall = nullptr;
+    }
+}
+
+void SDL2Graphics::drawTextWithFont(const std::string& text, int x, int y, TTF_Font* font, const Color& color) {
+    if (!font || text.empty()) return;
+
+    // Clean the text string to handle problematic ASCII characters
+    std::string cleanText = text;
+
+    // Replace or filter out problematic characters
+    for (size_t i = 0; i < cleanText.length(); ++i) {
+        unsigned char c = static_cast<unsigned char>(cleanText[i]);
+
+        // Replace non-printable ASCII characters (except common whitespace)
+        if (c < 32 && c != '\t' && c != '\n' && c != '\r') {
+            cleanText[i] = ' '; // Replace with space
+        }
+        // Handle extended ASCII characters that might cause issues
+        else if (c > 126 && c < 160) {
+            cleanText[i] = '?'; // Replace with question mark
+        }
+    }
+
+    SDL_Color sdlColor = {color.r, color.g, color.b, color.a};
+
+    // Use blended rendering for better quality and anti-aliasing
+    SDL_Surface* textSurface = TTF_RenderText_Blended(font, cleanText.c_str(), sdlColor);
+
+    if (!textSurface) {
+        // Fallback to solid rendering if blended fails
+        textSurface = TTF_RenderText_Solid(font, cleanText.c_str(), sdlColor);
+        if (!textSurface) {
+            return; // Failed to render text
+        }
+    }
+
+    SDL_Texture* textTexture = SDL_CreateTextureFromSurface(_renderer, textSurface);
+    SDL_FreeSurface(textSurface);
+
+    if (!textTexture) {
+        return; // Failed to create texture
+    }
+
+    int textWidth, textHeight;
+    SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
+
+    SDL_Rect destRect = {x, y, textWidth, textHeight};
+    SDL_RenderCopy(_renderer, textTexture, nullptr, &destRect);
+
+    SDL_DestroyTexture(textTexture);
+}
+
+void SDL2Graphics::drawCenteredTextWithFont(const std::string& text, int y, TTF_Font* font, const Color& color) {
+    if (!font || text.empty()) return;
+
+    int textWidth = getTextWidth(text, font);
+    int x = (WINDOW_WIDTH - textWidth) / 2;
+    drawTextWithFont(text, x, y, font, color);
+}
+
+int SDL2Graphics::getTextWidth(const std::string& text, TTF_Font* font) {
+    if (!font || text.empty()) return 0;
+
+    int width, height;
+    if (TTF_SizeText(font, text.c_str(), &width, &height) != 0) {
+        return 0; // Error occurred
+    }
+    return width;
+}
+
+int SDL2Graphics::getTextHeight(TTF_Font* font) {
+    if (!font) return 0;
+    return TTF_FontHeight(font);
 }
 
 // C interface for dynamic library loading

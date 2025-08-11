@@ -4,6 +4,7 @@
 #include "../IGraphicsLibrary.hpp"
 #include "../MenuSystem.hpp"
 #include <SDL.h>
+#include <SDL_ttf.h>
 #include <string>
 #include <vector>
 
@@ -35,6 +36,11 @@ private:
     SDL_Window* _window;
     SDL_Renderer* _renderer;
 
+    // Font objects
+    TTF_Font* _fontLarge;    // For titles
+    TTF_Font* _fontMedium;   // For menu items
+    TTF_Font* _fontSmall;    // For instructions
+
     // Menu system
     MenuSystem* _menuSystem;
 
@@ -60,15 +66,26 @@ private:
     static const Color COLOR_SNAKE_BODY;
     static const Color COLOR_FOOD;
     static const Color COLOR_TEXT;
+    static const Color COLOR_SELECTOR_BG;
+    static const Color COLOR_SELECTED_TEXT;
 
     // Helper methods
     void setError(const std::string& error);
     void clearError();
     void setDrawColor(const Color& color);
     void drawRect(int x, int y, int width, int height, bool filled = true);
+    void drawTransparentRect(int x, int y, int width, int height, const Color& color, Uint8 alpha);
     void drawText(const std::string& text, int x, int y);
     GameKey translateSDLKey(SDL_Keycode key);
     void calculateGameArea(const game_data& game, int& offsetX, int& offsetY, int& cellSize);
+
+    // Font methods
+    bool initializeFonts();
+    void shutdownFonts();
+    void drawTextWithFont(const std::string& text, int x, int y, TTF_Font* font, const Color& color = COLOR_TEXT);
+    void drawCenteredTextWithFont(const std::string& text, int y, TTF_Font* font, const Color& color = COLOR_TEXT);
+    int getTextWidth(const std::string& text, TTF_Font* font);
+    int getTextHeight(TTF_Font* font);
 
     // Menu rendering methods
     void renderMenu();

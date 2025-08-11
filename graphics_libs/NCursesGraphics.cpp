@@ -314,26 +314,6 @@ void NCursesGraphics::drawInfo(const game_data& game) {
     // Snake length
     mvprintw(termHeight - 4, 2, "Snake Length: %d", game.get_snake_length(0));
 
-    // Check if game has started (snake is moving)
-    // bool gameStarted = (game.get_direction_moving(0) != 0);
-
-    // if (!gameStarted) {
-    //     // Show start message
-    //     attron(COLOR_PAIR(COLOR_FOOD) | A_BOLD);
-    //     mvprintw(termHeight - 3, 2, ">>> PRESS ANY ARROW KEY TO START THE GAME <<<");
-    //     attroff(COLOR_PAIR(COLOR_FOOD) | A_BOLD);
-    // }
-	// else {
-    //     // Show normal controls
-    //     mvprintw(termHeight - 3, 2, "Controls: Arrow keys=Move, 1/2/3=Switch graphics, ESC/Q=Quit");
-    // }
-
-    // // Library name
-    // mvprintw(termHeight - 2, 2, "Graphics: %s (60 FPS)", getName());
-
-    // // Additional info
-    // mvprintw(termHeight - 1, 2, "Nibbler - Snake Game with Dynamic Libraries");
-
     attroff(COLOR_PAIR(COLOR_INFO));
 }
 
@@ -446,11 +426,6 @@ void NCursesGraphics::renderMainMenu() {
     attron(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
     drawCenteredText(termHeight / 4, _menuSystem->getCurrentTitle());
     attroff(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
-
-    // Draw subtitle
-    attron(COLOR_PAIR(COLOR_INFO));
-    drawCenteredText(termHeight / 4 + 2, "Dynamic Graphics Libraries Demo");
-    attroff(COLOR_PAIR(COLOR_INFO));
 
     // Draw menu items
     const auto& items = _menuSystem->getCurrentMenuItems();

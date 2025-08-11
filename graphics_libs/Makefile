@@ -29,8 +29,8 @@ LIBFT = ../libft/Full_Libft.a
 
 # System libraries
 NCURSES_LIBS = -lncurses
-SDL2_CFLAGS = $(shell pkg-config --cflags sdl2 2>/dev/null || echo "-I/opt/homebrew/include/SDL2")
-SDL2_LIBS = $(shell pkg-config --libs sdl2 2>/dev/null || echo "-L/opt/homebrew/lib -lSDL2")
+SDL2_CFLAGS = $(shell pkg-config --cflags sdl2 sdl2_ttf 2>/dev/null || echo "-I/opt/homebrew/include/SDL2")
+SDL2_LIBS = $(shell pkg-config --libs sdl2 sdl2_ttf 2>/dev/null || echo "-L/opt/homebrew/lib -lSDL2 -lSDL2_ttf")
 SFML_LIBS = -lsfml-graphics -lsfml-window -lsfml-system
 
 # Default target
@@ -48,12 +48,16 @@ $(NCURSES_LIB): $(NCURSES_SOURCES) $(NCURSES_HEADERS) $(GAME_DATA_OBJS)
 		echo "NCurses Graphics Library built successfully!"; \
 	fi
 
-# SDL2 graphics library (requires SDL2)
+# SDL2 graphics library (requires SDL2 and SDL2_ttf)
 $(SDL2_LIB): $(SDL2_SOURCES) $(SDL2_HEADERS) $(GAME_DATA_OBJS)
 	@echo "Building SDL2 Graphics Library..."
 	@if ! pkg-config --exists sdl2 2>/dev/null && ! [ -f /usr/include/SDL2/SDL.h ] && ! [ -f /usr/local/include/SDL2/SDL.h ] && ! [ -f /opt/homebrew/include/SDL2/SDL.h ]; then \
 		echo "Warning: SDL2 development headers not found. Skipping SDL2 library."; \
-		echo "Install SDL2 with: brew install sdl2 (macOS) or apt-get install libsdl2-dev (Ubuntu)"; \
+		echo "Install SDL2 with: brew install sdl2 sdl2_ttf (macOS) or apt-get install libsdl2-dev libsdl2-ttf-dev (Ubuntu)"; \
+		touch $@; \
+	elif ! pkg-config --exists sdl2_ttf 2>/dev/null && ! [ -f /usr/include/SDL2/SDL_ttf.h ] && ! [ -f /usr/local/include/SDL2/SDL_ttf.h ] && ! [ -f /opt/homebrew/include/SDL2/SDL_ttf.h ]; then \
+		echo "Warning: SDL2_ttf development headers not found. Skipping SDL2 library."; \
+		echo "Install SDL2_ttf with: brew install sdl2_ttf (macOS) or apt-get install libsdl2-ttf-dev (Ubuntu)"; \
 		touch $@; \
 	else \
 		$(CXX) $(CXXFLAGS) $(SDL2_CFLAGS) $(LDFLAGS) -o $@ $(SDL2_SOURCES) $(GAME_DATA_OBJS) $(LIBFT) $(SDL2_LIBS); \
@@ -88,9 +92,13 @@ check-deps:
 		echo "NCurses: NOT AVAILABLE - install with 'brew install ncurses' or 'apt-get install libncurses5-dev'"; \
 	fi
 	@if pkg-config --exists sdl2 2>/dev/null || [ -f /usr/include/SDL2/SDL.h ] || [ -f /usr/local/include/SDL2/SDL.h ] || [ -f /opt/homebrew/include/SDL2/SDL.h ]; then \
-		echo "SDL2: Available"; \
+		if pkg-config --exists sdl2_ttf 2>/dev/null || [ -f /usr/include/SDL2/SDL_ttf.h ] || [ -f /usr/local/include/SDL2/SDL_ttf.h ] || [ -f /opt/homebrew/include/SDL2/SDL_ttf.h ]; then \
+			echo "SDL2: Available (with TTF support)"; \
+		else \
+			echo "SDL2: Available (missing TTF support) - install SDL2_ttf with 'brew install sdl2_ttf' or 'apt-get install libsdl2-ttf-dev'"; \
+		fi; \
 	else \
-		echo "SDL2: NOT AVAILABLE - install with 'brew install sdl2' or 'apt-get install libsdl2-dev'"; \
+		echo "SDL2: NOT AVAILABLE - install with 'brew install sdl2 sdl2_ttf' or 'apt-get install libsdl2-dev libsdl2-ttf-dev'"; \
 	fi
 	@if pkg-config --exists sfml-graphics 2>/dev/null || [ -f /usr/include/SFML/Graphics.hpp ] || [ -f /usr/local/include/SFML/Graphics.hpp ] || [ -f /opt/homebrew/include/SFML/Graphics.hpp ]; then \
 		echo "SFML: Available"; \
@@ -102,7 +110,7 @@ check-deps:
 install-deps-macos:
 	@echo "Installing dependencies for macOS..."
 	@if command -v brew >/dev/null 2>&1; then \
-		brew install ncurses sdl2 sfml; \
+		brew install ncurses sdl2 sdl2_ttf sfml; \
 	else \
 		echo "Homebrew not found. Please install Homebrew first: https://brew.sh/"; \
 	fi
@@ -111,7 +119,7 @@ install-deps-macos:
 install-deps-ubuntu:
 	@echo "Installing dependencies for Ubuntu/Debian..."
 	sudo apt-get update
-	sudo apt-get install libncurses5-dev libsdl2-dev libsfml-dev
+	sudo apt-get install libncurses5-dev libsdl2-dev libsdl2-ttf-dev libsfml-dev
 
 # Clean all libraries
 clean:

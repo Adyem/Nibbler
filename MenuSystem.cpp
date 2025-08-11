@@ -135,7 +135,7 @@ const std::vector<MenuItem>& MenuSystem::getCurrentMenuItems() const {
 std::string MenuSystem::getCurrentTitle() const {
     switch (_currentState) {
         case MenuState::MAIN_MENU:
-            return "NIBBLER - SNAKE GAME";
+            return "NIBBLER";
         case MenuState::SETTINGS_MENU:
             return "GAME SETTINGS";
         case MenuState::CREDITS_PAGE:
@@ -226,15 +226,13 @@ void MenuSystem::toggleFPS() {
 
 std::vector<std::string> MenuSystem::getCreditsContent() const {
     return {
-        "NIBBLER - SNAKE GAME WITH DYNAMIC LIBRARIES",
-        "",
         "Developed by: rperez-t and bvangene",
         "C++ Version: C++17",
         "",
         "LIBRARIES USED:",
-        "• NCurses - Enhanced terminal graphics with colors",
-        "• SDL2 - Modern windowed graphics with hardware acceleration",
-        "• SFML - Advanced graphics library (coming soon)",
+        "NCurses - Enhanced terminal graphics with colors",
+        "SDL2 - Modern windowed graphics with hardware acceleration",
+        "SFML - Advanced graphics library (coming soon)",
         "",
         "DESIGN PHILOSOPHY:",
         "This project demonstrates the power of dynamic library loading",
@@ -243,52 +241,47 @@ std::vector<std::string> MenuSystem::getCreditsContent() const {
         "different graphics libraries at runtime using dlopen/dlsym.",
         "",
         "The architecture follows strict separation of concerns:",
-        "• Game logic in main executable",
-        "• Graphics/input handling in dynamic libraries",
-        "• Clean interfaces for extensibility",
+        "Game logic in main executable",
+        "Graphics/input handling in dynamic libraries",
+        "Clean interfaces for extensibility",
         "",
         "BONUS FEATURES:",
-        "• Comprehensive menu system across all libraries",
-        "• Multiplayer support (two snakes, one food!)",
-        "• Customizable game settings and board sizes",
-        "",
-        "Press ESC or ENTER to return to main menu"
+        "Comprehensive menu system across all libraries",
+        "Multiplayer support (two snakes, one food!)",
+        "Customizable game settings graphicaly (skins, background, grid, etc.)"
     };
 }
 
 std::vector<std::string> MenuSystem::getInstructionsContent() const {
     return {
-        "HOW TO PLAY NIBBLER",
-        "",
         "MENU NAVIGATION:",
-        "• Arrow Keys (↑↓) - Navigate menu items",
-        "• ENTER/SPACE - Select menu item",
-        "• ESC - Go back to previous menu",
-        "• Keys 1,2,3 - Switch graphics libraries anytime",
+        "Arrow Keys (UP/DOWN) - Navigate menu items",
+        "ENTER/SPACE - Select menu item",
+        "ESC - Go back to previous menu",
+        "Keys 1,2,3 - Switch graphics libraries anytime",
         "",
         "GAME OBJECTIVE:",
         "Control your snake to eat food and grow longer.",
         "Avoid hitting walls or your own body!",
         "",
         "SINGLE PLAYER MODE:",
-        "• Arrow Keys - Control snake direction",
-        "• Eat the red food (*) to grow longer",
-        "• Game ends when snake hits wall or itself",
+        "Arrow Keys - Control snake direction",
+        "Eat the red food (*) to grow longer",
+        "Game ends when snake hits wall or itself",
         "",
         "MULTIPLAYER MODE:",
         "Two snakes compete for the same food!",
-        "• Player 1: Arrow Keys (↑↓←→)",
-        "• Player 2: WASD Keys (W=up, S=down, A=left, D=right)",
-        "• Both snakes grow when eating food",
-        "• Game ends when any snake collides",
-        "• Winner is the snake with highest score!",
+        "- Player 1: Arrow Keys (UP/DOWN/LEFT/RIGHT)",
+        "- Player 2: WASD Keys (W=up, S=down, A=left, D=right)",
+        "- Both snakes grow when eating food",
+        "- Game ends when any snake collides",
+        "- Winner is the snake with highest score!",
         "",
         "GRAPHICS LIBRARIES:",
-        "• Key 1 - NCurses (colored terminal graphics)",
-        "• Key 2 - SDL2 (modern windowed graphics)",
-        "• Key 3 - SFML (advanced graphics with effects)",
-        "",
-        "Press ESC or ENTER to return to main menu"
+        "Key 1 - NCurses (colored terminal graphics)",
+        "Key 2 - SDL2 (modern windowed graphics)",
+        "Key 3 - SFML (advanced graphics with effects)",
+        ""
     };
 }
 
