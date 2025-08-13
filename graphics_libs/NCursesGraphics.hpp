@@ -67,11 +67,12 @@ private:
     void clearError();
 
     // Menu rendering methods
-    void renderMenu();
+    void renderMenu(const game_data& game);
     void renderMainMenu();
     void renderSettingsMenu();
     void renderCreditsPage();
     void renderInstructionsPage();
+    void renderAchievementsPage(const game_data& game);
     void renderGameOverScreen();
     void drawCenteredText(int y, const std::string& text, int colorPair = 0);
     void drawMenuItems(const std::vector<MenuItem>& items, int selection, int startY);

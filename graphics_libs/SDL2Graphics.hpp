@@ -71,11 +71,12 @@ private:
     void calculateGameArea(const game_data& game, int& offsetX, int& offsetY, int& cellSize);
 
     // Menu rendering methods
-    void renderMenu();
+    void renderMenu(const game_data& game);
     void renderMainMenu();
     void renderSettingsMenu();
     void renderCreditsMenu();
     void renderInstructionsMenu();
+    void renderAchievementsMenu(const game_data& game);
     void renderGameOverMenu();
     void drawCenteredText(const std::string& text, int y, const Color& color = COLOR_TEXT);
     void drawMenuItems(const std::vector<MenuItem>& items, int selectedIndex, int startY);

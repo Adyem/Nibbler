@@ -1,4 +1,5 @@
 #include "MenuSystem.hpp"
+#include "game_data.hpp"
 #include <algorithm>
 
 MenuSystem::MenuSystem() : _currentState(MenuState::MAIN_MENU), _currentSelection(0), _gameOverScore(0) {
@@ -57,7 +58,10 @@ void MenuSystem::selectCurrentItem() {
                 case 3: // Instructions
                     setState(MenuState::INSTRUCTIONS_PAGE);
                     break;
-                case 4: // Exit
+                case 4: // Achievements
+                    setState(MenuState::ACHIEVEMENTS_PAGE);
+                    break;
+                case 5: // Exit
                     setState(MenuState::EXIT_REQUESTED);
                     break;
             }
@@ -79,6 +83,7 @@ void MenuSystem::selectCurrentItem() {
             
         case MenuState::CREDITS_PAGE:
         case MenuState::INSTRUCTIONS_PAGE:
+        case MenuState::ACHIEVEMENTS_PAGE:
             goBack();
             break;
 
@@ -106,6 +111,7 @@ void MenuSystem::goBack() {
         case MenuState::SETTINGS_MENU:
         case MenuState::CREDITS_PAGE:
         case MenuState::INSTRUCTIONS_PAGE:
+        case MenuState::ACHIEVEMENTS_PAGE:
             setState(MenuState::MAIN_MENU);
             break;
         case MenuState::IN_GAME:
@@ -142,6 +148,8 @@ std::string MenuSystem::getCurrentTitle() const {
             return "CREDITS";
         case MenuState::INSTRUCTIONS_PAGE:
             return "INSTRUCTIONS";
+        case MenuState::ACHIEVEMENTS_PAGE:
+            return "ACHIEVEMENTS";
         case MenuState::IN_GAME:
             return "NIBBLER";
         case MenuState::GAME_OVER:
@@ -158,6 +166,7 @@ void MenuSystem::initializeMenus() {
         MenuItem("Settings"),
         MenuItem("Credits"),
         MenuItem("Instructions"),
+        MenuItem("Achievements"),
         MenuItem("Exit")
     };
 
@@ -290,6 +299,18 @@ std::vector<std::string> MenuSystem::getInstructionsContent() const {
         "",
         "Press ESC or ENTER to return to main menu"
     };
+}
+
+std::vector<std::string> MenuSystem::getAchievementsContent(const game_data& game) const {
+    std::vector<std::string> content = {
+        "PLAYER ACHIEVEMENTS",
+        ""
+    };
+
+    content.push_back(std::string("• Reach length 50: ") + (game.get_achievement_snake50() ? "Unlocked" : "Locked"));
+    content.push_back("");
+    content.push_back("Press ESC or ENTER to return to main menu");
+    return content;
 }
 
 void MenuSystem::setGameOverScore(int score) {

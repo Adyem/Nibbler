@@ -4,11 +4,14 @@
 #include <string>
 #include <vector>
 
+class game_data;
+
 enum class MenuState {
     MAIN_MENU,
     SETTINGS_MENU,
     CREDITS_PAGE,
     INSTRUCTIONS_PAGE,
+    ACHIEVEMENTS_PAGE,
     IN_GAME,
     GAME_OVER,
     EXIT_REQUESTED
@@ -66,6 +69,7 @@ public:
     // Content getters for pages
     std::vector<std::string> getCreditsContent() const;
     std::vector<std::string> getInstructionsContent() const;
+    std::vector<std::string> getAchievementsContent(const game_data& game) const;
     std::vector<std::string> getSettingsContent() const;
     
     // Settings modification
