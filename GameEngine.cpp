@@ -85,6 +85,8 @@ void GameEngine::run() {
     gameLoop();
 
     // Cleanup
+    // Re-acquire the current library in case it changed during the game
+    currentLib = _libraryManager.getCurrentLibrary();
     if (currentLib) {
         currentLib->shutdown();
     }
@@ -132,6 +134,14 @@ void GameEngine::gameLoop() {
             handleInput(key, shouldQuit);
         }
 
+        // IMPORTANT: The input handler may have switched libraries.
+        // Refresh the currentLib pointer to avoid using a stale (possibly destroyed) instance.
+        currentLib = _libraryManager.getCurrentLibrary();
+        if (!currentLib) {
+            shouldQuit = true;
+            break;
+        }
+
         // Check if we should quit based on menu state
         if (_menuSystem.getCurrentState() == MenuState::EXIT_REQUESTED) {
             shouldQuit = true;
@@ -171,6 +181,13 @@ void GameEngine::gameLoop() {
                 shouldQuit = true;
                 break;
             }
+        }
+
+        // Re-check current library in case rendering triggered a change (defensive)
+        currentLib = _libraryManager.getCurrentLibrary();
+        if (!currentLib) {
+            shouldQuit = true;
+            break;
         }
 
         // Check if library wants to quit
@@ -346,10 +363,21 @@ void GameEngine::switchGraphicsLibrary(int libraryIndex) {
 
     // Shutdown current library
     if (currentLib) {
+        // Check if we're switching from SFML (which needs extra time for clean shutdown)
+        const char* currentLibName = _libraryManager.getLibraryName(_libraryManager.getCurrentLibraryIndex());
+        bool switchingFromSFML = (currentLibName && std::string(currentLibName).find("SFML") != std::string::npos);
+        
         currentLib->shutdown();
 
-        // Small delay to ensure clean shutdown, especially for SDL2
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        // Much longer delay when switching from SFML to ensure graphics context is properly released
+        if (switchingFromSFML) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(300));
+            // Force a yield to let the system process the shutdown
+            std::this_thread::yield();
+        } else {
+            // Small delay to ensure clean shutdown, especially for SDL2
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
     }
 
     // Switch to new library

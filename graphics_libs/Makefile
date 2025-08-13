@@ -10,8 +10,7 @@ NCURSES_LIB = ../lib_ncurses.so
 SFML_LIB = ../lib_sfml.so
 
 # All libraries
-ALL_LIBS = $(NCURSES_LIB) $(SDL2_LIB)
-# SFML_LIB temporarily disabled until implementation is complete
+ALL_LIBS = $(NCURSES_LIB) $(SDL2_LIB) $(SFML_LIB)
 
 # Sources
 SDL2_SOURCES = SDL2Graphics.cpp
@@ -31,7 +30,8 @@ LIBFT = ../libft/Full_Libft.a
 NCURSES_LIBS = -lncurses
 SDL2_CFLAGS = $(shell pkg-config --cflags sdl2 sdl2_ttf 2>/dev/null || echo "-I/opt/homebrew/include/SDL2")
 SDL2_LIBS = $(shell pkg-config --libs sdl2 sdl2_ttf 2>/dev/null || echo "-L/opt/homebrew/lib -lSDL2 -lSDL2_ttf")
-SFML_LIBS = -lsfml-graphics -lsfml-window -lsfml-system
+SFML_CFLAGS = $(shell pkg-config --cflags sfml-graphics 2>/dev/null || echo "-I/opt/homebrew/include")
+SFML_LIBS = $(shell pkg-config --libs sfml-graphics sfml-window sfml-system 2>/dev/null | sed 's|/opt/homebrew/Cellar/sfml/3.0.1/|/opt/homebrew/Cellar/sfml/3.0.1/lib/|g' || echo "-L/opt/homebrew/Cellar/sfml/3.0.1/lib -lsfml-graphics -lsfml-window -lsfml-system")
 
 # Default target
 all: $(ALL_LIBS)
@@ -72,7 +72,7 @@ $(SFML_LIB): $(SFML_SOURCES) $(SFML_HEADERS) $(GAME_DATA_OBJS)
 		echo "Install SFML with: brew install sfml (macOS) or apt-get install libsfml-dev (Ubuntu)"; \
 		touch $@; \
 	else \
-		$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(SFML_SOURCES) $(GAME_DATA_OBJS) $(LIBFT) $(SFML_LIBS); \
+		$(CXX) $(CXXFLAGS) $(SFML_CFLAGS) $(LDFLAGS) -o $@ $(SFML_SOURCES) $(GAME_DATA_OBJS) $(LIBFT) $(SFML_LIBS); \
 		echo "SFML Graphics Library built successfully!"; \
 	fi
 
