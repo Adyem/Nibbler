@@ -184,6 +184,8 @@ GameKey NCursesGraphics::getInput() {
             return GameKey::KEY_2;
         case '3':
             return GameKey::KEY_3;
+        case '4':
+            return GameKey::KEY_4;
         case ERR:
             return GameKey::NONE;
     }
@@ -265,6 +267,8 @@ GameKey NCursesGraphics::getInput() {
             return GameKey::KEY_2;
         case '3':
             return GameKey::KEY_3;
+        case '4':
+            return GameKey::KEY_4;
         case 27:            // ESC key
         case 'q':
         case 'Q':
@@ -435,7 +439,7 @@ void NCursesGraphics::renderMainMenu() {
     // Draw footer
     attron(COLOR_PAIR(COLOR_INFO));
     drawCenteredText(termHeight - 3, "Use Arrow Keys to navigate, ENTER to select");
-    drawCenteredText(termHeight - 2, "Press 1/2/3 to switch graphics libraries");
+    drawCenteredText(termHeight - 2, "Press 1/2/3/4 to switch graphics libraries");
     attroff(COLOR_PAIR(COLOR_INFO));
 }
 
@@ -599,7 +603,7 @@ void NCursesGraphics::renderGameOverScreen() {
     attron(COLOR_PAIR(COLOR_INFO));
     drawCenteredText(termHeight - 4, "Use Arrow Keys to navigate, ENTER to select");
     drawCenteredText(termHeight - 3, "Press ESC to quit the game");
-    drawCenteredText(termHeight - 2, "Press 1/2/3 to switch graphics libraries");
+    drawCenteredText(termHeight - 2, "Press 1/2/3/4 to switch graphics libraries");
     attroff(COLOR_PAIR(COLOR_INFO));
 }
 

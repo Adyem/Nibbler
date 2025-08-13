@@ -232,7 +232,8 @@ std::vector<std::string> MenuSystem::getCreditsContent() const {
         "LIBRARIES USED:",
         "NCurses - Enhanced terminal graphics with colors",
         "SDL2 - Modern windowed graphics with hardware acceleration",
-        "SFML - Advanced graphics library (coming soon)",
+        "SFML - Advanced graphics library",
+        "Raylib - Simple 2D graphics library",
         "",
         "DESIGN PHILOSOPHY:",
         "This project demonstrates the power of dynamic library loading",
@@ -258,7 +259,7 @@ std::vector<std::string> MenuSystem::getInstructionsContent() const {
         "Arrow Keys (UP/DOWN) - Navigate menu items",
         "ENTER/SPACE - Select menu item",
         "ESC - Go back to previous menu",
-        "Keys 1,2,3 - Switch graphics libraries anytime",
+        "Keys 1,2,3,4 - Switch graphics libraries anytime",
         "",
         "GAME OBJECTIVE:",
         "Control your snake to eat food and grow longer.",
@@ -280,7 +281,8 @@ std::vector<std::string> MenuSystem::getInstructionsContent() const {
         "GRAPHICS LIBRARIES:",
         "Key 1 - NCurses (colored terminal graphics)",
         "Key 2 - SDL2 (modern windowed graphics)",
-        "Key 3 - SFML (advanced graphics with effects)",
+        "Key 3 - SFML (advanced graphics)",
+        "Key 4 - Raylib (simple 2D graphics)",
         ""
     };
 }

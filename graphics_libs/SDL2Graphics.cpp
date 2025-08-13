@@ -252,6 +252,7 @@ GameKey SDL2Graphics::getInput() {
                 if (key == SDLK_1) return GameKey::KEY_1;
                 if (key == SDLK_2) return GameKey::KEY_2;
                 if (key == SDLK_3) return GameKey::KEY_3;
+                if (key == SDLK_4) return GameKey::KEY_4;
 
                 // Handle menu navigation if in menu mode
                 if (_menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME) {
@@ -425,7 +426,7 @@ void SDL2Graphics::renderMainMenu() {
 
     // Draw footer
     drawCenteredTextWithFont("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 80, _fontSmall, COLOR_TEXT);
-    drawCenteredTextWithFont("Press 1/2/3 to switch graphics libraries", WINDOW_HEIGHT - 60, _fontSmall, COLOR_TEXT);
+    drawCenteredTextWithFont("Press 1/2/3/4 to switch graphics libraries", WINDOW_HEIGHT - 60, _fontSmall, COLOR_TEXT);
 }
 
 void SDL2Graphics::renderSettingsMenu() {

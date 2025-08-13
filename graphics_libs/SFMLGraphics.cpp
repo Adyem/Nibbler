@@ -302,6 +302,7 @@ GameKey SFMLGraphics::translateSFMLKey(sf::Keyboard::Key key) {
         case sf::Keyboard::Key::Num1:    return GameKey::KEY_1;
         case sf::Keyboard::Key::Num2:    return GameKey::KEY_2;
         case sf::Keyboard::Key::Num3:    return GameKey::KEY_3;
+        case sf::Keyboard::Key::Num4:    return GameKey::KEY_4;
         case sf::Keyboard::Key::Escape:  return GameKey::ESCAPE;
         default:                         return GameKey::NONE;
     }
@@ -415,7 +416,7 @@ void SFMLGraphics::renderMainMenu() {
 
     // Draw instructions
     drawCenteredText("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 80, COLOR_TEXT, 16);
-    drawCenteredText("Press 1/2/3 to switch graphics libraries", WINDOW_HEIGHT - 60, COLOR_TEXT, 16);
+    drawCenteredText("Press 1/2/3/4 to switch graphics libraries", WINDOW_HEIGHT - 60, COLOR_TEXT, 16);
 }
 
 void SFMLGraphics::renderSettingsMenu() {

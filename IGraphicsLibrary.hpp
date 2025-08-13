@@ -17,6 +17,7 @@ enum class GameKey {
     KEY_1,      // Switch to library 1
     KEY_2,      // Switch to library 2
     KEY_3,      // Switch to library 3
+    KEY_4,      // Switch to library 4
     ESCAPE,     // Quit game
     QUIT
 };

@@ -89,7 +89,7 @@ void printUsage(const char* programName) {
     std::cout << std::endl;
     std::cout << "Controls:" << std::endl;
     std::cout << "  Arrow keys: Move snake" << std::endl;
-    std::cout << "  1, 2, 3:    Switch graphics libraries" << std::endl;
+    std::cout << "  1, 2, 3, 4: Switch graphics libraries" << std::endl;
     std::cout << "  ESC:        Quit game" << std::endl;
 }
 
@@ -99,7 +99,8 @@ int selectGraphicsLibrary() {
     std::cout << "  1. NCurses (Terminal-based)" << std::endl;
     std::cout << "  2. SDL2 (Window-based)" << std::endl;
     std::cout << "  3. SFML (Window-based)" << std::endl;
-    std::cout << "Enter your choice (1-3): ";
+    std::cout << "  4. Raylib (Window-based)" << std::endl;
+    std::cout << "Enter your choice (1-4): ";
 
     std::string input;
     std::getline(std::cin, input);
@@ -111,8 +112,8 @@ int selectGraphicsLibrary() {
 
     try {
         int choice = std::stoi(input);
-        if (choice >= 1 && choice <= 3) {
-            const char* libNames[] = {"NCurses", "SDL2", "SFML"};
+        if (choice >= 1 && choice <= 4) {
+            const char* libNames[] = {"NCurses", "SDL2", "SFML", "Raylib"};
             std::cout << "Selected: " << libNames[choice - 1] << std::endl;
             return choice - 1; // Convert to 0-based index
         } else {

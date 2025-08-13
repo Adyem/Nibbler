@@ -8,19 +8,22 @@ LDFLAGS = -shared
 SDL2_LIB = ../lib_sdl2.so
 NCURSES_LIB = ../lib_ncurses.so
 SFML_LIB = ../lib_sfml.so
+RAYLIB_LIB = ../lib_raylib.so
 
 # All libraries
-ALL_LIBS = $(NCURSES_LIB) $(SDL2_LIB) $(SFML_LIB)
+ALL_LIBS = $(NCURSES_LIB) $(SDL2_LIB) $(SFML_LIB) $(RAYLIB_LIB)
 
 # Sources
 SDL2_SOURCES = SDL2Graphics.cpp
 NCURSES_SOURCES = NCursesGraphics.cpp
 SFML_SOURCES = SFMLGraphics.cpp
+RAYLIB_SOURCES = RaylibGraphics.cpp
 
 # Headers
 SDL2_HEADERS = SDL2Graphics.hpp ../IGraphicsLibrary.hpp
 NCURSES_HEADERS = NCursesGraphics.hpp ../IGraphicsLibrary.hpp
 SFML_HEADERS = SFMLGraphics.hpp ../IGraphicsLibrary.hpp
+RAYLIB_HEADERS = RaylibGraphics.hpp ../IGraphicsLibrary.hpp
 
 # Game data dependencies (we need these object files)
 GAME_DATA_OBJS = ../objs/game_data_core.o ../objs/game_data_board.o ../objs/game_data_movement.o ../objs/game_data_io.o ../objs/MenuSystem.o
@@ -32,6 +35,8 @@ SDL2_CFLAGS = $(shell pkg-config --cflags sdl2 sdl2_ttf 2>/dev/null || echo "-I/
 SDL2_LIBS = $(shell pkg-config --libs sdl2 sdl2_ttf 2>/dev/null || echo "-L/opt/homebrew/lib -lSDL2 -lSDL2_ttf")
 SFML_CFLAGS = $(shell pkg-config --cflags sfml-graphics 2>/dev/null || echo "-I/opt/homebrew/include")
 SFML_LIBS = $(shell pkg-config --libs sfml-graphics sfml-window sfml-system 2>/dev/null | sed 's|/opt/homebrew/Cellar/sfml/3.0.1/|/opt/homebrew/Cellar/sfml/3.0.1/lib/|g' || echo "-L/opt/homebrew/Cellar/sfml/3.0.1/lib -lsfml-graphics -lsfml-window -lsfml-system")
+RAYLIB_CFLAGS = $(shell pkg-config --cflags raylib 2>/dev/null || echo "-I/opt/homebrew/include")
+RAYLIB_LIBS = $(shell pkg-config --libs raylib 2>/dev/null || echo "-L/opt/homebrew/lib -lraylib")
 
 # Default target
 all: $(ALL_LIBS)
@@ -39,7 +44,7 @@ all: $(ALL_LIBS)
 # NCurses graphics library (requires ncurses)
 $(NCURSES_LIB): $(NCURSES_SOURCES) $(NCURSES_HEADERS) $(GAME_DATA_OBJS)
 	@echo "Building NCurses Graphics Library..."
-	@if ! pkg-config --exists ncurses 2>/dev/null && ! [ -f /usr/include/ncurses.h ] && ! [ -f /usr/local/include/ncurses.h ]; then \
+	@if ! pkg-config --exists ncurses 2>/dev/null && ! [ -f /usr/include/ncurses.h ] && ! [ -f /usr/local/include/ncurses.h ] && ! [ -f /opt/homebrew/include/ncurses.h ]; then \
 		echo "Warning: NCurses development headers not found. Skipping NCurses library."; \
 		echo "Install ncurses with: brew install ncurses (macOS) or apt-get install libncurses5-dev (Ubuntu)"; \
 		touch $@; \
@@ -76,12 +81,26 @@ $(SFML_LIB): $(SFML_SOURCES) $(SFML_HEADERS) $(GAME_DATA_OBJS)
 		echo "SFML Graphics Library built successfully!"; \
 	fi
 
+# Raylib graphics library (requires raylib)
+$(RAYLIB_LIB): $(RAYLIB_SOURCES) $(RAYLIB_HEADERS) $(GAME_DATA_OBJS)
+	@echo "Building Raylib Graphics Library..."
+	@if ! pkg-config --exists raylib 2>/dev/null && ! [ -f /opt/homebrew/lib/libraylib.a ] && ! [ -f /usr/local/lib/libraylib.a ]; then \
+		echo "Warning: raylib development package not found. Skipping raylib library."; \
+		echo "Install raylib with: brew install raylib (macOS) or apt-get install libraylib-dev (Ubuntu)"; \
+		touch $@; \
+	else \
+		$(CXX) $(CXXFLAGS) $(RAYLIB_CFLAGS) $(LDFLAGS) -o $@ $(RAYLIB_SOURCES) $(GAME_DATA_OBJS) $(LIBFT) $(RAYLIB_LIBS); \
+		echo "Raylib Graphics Library built successfully!"; \
+	fi
+
 # Individual library targets
 ncurses: $(NCURSES_LIB)
 
 sdl2: $(SDL2_LIB)
 
 sfml: $(SFML_LIB)
+
+raylib: $(RAYLIB_LIB)
 
 # Check dependencies
 check-deps:
@@ -105,12 +124,17 @@ check-deps:
 	else \
 		echo "SFML: NOT AVAILABLE - install with 'brew install sfml' or 'apt-get install libsfml-dev'"; \
 	fi
+	@if pkg-config --exists raylib 2>/dev/null || [ -f /opt/homebrew/lib/libraylib.a ] || [ -f /usr/local/lib/libraylib.a ]; then \
+		echo "Raylib: Available"; \
+	else \
+		echo "Raylib: NOT AVAILABLE - install with 'brew install raylib' or 'apt-get install libraylib-dev'"; \
+	fi
 
 # Install dependencies (macOS with Homebrew)
 install-deps-macos:
 	@echo "Installing dependencies for macOS..."
 	@if command -v brew >/dev/null 2>&1; then \
-		brew install ncurses sdl2 sdl2_ttf sfml; \
+		brew install ncurses sdl2 sdl2_ttf sfml raylib; \
 	else \
 		echo "Homebrew not found. Please install Homebrew first: https://brew.sh/"; \
 	fi
@@ -119,7 +143,7 @@ install-deps-macos:
 install-deps-ubuntu:
 	@echo "Installing dependencies for Ubuntu/Debian..."
 	sudo apt-get update
-	sudo apt-get install libncurses5-dev libsdl2-dev libsdl2-ttf-dev libsfml-dev
+	sudo apt-get install libncurses5-dev libsdl2-dev libsdl2-ttf-dev libsfml-dev libraylib-dev
 
 # Clean all libraries
 clean:
@@ -139,6 +163,7 @@ help:
 	@echo "  ncurses          - Build NCurses graphics library only"
 	@echo "  sdl2             - Build SDL2 graphics library only"
 	@echo "  sfml             - Build SFML graphics library only"
+	@echo "  raylib           - Build Raylib graphics library only"
 	@echo "  check-deps       - Check for required dependencies"
 	@echo "  install-deps-macos   - Install dependencies on macOS"
 	@echo "  install-deps-ubuntu  - Install dependencies on Ubuntu/Debian"
@@ -150,5 +175,6 @@ help:
 	@echo "  lib_ncurses.so   - Enhanced terminal graphics with colors"
 	@echo "  lib_sdl2.so      - Modern windowed graphics with SDL2"
 	@echo "  lib_sfml.so      - Advanced graphics with SFML"
+	@echo "  lib_raylib.so    - Windowed graphics with raylib"
 
-.PHONY: all ncurses sdl2 sfml check-deps install-deps-macos install-deps-ubuntu clean rebuild help
+.PHONY: all ncurses sdl2 sfml raylib check-deps install-deps-macos install-deps-ubuntu clean rebuild help

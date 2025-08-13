@@ -79,7 +79,7 @@ void GameEngine::run() {
 
     std::cout << "Nibbler started with " << _libraryManager.getLibraryName(_libraryManager.getCurrentLibraryIndex()) << std::endl;
     std::cout << "Navigate menus with arrow keys, ENTER to select, ESC to go back" << std::endl;
-    std::cout << "Press 1/2/3 to switch graphics libraries anytime" << std::endl;
+    std::cout << "Press 1/2/3/4 to switch graphics libraries anytime" << std::endl;
 
     // Start the game loop
     gameLoop();
@@ -226,6 +226,9 @@ void GameEngine::handleInput(GameKey key, bool& shouldQuit) {
         case GameKey::KEY_3:
             switchGraphicsLibrary(2);
             return;
+        case GameKey::KEY_4:
+            switchGraphicsLibrary(3);
+            return;
         default:
             break;
     }
@@ -328,6 +331,11 @@ int GameEngine::loadDefaultLibraries() {
     // Try to load the SFML library (index 2)
     if (_libraryManager.loadLibrary("./lib_sfml.so") != 0) {
         std::cerr << "Warning: Failed to load SFML library: " << _libraryManager.getError() << std::endl;
+    }
+
+    // Try to load the Raylib library (index 3)
+    if (_libraryManager.loadLibrary("./lib_raylib.so") != 0) {
+        std::cerr << "Warning: Failed to load Raylib library: " << _libraryManager.getError() << std::endl;
     }
 
     if (_libraryManager.getLibraryCount() == 0) {
