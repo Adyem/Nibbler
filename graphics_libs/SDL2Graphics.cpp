@@ -136,7 +136,7 @@ void SDL2Graphics::render(const game_data& game) {
 
     // Check if we should render menu instead of game
     if (_menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME) {
-        renderMenu();
+        renderMenu(game);
         SDL_RenderPresent(_renderer);
         return;
     }
@@ -347,7 +347,7 @@ void SDL2Graphics::setSwitchMessage(const std::string& message, int timer) {
 }
 
 // Menu rendering methods
-void SDL2Graphics::renderMenu() {
+void SDL2Graphics::renderMenu(const game_data& game) {
     if (!_menuSystem) return;
 
     switch (_menuSystem->getCurrentState()) {
@@ -362,6 +362,9 @@ void SDL2Graphics::renderMenu() {
             break;
         case MenuState::INSTRUCTIONS_PAGE:
             renderInstructionsMenu();
+            break;
+        case MenuState::ACHIEVEMENTS_PAGE:
+            renderAchievementsMenu(game);
             break;
         case MenuState::GAME_OVER:
             renderGameOverMenu();
@@ -427,6 +430,25 @@ void SDL2Graphics::renderInstructionsMenu() {
 
     // Draw content
     auto content = _menuSystem->getInstructionsContent();
+    int startY = 100;
+
+    for (size_t i = 0; i < content.size() && startY + static_cast<int>(i) * 25 < WINDOW_HEIGHT - 60; ++i) {
+        const std::string& line = content[i];
+        if (line.empty()) continue;
+
+        drawCenteredText(line, startY + static_cast<int>(i) * 25, COLOR_TEXT);
+    }
+
+    // Draw footer
+    drawCenteredText("ESC to go back", WINDOW_HEIGHT - 40, COLOR_TEXT);
+}
+
+void SDL2Graphics::renderAchievementsMenu(const game_data& game) {
+    // Draw title
+    drawCenteredText(_menuSystem->getCurrentTitle(), 40, COLOR_SNAKE_HEAD);
+
+    // Draw content
+    auto content = _menuSystem->getAchievementsContent(game);
     int startY = 100;
 
     for (size_t i = 0; i < content.size() && startY + static_cast<int>(i) * 25 < WINDOW_HEIGHT - 60; ++i) {

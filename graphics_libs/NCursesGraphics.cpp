@@ -96,7 +96,7 @@ void NCursesGraphics::render(const game_data& game) {
 
     // Check if we should render menu instead of game
     if (_menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME) {
-        renderMenu();
+        renderMenu(game);
         refresh();
         return;
     }
@@ -414,7 +414,7 @@ void NCursesGraphics::forceInputReadiness() {
 }
 
 // Menu rendering methods
-void NCursesGraphics::renderMenu() {
+void NCursesGraphics::renderMenu(const game_data& game) {
     if (!_menuSystem) return;
 
     switch (_menuSystem->getCurrentState()) {
@@ -429,6 +429,9 @@ void NCursesGraphics::renderMenu() {
             break;
         case MenuState::INSTRUCTIONS_PAGE:
             renderInstructionsPage();
+            break;
+        case MenuState::ACHIEVEMENTS_PAGE:
+            renderAchievementsPage(game);
             break;
         case MenuState::GAME_OVER:
             renderGameOverScreen();
@@ -583,6 +586,37 @@ void NCursesGraphics::renderInstructionsPage() {
             line.find("MULTIPLAYER") != std::string::npos || line.find("GRAPHICS") != std::string::npos) {
             colorPair = COLOR_SNAKE_HEAD;
         } else if (line.find("•") != std::string::npos || line.find("Key") != std::string::npos) {
+            colorPair = COLOR_FOOD;
+        }
+
+        drawCenteredText(startY + static_cast<int>(i), line, colorPair);
+    }
+
+    // Draw footer
+    attron(COLOR_PAIR(COLOR_BORDER));
+    drawCenteredText(termHeight - 2, "Press ESC or ENTER to return to main menu");
+    attroff(COLOR_PAIR(COLOR_BORDER));
+}
+
+void NCursesGraphics::renderAchievementsPage(const game_data& game) {
+    int termHeight, termWidth;
+    getmaxyx(stdscr, termHeight, termWidth);
+
+    // Draw title
+    attron(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
+    drawCenteredText(2, _menuSystem->getCurrentTitle());
+    attroff(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
+
+    // Draw content
+    auto content = _menuSystem->getAchievementsContent(game);
+    int startY = 4;
+
+    for (size_t i = 0; i < content.size() && startY + static_cast<int>(i) < termHeight - 2; ++i) {
+        const std::string& line = content[i];
+        if (line.empty()) continue;
+
+        int colorPair = COLOR_INFO;
+        if (line.find("Unlocked") != std::string::npos) {
             colorPair = COLOR_FOOD;
         }
 
