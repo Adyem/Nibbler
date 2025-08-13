@@ -334,17 +334,6 @@ void GameEngine::switchGraphicsLibrary(int libraryIndex) {
         return;
     }
 
-    // Block SFML switching since it's not implemented yet
-    const char* libName = _libraryManager.getLibraryName(libraryIndex);
-    if (libName && (std::string(libName).find("SFML") != std::string::npos ||
-                   std::string(libName).find("sfml") != std::string::npos)) {
-        std::string message = "SFML library is not yet implemented";
-        if (currentLib) {
-            currentLib->setSwitchMessage(message, 120); // Show for 2 seconds at 60 FPS
-        }
-        return;
-    }
-
     // Don't switch if we're already using this library
     if (libraryIndex == _libraryManager.getCurrentLibraryIndex()) {
         const char* currentLibName = _libraryManager.getLibraryName(libraryIndex);
