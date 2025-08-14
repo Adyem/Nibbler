@@ -7,8 +7,8 @@ LDFLAGS = -shared
 # Parent-provided object directory fallback
 OBJ_DIR ?= ../objs
 
-# Output directory for shared libs
-OUT_DIR = ../dllibs
+# Output directory for shared libs (prefer absolute from parent)
+OUT_DIR := $(if $(DLLIBS_DIR),$(DLLIBS_DIR),../dllibs)
 
 # Library targets
 SDL2_LIB = $(OUT_DIR)/lib_sdl2.so
@@ -32,17 +32,19 @@ SFML_HEADERS = include/SFMLGraphics.hpp ../IGraphicsLibrary.hpp
 RAYLIB_HEADERS = include/RaylibGraphics.hpp ../IGraphicsLibrary.hpp
 
 # Game data dependencies (object files produced by top-level)
+# NOTE: We no longer link these into the shared libraries (to avoid non-PIC issues).
+#       Symbols will be resolved at runtime from the main executable (exported via -rdynamic).
 GAME_DATA_OBJS = $(OBJ_DIR)/game_data_core.o $(OBJ_DIR)/game_data_board.o $(OBJ_DIR)/game_data_movement.o $(OBJ_DIR)/game_data_io.o $(OBJ_DIR)/MenuSystem.o
 LIBFT = ../libft/Full_Libft.a
 
-# System libraries
-NCURSES_LIBS = -lncurses
-SDL2_CFLAGS = $(shell pkg-config --cflags sdl2 sdl2_ttf 2>/dev/null || echo "-I/opt/homebrew/include/SDL2")
-SDL2_LIBS = $(shell pkg-config --libs sdl2 sdl2_ttf 2>/dev/null || echo "-L/opt/homebrew/lib -lSDL2 -lSDL2_ttf")
-SFML_CFLAGS = $(shell pkg-config --cflags sfml-graphics 2>/dev/null || echo "-I/opt/homebrew/include")
-SFML_LIBS = $(shell pkg-config --libs sfml-graphics sfml-window sfml-system 2>/dev/null | sed 's|/opt/homebrew/Cellar/sfml/3.0.1/|/opt/homebrew/Cellar/sfml/3.0.1/lib/|g' || echo "-L/opt/homebrew/Cellar/sfml/3.0.1/lib -lsfml-graphics -lsfml-window -lsfml-system")
-RAYLIB_CFLAGS = $(shell pkg-config --cflags raylib 2>/dev/null || echo "-I/opt/homebrew/include")
-RAYLIB_LIBS = $(shell pkg-config --libs raylib 2>/dev/null || echo "-L/opt/homebrew/lib -lraylib")
+# System libraries (prefer pkg-config; provide sane Linux fallbacks)
+NCURSES_LIBS = $(shell pkg-config --libs ncursesw 2>/dev/null || pkg-config --libs ncurses 2>/dev/null || echo "-lncurses")
+SDL2_CFLAGS = $(shell pkg-config --cflags sdl2 sdl2_ttf 2>/dev/null || echo "")
+SDL2_LIBS = $(shell pkg-config --libs sdl2 sdl2_ttf 2>/dev/null || echo "-lSDL2 -lSDL2_ttf")
+SFML_CFLAGS = $(shell pkg-config --cflags sfml-graphics 2>/dev/null || echo "")
+SFML_LIBS = $(shell pkg-config --libs sfml-graphics sfml-window sfml-system 2>/dev/null || echo "-lsfml-graphics -lsfml-window -lsfml-system")
+RAYLIB_CFLAGS = $(shell pkg-config --cflags raylib 2>/dev/null || echo "")
+RAYLIB_LIBS = $(shell pkg-config --libs raylib 2>/dev/null || echo "-lraylib")
 
 # Default target
 all: $(OUT_DIR) $(ALL_LIBS)
@@ -50,56 +52,55 @@ all: $(OUT_DIR) $(ALL_LIBS)
 $(OUT_DIR):
 	@mkdir -p $(OUT_DIR)
 
-# NCurses graphics library (requires ncurses)
-$(NCURSES_LIB): $(NCURSES_SOURCES) $(NCURSES_HEADERS) $(GAME_DATA_OBJS) | $(OUT_DIR)
+# Helper to run link and echo success only if it succeeds
+# Usage: $(call link_so, CXXFLAGS..., LIBS..., output, sources)
+# Not using a generic function to keep it simple/portable.
+
+# NCurses graphics library (requires ncurses/ncursesw)
+$(NCURSES_LIB): $(NCURSES_SOURCES) $(NCURSES_HEADERS) | $(OUT_DIR)
 	@echo "Building NCurses Graphics Library..."
-	@if ! pkg-config --exists ncurses 2>/dev/null && ! [ -f /usr/include/ncurses.h ] && ! [ -f /usr/local/include/ncurses.h ] && ! [ -f /opt/homebrew/include/ncurses.h ]; then \
+	@if ! pkg-config --exists ncursesw 2>/dev/null && ! pkg-config --exists ncurses 2>/dev/null \
+		&& ! [ -f /usr/include/ncurses.h ] && ! [ -f /usr/include/ncursesw/ncurses.h ] \
+		&& ! [ -f /usr/local/include/ncurses.h ]; then \
 		echo "Warning: NCurses development headers not found. Skipping NCurses library."; \
-		echo "Install ncurses with: brew install ncurses (macOS) or apt-get install libncurses5-dev (Ubuntu)"; \
-		touch $@; \
+		:; \
 	else \
-		$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(NCURSES_SOURCES) $(GAME_DATA_OBJS) $(LIBFT) $(NCURSES_LIBS); \
-		echo "NCurses Graphics Library built successfully!"; \
+		$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(NCURSES_SOURCES) $(NCURSES_LIBS) && echo "NCurses Graphics Library built successfully!"; \
 	fi
 
 # SDL2 graphics library (requires SDL2 and SDL2_ttf)
-$(SDL2_LIB): $(SDL2_SOURCES) $(SDL2_HEADERS) $(GAME_DATA_OBJS) | $(OUT_DIR)
+$(SDL2_LIB): $(SDL2_SOURCES) $(SDL2_HEADERS) | $(OUT_DIR)
 	@echo "Building SDL2 Graphics Library..."
-	@if ! pkg-config --exists sdl2 2>/dev/null && ! [ -f /usr/include/SDL2/SDL.h ] && ! [ -f /usr/local/include/SDL2/SDL.h ] && ! [ -f /opt/homebrew/include/SDL2/SDL.h ]; then \
+	@if ! pkg-config --exists sdl2 2>/dev/null && ! [ -f /usr/include/SDL2/SDL.h ] && ! [ -f /usr/local/include/SDL2/SDL.h ]; then \
 		echo "Warning: SDL2 development headers not found. Skipping SDL2 library."; \
-		echo "Install SDL2 with: brew install sdl2 sdl2_ttf (macOS) or apt-get install libsdl2-dev libsdl2-ttf-dev (Ubuntu)"; \
-		touch $@; \
-	elif ! pkg-config --exists sdl2_ttf 2>/dev/null && ! [ -f /usr/include/SDL2/SDL_ttf.h ] && ! [ -f /usr/local/include/SDL2/SDL_ttf.h ] && ! [ -f /opt/homebrew/include/SDL2/SDL_ttf.h ]; then \
+		:; \
+	elif ! pkg-config --exists sdl2_ttf 2>/dev/null && ! [ -f /usr/include/SDL2/SDL_ttf.h ] && ! [ -f /usr/local/include/SDL2/SDL_ttf.h ]; then \
 		echo "Warning: SDL2_ttf development headers not found. Skipping SDL2 library."; \
-		echo "Install SDL2_ttf with: brew install sdl2_ttf (macOS) or apt-get install libsdl2-ttf-dev (Ubuntu)"; \
-		touch $@; \
+		:; \
 	else \
-		$(CXX) $(CXXFLAGS) $(SDL2_CFLAGS) $(LDFLAGS) -o $@ $(SDL2_SOURCES) $(GAME_DATA_OBJS) $(LIBFT) $(SDL2_LIBS); \
-		echo "SDL2 Graphics Library built successfully!"; \
+		$(CXX) $(CXXFLAGS) $(SDL2_CFLAGS) $(LDFLAGS) -o $@ $(SDL2_SOURCES) $(SDL2_LIBS) && echo "SDL2 Graphics Library built successfully!"; \
 	fi
 
 # SFML graphics library (requires SFML)
-$(SFML_LIB): $(SFML_SOURCES) $(SFML_HEADERS) $(GAME_DATA_OBJS) | $(OUT_DIR)
+$(SFML_LIB): $(SFML_SOURCES) $(SFML_HEADERS) | $(OUT_DIR)
 	@echo "Building SFML Graphics Library..."
-	@if ! pkg-config --exists sfml-graphics 2>/dev/null && ! [ -f /usr/include/SFML/Graphics.hpp ] && ! [ -f /usr/local/include/SFML/Graphics.hpp ] && ! [ -f /opt/homebrew/include/SFML/Graphics.hpp ]; then \
+	@if ! pkg-config --exists sfml-graphics 2>/dev/null && ! [ -f /usr/include/SFML/Graphics.hpp ] && ! [ -f /usr/local/include/SFML/Graphics.hpp ]; then \
 		echo "Warning: SFML development headers not found. Skipping SFML library."; \
-		echo "Install SFML with: brew install sfml (macOS) or apt-get install libsfml-dev (Ubuntu)"; \
-		touch $@; \
+		:; \
 	else \
-		$(CXX) $(CXXFLAGS) $(SFML_CFLAGS) $(LDFLAGS) -o $@ $(SFML_SOURCES) $(GAME_DATA_OBJS) $(LIBFT) $(SFML_LIBS); \
-		echo "SFML Graphics Library built successfully!"; \
+		$(CXX) $(CXXFLAGS) $(SFML_CFLAGS) $(LDFLAGS) -o $@ $(SFML_SOURCES) $(SFML_LIBS) && echo "SFML Graphics Library built successfully!"; \
 	fi
 
 # Raylib graphics library (requires raylib)
-$(RAYLIB_LIB): $(RAYLIB_SOURCES) $(RAYLIB_HEADERS) $(GAME_DATA_OBJS) | $(OUT_DIR)
+$(RAYLIB_LIB): $(RAYLIB_SOURCES) $(RAYLIB_HEADERS) | $(OUT_DIR)
 	@echo "Building Raylib Graphics Library..."
-	@if ! pkg-config --exists raylib 2>/dev/null && ! [ -f /opt/homebrew/lib/libraylib.a ] && ! [ -f /usr/local/lib/libraylib.a ]; then \
+	@if ! pkg-config --exists raylib 2>/dev/null \
+		&& ! [ -f /usr/include/raylib.h ] && ! [ -f /usr/local/include/raylib.h ] \
+		&& ! [ -f /usr/lib/x86_64-linux-gnu/libraylib.so ] && ! [ -f /usr/local/lib/libraylib.so ]; then \
 		echo "Warning: raylib development package not found. Skipping raylib library."; \
-		echo "Install raylib with: brew install raylib (macOS) or apt-get install libraylib-dev (Ubuntu)"; \
-		touch $@; \
+		:; \
 	else \
-		$(CXX) $(CXXFLAGS) $(RAYLIB_CFLAGS) $(LDFLAGS) -o $@ $(RAYLIB_SOURCES) $(GAME_DATA_OBJS) $(LIBFT) $(RAYLIB_LIBS); \
-		echo "Raylib Graphics Library built successfully!"; \
+		$(CXX) $(CXXFLAGS) $(RAYLIB_CFLAGS) $(LDFLAGS) -o $@ $(RAYLIB_SOURCES) $(RAYLIB_LIBS) && echo "Raylib Graphics Library built successfully!"; \
 	fi
 
 # Individual library targets
@@ -114,29 +115,29 @@ raylib: $(RAYLIB_LIB)
 # Check dependencies
 check-deps:
 	@echo "Checking dependencies..."
-	@if pkg-config --exists ncurses 2>/dev/null || [ -f /usr/include/ncurses.h ] || [ -f /usr/local/include/ncurses.h ]; then \
+	@if pkg-config --exists ncursesw 2>/dev/null || pkg-config --exists ncurses 2>/dev/null || [ -f /usr/include/ncurses.h ] || [ -f /usr/include/ncursesw/ncurses.h ] || [ -f /usr/local/include/ncurses.h ]; then \
 		echo "NCurses: Available"; \
 	else \
-		echo "NCurses: NOT AVAILABLE - install with 'brew install ncurses' or 'apt-get install libncurses5-dev'"; \
+		echo "NCurses: NOT AVAILABLE - install with 'apt-get install libncurses5-dev' or 'brew install ncurses'"; \
 	fi
-	@if pkg-config --exists sdl2 2>/dev/null || [ -f /usr/include/SDL2/SDL.h ] || [ -f /usr/local/include/SDL2/SDL.h ] || [ -f /opt/homebrew/include/SDL2/SDL.h ]; then \
-		if pkg-config --exists sdl2_ttf 2>/dev/null || [ -f /usr/include/SDL2/SDL_ttf.h ] || [ -f /usr/local/include/SDL2/SDL_ttf.h ] || [ -f /opt/homebrew/include/SDL2/SDL_ttf.h ]; then \
+	@if pkg-config --exists sdl2 2>/dev/null || [ -f /usr/include/SDL2/SDL.h ] || [ -f /usr/local/include/SDL2/SDL.h ]; then \
+		if pkg-config --exists sdl2_ttf 2>/dev/null || [ -f /usr/include/SDL2/SDL_ttf.h ] || [ -f /usr/local/include/SDL2/SDL_ttf.h ]; then \
 			echo "SDL2: Available (with TTF support)"; \
 		else \
-			echo "SDL2: Available (missing TTF support) - install SDL2_ttf with 'brew install sdl2_ttf' or 'apt-get install libsdl2-ttf-dev'"; \
+			echo "SDL2: Available (missing TTF support) - install SDL2_ttf with 'apt-get install libsdl2-ttf-dev' or 'brew install sdl2_ttf'"; \
 		fi; \
 	else \
-		echo "SDL2: NOT AVAILABLE - install with 'brew install sdl2 sdl2_ttf' or 'apt-get install libsdl2-dev libsdl2-ttf-dev'"; \
+		echo "SDL2: NOT AVAILABLE - install with 'apt-get install libsdl2-dev libsdl2-ttf-dev' or 'brew install sdl2 sdl2_ttf'"; \
 	fi
-	@if pkg-config --exists sfml-graphics 2>/dev/null || [ -f /usr/include/SFML/Graphics.hpp ] || [ -f /usr/local/include/SFML/Graphics.hpp ] || [ -f /opt/homebrew/include/SFML/Graphics.hpp ]; then \
+	@if pkg-config --exists sfml-graphics 2>/dev/null || [ -f /usr/include/SFML/Graphics.hpp ] || [ -f /usr/local/include/SFML/Graphics.hpp ]; then \
 		echo "SFML: Available"; \
 	else \
-		echo "SFML: NOT AVAILABLE - install with 'brew install sfml' or 'apt-get install libsfml-dev'"; \
+		echo "SFML: NOT AVAILABLE - install with 'apt-get install libsfml-dev' or 'brew install sfml'"; \
 	fi
-	@if pkg-config --exists raylib 2>/dev/null || [ -f /opt/homebrew/lib/libraylib.a ] || [ -f /usr/local/lib/libraylib.a ]; then \
+	@if pkg-config --exists raylib 2>/dev/null || [ -f /usr/include/raylib.h ] || [ -f /usr/local/include/raylib.h ] || [ -f /usr/lib/x86_64-linux-gnu/libraylib.so ] || [ -f /usr/local/lib/libraylib.so ]; then \
 		echo "Raylib: Available"; \
 	else \
-		echo "Raylib: NOT AVAILABLE - install with 'brew install raylib' or 'apt-get install libraylib-dev'"; \
+		echo "Raylib: NOT AVAILABLE - install with 'apt-get install libraylib-dev' or 'brew install raylib'"; \
 	fi
 
 # Install dependencies (macOS with Homebrew)

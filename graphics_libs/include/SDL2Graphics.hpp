@@ -2,8 +2,8 @@
 
 #include "../../IGraphicsLibrary.hpp"
 #include "../../MenuSystem.hpp"
-#include <SDL.h>
-#include <SDL_ttf.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include <string>
 #include <vector>
 

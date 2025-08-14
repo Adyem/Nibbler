@@ -395,7 +395,7 @@ void GameEngine::switchGraphicsLibrary(int libraryIndex) {
                 // Set up menu system for the new library
                 newLib->setMenuSystem(&_menuSystem);
 
-                // Special handling for NCurses to ensure it gets focus
+                // Special handling for different libraries
                 const char* newLibName = _libraryManager.getLibraryName(libraryIndex);
                 if (newLibName && std::string(newLibName) == "NCurses") {
                     // Try to bring terminal to front on macOS
@@ -406,6 +406,9 @@ void GameEngine::switchGraphicsLibrary(int libraryIndex) {
 
                     // Force NCurses to be ready for input (cast to NCursesGraphics if needed)
                     // This will be handled by the forceInputReadiness() method called in initialize()
+                } else if (newLibName && std::string(newLibName).find("Raylib") != std::string::npos) {
+                    // Special handling for Raylib after SFML - ensure OpenGL context is ready
+                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
                 }
 
                 std::string message = std::string("Switched to: ") + (newLibName ? newLibName : "Unknown Library");

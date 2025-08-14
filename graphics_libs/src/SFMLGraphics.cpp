@@ -43,8 +43,8 @@ int SFMLGraphics::initialize() {
 
     clearError();
 
-    // Create SFML window - SFML 3.x uses Vector2u for VideoMode
-    _window = new sf::RenderWindow(sf::VideoMode(sf::Vector2u(WINDOW_WIDTH, WINDOW_HEIGHT)), "Nibbler - SFML Graphics");
+    // Create SFML window - SFML 2.5 uses width and height directly
+    _window = new sf::RenderWindow(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Nibbler - SFML Graphics");
     if (!_window) {
         setError("Failed to create SFML window");
         return 1;
@@ -79,11 +79,14 @@ void SFMLGraphics::shutdown() {
         // First, stop any rendering by making window invisible
         _window->setVisible(false);
 
+        // Force window to lose focus to help release graphics context
+        _window->setActive(false);
+
         // Aggressively consume ALL events to prevent them from affecting the next library
         int eventCount = 0;
+        sf::Event event;
         while (eventCount < 500) { // Increased limit
-            auto event = _window->pollEvent();
-            if (!event)
+            if (!_window->pollEvent(event))
                 break; // No more events
             eventCount++;
         }
@@ -97,8 +100,7 @@ void SFMLGraphics::shutdown() {
         // Final event cleanup after close
         eventCount = 0;
         while (eventCount < 100) {
-            auto event = _window->pollEvent();
-            if (!event)
+            if (!_window->pollEvent(event))
                 break;
             eventCount++;
         }
@@ -106,6 +108,9 @@ void SFMLGraphics::shutdown() {
         // Delete the window object
         delete _window;
         _window = nullptr;
+
+        // Additional delay specifically for OpenGL context cleanup
+        sf::sleep(sf::milliseconds(100));
     }
 
     // Clear all SFML resources by creating a new default font
@@ -199,23 +204,24 @@ GameKey SFMLGraphics::getInput() {
         return GameKey::NONE;
     }
 
-    // SFML 3.x uses std::optional<Event> pollEvent()
-    while (auto event = _window->pollEvent()) {
+    // SFML 2.5 uses Event reference in pollEvent()
+    sf::Event event;
+    while (_window->pollEvent(event)) {
         // Check if it's a close event
-        if (event->is<sf::Event::Closed>()) {
+        if (event.type == sf::Event::Closed) {
             _shouldContinue = false;
             return GameKey::QUIT;
         }
 
         // Check for key press events
-        if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
-            GameKey key = translateSFMLKey(keyPressed->code);
+        if (event.type == sf::Event::KeyPressed) {
+            GameKey key = translateSFMLKey(event.key.code);
 
             // Handle menu input if we're in menu mode (do NOT gate on key != NONE)
             if (_menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME) {
                 // First, handle selection keys that aren't in our GameKey enum
-                if (keyPressed->code == sf::Keyboard::Key::Enter ||
-                    keyPressed->code == sf::Keyboard::Key::Space) {
+                if (event.key.code == sf::Keyboard::Return ||
+                    event.key.code == sf::Keyboard::Space) {
                     _menuSystem->selectCurrentItem();
                     continue; // consume and keep polling
                 }
@@ -305,33 +311,36 @@ void SFMLGraphics::drawText(const std::string& text, int x, int y, const Color& 
     if (!_window)
         return;
 
-    // SFML 3.x requires font in Text constructor
-    sf::Text sfText(_font, text, static_cast<unsigned int>(fontSize));
+    // SFML 2.5 requires text, font, and size separately
+    sf::Text sfText;
+    sfText.setString(text);
+    sfText.setFont(_font);
+    sfText.setCharacterSize(static_cast<unsigned int>(fontSize));
     sfText.setFillColor(color.toSFColor());
-    sfText.setPosition(sf::Vector2f(static_cast<float>(x), static_cast<float>(y))); // SFML 3.x uses Vector2f
+    sfText.setPosition(static_cast<float>(x), static_cast<float>(y));
 
     _window->draw(sfText);
 }
 
 GameKey SFMLGraphics::translateSFMLKey(sf::Keyboard::Key key) {
     switch (key) {
-    case sf::Keyboard::Key::Up:
+    case sf::Keyboard::Up:
         return GameKey::UP;
-    case sf::Keyboard::Key::Down:
+    case sf::Keyboard::Down:
         return GameKey::DOWN;
-    case sf::Keyboard::Key::Left:
+    case sf::Keyboard::Left:
         return GameKey::LEFT;
-    case sf::Keyboard::Key::Right:
+    case sf::Keyboard::Right:
         return GameKey::RIGHT;
-    case sf::Keyboard::Key::Num1:
+    case sf::Keyboard::Num1:
         return GameKey::KEY_1;
-    case sf::Keyboard::Key::Num2:
+    case sf::Keyboard::Num2:
         return GameKey::KEY_2;
-    case sf::Keyboard::Key::Num3:
+    case sf::Keyboard::Num3:
         return GameKey::KEY_3;
-    case sf::Keyboard::Key::Num4:
+    case sf::Keyboard::Num4:
         return GameKey::KEY_4;
-    case sf::Keyboard::Key::Escape:
+    case sf::Keyboard::Escape:
         return GameKey::ESCAPE;
     default:
         return GameKey::NONE;
@@ -370,7 +379,7 @@ bool SFMLGraphics::initializeFont() {
     };
 
     for (const auto& fontPath : fontPaths) {
-        if (_font.openFromFile(fontPath)) { // SFML 3.x uses openFromFile instead of loadFromFile
+        if (_font.loadFromFile(fontPath)) { // SFML 2.5 uses loadFromFile
             std::cout << "Loaded font: " << fontPath << std::endl;
             return true;
         }
@@ -384,32 +393,41 @@ void SFMLGraphics::drawCenteredText(const std::string& text, int y, const Color&
     if (!_window)
         return;
 
-    // SFML 3.x requires font in Text constructor
-    sf::Text sfText(_font, text, static_cast<unsigned int>(fontSize));
+    // SFML 2.5 requires text, font, and size separately
+    sf::Text sfText;
+    sfText.setString(text);
+    sfText.setFont(_font);
+    sfText.setCharacterSize(static_cast<unsigned int>(fontSize));
     sfText.setFillColor(color.toSFColor());
 
-    // Center horizontally - SFML 3.x getLocalBounds() returns different struct
+    // Center horizontally - SFML 2.5 getLocalBounds() returns FloatRect with .width member
     sf::FloatRect textBounds = sfText.getLocalBounds();
-    float textWidth = textBounds.size.x; // SFML 3.x uses .size.x instead of .width
-    sfText.setPosition(sf::Vector2f((WINDOW_WIDTH - textWidth) / 2.0f, static_cast<float>(y)));
+    float textWidth = textBounds.width; // SFML 2.5 uses .width instead of .size.x
+    sfText.setPosition((WINDOW_WIDTH - textWidth) / 2.0f, static_cast<float>(y));
 
     _window->draw(sfText);
 }
 
 int SFMLGraphics::getTextWidth(const std::string& text, int fontSize) {
-    // SFML 3.x requires font in Text constructor
-    sf::Text sfText(_font, text, static_cast<unsigned int>(fontSize));
+    // SFML 2.5 requires text, font, and size separately
+    sf::Text sfText;
+    sfText.setString(text);
+    sfText.setFont(_font);
+    sfText.setCharacterSize(static_cast<unsigned int>(fontSize));
 
-    // SFML 3.x uses .size.x instead of .width
-    return static_cast<int>(sfText.getLocalBounds().size.x);
+    // SFML 2.5 uses .width
+    return static_cast<int>(sfText.getLocalBounds().width);
 }
 
 int SFMLGraphics::getTextHeight(int fontSize) {
-    // SFML 3.x requires font in Text constructor
-    sf::Text sfText(_font, "Tg", static_cast<unsigned int>(fontSize)); // Text with ascenders and descenders
+    // SFML 2.5 requires text, font, and size separately
+    sf::Text sfText;
+    sfText.setString("Tg"); // Text with ascenders and descenders
+    sfText.setFont(_font);
+    sfText.setCharacterSize(static_cast<unsigned int>(fontSize));
 
-    // SFML 3.x uses .size.y instead of .height
-    return static_cast<int>(sfText.getLocalBounds().size.y);
+    // SFML 2.5 uses .height
+    return static_cast<int>(sfText.getLocalBounds().height);
 }
 
 // Menu rendering methods
@@ -579,6 +597,9 @@ void SFMLGraphics::renderGameOverMenu() {
 
     // Draw title
     drawCenteredText(_menuSystem->getCurrentTitle(), 100, title, 48);
+
+    // Draw game over message
+    drawCenteredText("Your snake has collided!", 140, title, 24);
 
     // Draw final score
     std::string scoreText = "Final Score: " + std::to_string(_menuSystem->getGameOverScore());

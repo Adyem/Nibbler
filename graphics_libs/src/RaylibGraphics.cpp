@@ -3,6 +3,9 @@
 #include "../../MenuSystem.hpp"
 #include <raylib.h>
 #include <algorithm>
+#include <string>
+#include <chrono>
+#include <thread>
 
 const RaylibGraphics::Color RaylibGraphics::COLOR_BACKGROUND(20, 20, 30, 255);
 const RaylibGraphics::Color RaylibGraphics::COLOR_BORDER(100, 100, 120, 255);
@@ -33,9 +36,12 @@ int RaylibGraphics::initialize() {
         return 0;
     clearError();
 
+    // Add a small delay to ensure previous graphics context is fully released
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Nibbler - Raylib");
     if (!IsWindowReady()) {
-        setError("Failed to create window");
+        setError("Failed to create Raylib window - possible OpenGL context conflict");
         return 1;
     }
     SetTargetFPS(_targetFPS);
@@ -368,6 +374,10 @@ void RaylibGraphics::renderGameOverMenu() {
     const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
 
     drawCenteredText(_menuSystem->getCurrentTitle(), 100, title, 48);
+
+    // Draw game over message
+    drawCenteredText("Your snake has collided!", 140, title, 24);
+
     std::string score = std::string("Final Score: ") + std::to_string(_menuSystem->getGameOverScore());
     drawCenteredText(score, 180, text, 24);
     const auto& items = _menuSystem->getCurrentMenuItems();

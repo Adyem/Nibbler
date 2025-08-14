@@ -95,7 +95,9 @@ export DLLIBS_DIR := $(abspath $(DLLIBS_DIR))
 ifeq ($(OS),Windows_NT)
     LDFLAGS     = $(LIBFT) -ldl
 else
-    LDFLAGS     = $(LIBFT) -lreadline -ldl
+    # Export all symbols from the main executable so dlopened plugins can
+    # resolve references (e.g., MenuSystem, GameEngine) at runtime.
+    LDFLAGS     = $(LIBFT) -lreadline -ldl -rdynamic
 endif
 
 OBJS        = $(SRC:%.cpp=$(OBJ_DIR)/%.o)
