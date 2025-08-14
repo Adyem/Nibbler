@@ -64,22 +64,13 @@ void MenuSystem::selectCurrentItem() {
         break;
 
     case MenuState::SETTINGS_MENU:
-        // Handle settings selection based on current item
+        // Handle settings selection based on current item (updated indices)
         if (_currentSelection == 0)
             toggleGameMode();
         else if (_currentSelection == 1)
-            adjustGameSpeed(10);
-        else if (_currentSelection == 2)
-            toggleWrapAround();
-        // Board size (index 3) is non-selectable - skip
-        else if (_currentSelection == 4)
             toggleAlternativeColors();
-        else if (_currentSelection == 5)
-            toggleGrid();
-        else if (_currentSelection == 6)
-            toggleFPS();
-        else if (_currentSelection == 8)
-            goBack(); // Back to Main Menu (adjusted index)
+        else if (_currentSelection == 3)
+            goBack(); // Back to Main Menu
 
         updateSettingsMenu();
         break;
@@ -183,12 +174,12 @@ void MenuSystem::updateSettingsMenu() {
                                (_settings.gameMode == GameMode::SINGLE_PLAYER ? "Single Player" : "Multiplayer");
     _settingsMenuItems.emplace_back(gameModeText);
 
-    _settingsMenuItems.emplace_back("Game Speed: " + std::to_string(_settings.gameSpeed) + " FPS");
-    _settingsMenuItems.emplace_back("Wrap Around Edges: " + std::string(_settings.wrapAroundEdges ? "ON" : "OFF"));
-    _settingsMenuItems.emplace_back("Board Size: " + std::to_string(_settings.boardWidth) + "x" + std::to_string(_settings.boardHeight) + " (from command line)", false);
+    //_settingsMenuItems.emplace_back("Game Speed: " + std::to_string(_settings.gameSpeed) + " FPS");
+    //_settingsMenuItems.emplace_back("Wrap Around Edges: " + std::string(_settings.wrapAroundEdges ? "ON" : "OFF"));
+    //_settingsMenuItems.emplace_back("Board Size: " + std::to_string(_settings.boardWidth) + "x" + std::to_string(_settings.boardHeight) + " (from command line)", false);
     _settingsMenuItems.emplace_back("Alternative Colors: " + std::string(_settings.useAlternativeColors ? "ON" : "OFF"));
-    _settingsMenuItems.emplace_back("Show Grid: " + std::string(_settings.showGrid ? "ON" : "OFF"));
-    _settingsMenuItems.emplace_back("Show FPS: " + std::string(_settings.showFPS ? "ON" : "OFF"));
+    //_settingsMenuItems.emplace_back("Show Grid: " + std::string(_settings.showGrid ? "ON" : "OFF"));
+    //_settingsMenuItems.emplace_back("Show FPS: " + std::string(_settings.showFPS ? "ON" : "OFF"));
 
     _settingsMenuItems.emplace_back("", false); // Spacer
     _settingsMenuItems.emplace_back("Back to Main Menu");
@@ -253,7 +244,8 @@ std::vector<std::string> MenuSystem::getCreditsContent() const {
         "BONUS FEATURES:",
         "Comprehensive menu system across all libraries",
         "Multiplayer support (two snakes, one food!)",
-        "Customizable game settings graphicaly (skins, background, grid, etc.)"};
+        "Customizable game settings (2 color palletes)",
+		"4th lib used"};
 }
 
 std::vector<std::string> MenuSystem::getInstructionsContent() const {
