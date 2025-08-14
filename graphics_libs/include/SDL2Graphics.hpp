@@ -59,6 +59,7 @@ class SDL2Graphics : public IGraphicsLibrary {
             : r(red), g(green), b(blue), a(alpha) {}
     };
 
+    // Default palette
     static const Color COLOR_BACKGROUND;
     static const Color COLOR_BORDER;
     static const Color COLOR_SNAKE_HEAD;
@@ -67,6 +68,14 @@ class SDL2Graphics : public IGraphicsLibrary {
     static const Color COLOR_TEXT;
     static const Color COLOR_SELECTOR_BG;
     static const Color COLOR_SELECTED_TEXT;
+
+    // Alternative palette
+    static const Color ALT_COLOR_BACKGROUND;
+    static const Color ALT_COLOR_BORDER;
+    static const Color ALT_COLOR_SNAKE_HEAD;
+    static const Color ALT_COLOR_SNAKE_BODY;
+    static const Color ALT_COLOR_FOOD;
+    static const Color ALT_COLOR_TEXT;
 
     // Helper methods
     void setError(const std::string& error);

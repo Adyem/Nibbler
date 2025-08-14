@@ -13,6 +13,14 @@ const RaylibGraphics::Color RaylibGraphics::COLOR_TEXT(255, 255, 255, 255);
 const RaylibGraphics::Color RaylibGraphics::COLOR_SELECTOR_BG(70, 130, 180, 255);
 const RaylibGraphics::Color RaylibGraphics::COLOR_SELECTED_TEXT(255, 255, 255, 255);
 
+// Alternative palette
+const RaylibGraphics::Color RaylibGraphics::ALT_COLOR_BACKGROUND(15, 15, 18, 255);
+const RaylibGraphics::Color RaylibGraphics::ALT_COLOR_BORDER(180, 160, 90, 255);
+const RaylibGraphics::Color RaylibGraphics::ALT_COLOR_SNAKE_HEAD(80, 180, 220, 255);
+const RaylibGraphics::Color RaylibGraphics::ALT_COLOR_SNAKE_BODY(40, 120, 180, 255);
+const RaylibGraphics::Color RaylibGraphics::ALT_COLOR_FOOD(235, 130, 35, 255);
+const RaylibGraphics::Color RaylibGraphics::ALT_COLOR_TEXT(240, 240, 240, 255);
+
 RaylibGraphics::RaylibGraphics()
     : _initialized(false), _shouldContinue(true), _targetFPS(60), _menuSystem(nullptr), _switchMessageTimer(0) {}
 
@@ -49,8 +57,17 @@ void RaylibGraphics::shutdown() {
 void RaylibGraphics::render(const game_data& game) {
     if (!_initialized || !IsWindowReady())
         return;
+
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& bg = useAlt ? ALT_COLOR_BACKGROUND : COLOR_BACKGROUND;
+    const Color& border = useAlt ? ALT_COLOR_BORDER : COLOR_BORDER;
+    const Color& head = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
+    const Color& body = useAlt ? ALT_COLOR_SNAKE_BODY : COLOR_SNAKE_BODY;
+    const Color& food = useAlt ? ALT_COLOR_FOOD : COLOR_FOOD;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+
     BeginDrawing();
-    ClearBackground({COLOR_BACKGROUND.r, COLOR_BACKGROUND.g, COLOR_BACKGROUND.b, COLOR_BACKGROUND.a});
+    ClearBackground({bg.r, bg.g, bg.b, bg.a});
 
     if (_menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME) {
         renderMenu();
@@ -65,7 +82,7 @@ void RaylibGraphics::render(const game_data& game) {
     size_t height = game.get_height();
 
     // Border
-    DrawRectangleLinesEx({(float)offsetX - 2, (float)offsetY - 2, (float)width * cellSize + 4, (float)height * cellSize + 4}, 2, {COLOR_BORDER.r, COLOR_BORDER.g, COLOR_BORDER.b, COLOR_BORDER.a});
+    DrawRectangleLinesEx({(float)offsetX - 2, (float)offsetY - 2, (float)width * cellSize + 4, (float)height * cellSize + 4}, 2, {border.r, border.g, border.b, border.a});
 
     for (size_t y = 0; y < height; ++y) {
         for (size_t x = 0; x < width; ++x) {
@@ -73,27 +90,27 @@ void RaylibGraphics::render(const game_data& game) {
             int py = offsetY + (int)y * cellSize;
             int l2 = game.get_map_value((int)x, (int)y, 2);
             if (l2 == FOOD) {
-                DrawRectangle(px, py, cellSize, cellSize, {COLOR_FOOD.r, COLOR_FOOD.g, COLOR_FOOD.b, COLOR_FOOD.a});
+                DrawRectangle(px, py, cellSize, cellSize, {food.r, food.g, food.b, food.a});
             } else if (l2 >= SNAKE_HEAD_PLAYER_1 && l2 < SNAKE_HEAD_PLAYER_1 + 1000000) {
-                bool head = (l2 % 1000000 == 1);
-                auto c = head ? COLOR_SNAKE_HEAD : COLOR_SNAKE_BODY;
+                bool headTile = (l2 % 1000000 == 1);
+                auto c = headTile ? head : body;
                 DrawRectangle(px, py, cellSize, cellSize, {c.r, c.g, c.b, c.a});
             } else {
                 int l0 = game.get_map_value((int)x, (int)y, 0);
                 if (l0 == GAME_TILE_WALL)
-                    DrawRectangle(px, py, cellSize, cellSize, {COLOR_BORDER.r, COLOR_BORDER.g, COLOR_BORDER.b, COLOR_BORDER.a});
+                    DrawRectangle(px, py, cellSize, cellSize, {border.r, border.g, border.b, border.a});
                 else if (l0 == GAME_TILE_ICE)
-                    DrawRectangle(px, py, cellSize, cellSize, {COLOR_BACKGROUND.r, COLOR_BACKGROUND.g, COLOR_BACKGROUND.b, COLOR_BACKGROUND.a});
+                    DrawRectangle(px, py, cellSize, cellSize, {bg.r, bg.g, bg.b, bg.a});
             }
         }
     }
 
     // HUD: score/length top-left
-    DrawText(TextFormat("Length: %d", game.get_snake_length(0)), 10, 10, 20, {COLOR_TEXT.r, COLOR_TEXT.g, COLOR_TEXT.b, COLOR_TEXT.a});
+    DrawText(TextFormat("Length: %d", game.get_snake_length(0)), 10, 10, 20, {text.r, text.g, text.b, text.a});
 
     // Optional switch message
     if (_switchMessageTimer > 0) {
-        DrawText(_switchMessage.c_str(), 10, 36, 18, {COLOR_TEXT.r, COLOR_TEXT.g, COLOR_TEXT.b, COLOR_TEXT.a});
+        DrawText(_switchMessage.c_str(), 10, 36, 18, {text.r, text.g, text.b, text.a});
         --_switchMessageTimer;
     }
 
@@ -220,6 +237,7 @@ void RaylibGraphics::drawCenteredText(const std::string& text, int y, const Colo
 }
 
 void RaylibGraphics::renderMenu() {
+    // Only draw content; frame begin/clear/end handled by render()
     switch (_menuSystem->getCurrentState()) {
     case MenuState::MAIN_MENU:
         return renderMainMenu();
@@ -237,21 +255,32 @@ void RaylibGraphics::renderMenu() {
 }
 
 void RaylibGraphics::renderMainMenu() {
-    drawCenteredText(_menuSystem->getCurrentTitle(), 100, COLOR_SNAKE_HEAD, 48);
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& title = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+
+    drawCenteredText(_menuSystem->getCurrentTitle(), 100, title, 48);
     const auto& items = _menuSystem->getCurrentMenuItems();
     drawMenuItems(items, _menuSystem->getCurrentSelection(), 200);
-    drawCenteredText("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 80, COLOR_TEXT, 16);
-    drawCenteredText("Press 1/2/3/4 to switch graphics libraries", WINDOW_HEIGHT - 60, COLOR_TEXT, 16);
+    drawCenteredText("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 80, text, 16);
+    drawCenteredText("Press 1/2/3/4 to switch graphics libraries", WINDOW_HEIGHT - 60, text, 16);
 }
 
 void RaylibGraphics::renderSettingsMenu() {
-    drawCenteredText(_menuSystem->getCurrentTitle(), 60, COLOR_SNAKE_HEAD, 36);
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& title = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
+
+    drawCenteredText(_menuSystem->getCurrentTitle(), 60, title, 36);
     const auto& items = _menuSystem->getCurrentMenuItems();
     drawMenuItems(items, _menuSystem->getCurrentSelection(), 120);
 }
 
 void RaylibGraphics::renderCreditsMenu() {
-    drawCenteredText(_menuSystem->getCurrentTitle(), 60, COLOR_SNAKE_HEAD, 36);
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& title = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+
+    drawCenteredText(_menuSystem->getCurrentTitle(), 60, title, 36);
 
     const auto& content = _menuSystem->getCreditsContent();
     int top = 120;
@@ -275,7 +304,7 @@ void RaylibGraphics::renderCreditsMenu() {
                 y1 += lineH;
                 continue;
             }
-            drawText(content[i], colX1, y1, COLOR_TEXT, 20);
+            drawText(content[i], colX1, y1, text, 20);
             y1 += lineH;
         }
         int y2 = top;
@@ -284,7 +313,7 @@ void RaylibGraphics::renderCreditsMenu() {
                 y2 += lineH;
                 continue;
             }
-            drawText(content[i], colX2, y2, COLOR_TEXT, 20);
+            drawText(content[i], colX2, y2, text, 20);
             y2 += lineH;
         }
     } else {
@@ -297,15 +326,19 @@ void RaylibGraphics::renderCreditsMenu() {
             int y = top + row * lineH;
             if (y > bottomY)
                 continue;
-            drawText(content[i], x, y, COLOR_TEXT, 20);
+            drawText(content[i], x, y, text, 20);
         }
     }
 
-    drawCenteredText("Press ESC or ENTER to go back", WINDOW_HEIGHT - 60, COLOR_SNAKE_HEAD, 18);
+    drawCenteredText("Press ESC or ENTER to go back", WINDOW_HEIGHT - 60, title, 18);
 }
 
 void RaylibGraphics::renderInstructionsMenu() {
-    drawCenteredText(_menuSystem->getCurrentTitle(), 60, COLOR_SNAKE_HEAD, 36);
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& title = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+
+    drawCenteredText(_menuSystem->getCurrentTitle(), 60, title, 36);
 
     const auto& content = _menuSystem->getInstructionsContent();
     int top = 120;
@@ -323,21 +356,28 @@ void RaylibGraphics::renderInstructionsMenu() {
         int y = top + row * lineH;
         if (y > WINDOW_HEIGHT - 100)
             continue;
-        drawText(content[i], x, y, COLOR_TEXT, 20);
+        drawText(content[i], x, y, text, 20);
     }
 
-    drawCenteredText("Press ESC or ENTER to go back", WINDOW_HEIGHT - 60, COLOR_SNAKE_HEAD, 18);
+    drawCenteredText("Press ESC or ENTER to go back", WINDOW_HEIGHT - 60, title, 18);
 }
 
 void RaylibGraphics::renderGameOverMenu() {
-    drawCenteredText(_menuSystem->getCurrentTitle(), 100, COLOR_FOOD, 48);
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& title = useAlt ? ALT_COLOR_FOOD : COLOR_FOOD;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+
+    drawCenteredText(_menuSystem->getCurrentTitle(), 100, title, 48);
     std::string score = std::string("Final Score: ") + std::to_string(_menuSystem->getGameOverScore());
-    drawCenteredText(score, 180, COLOR_TEXT, 24);
+    drawCenteredText(score, 180, text, 24);
     const auto& items = _menuSystem->getCurrentMenuItems();
     drawMenuItems(items, _menuSystem->getCurrentSelection(), 240);
 }
 
 void RaylibGraphics::drawMenuItems(const std::vector<MenuItem>& items, int selectedIndex, int startY) {
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+
     int y = startY;
     for (int i = 0; i < (int)items.size(); ++i) {
         const auto& item = items[i];
@@ -349,7 +389,7 @@ void RaylibGraphics::drawMenuItems(const std::vector<MenuItem>& items, int selec
         if (item.selectable && i == selectedIndex) {
             DrawRectangle((WINDOW_WIDTH - textWidth) / 2 - 10, y - 5, textWidth + 20, 30, {COLOR_SELECTOR_BG.r, COLOR_SELECTOR_BG.g, COLOR_SELECTOR_BG.b, COLOR_SELECTOR_BG.a});
         }
-        DrawText(item.text.c_str(), (WINDOW_WIDTH - textWidth) / 2, y, 20, item.selectable && i == selectedIndex ? ::Color{COLOR_SELECTED_TEXT.r, COLOR_SELECTED_TEXT.g, COLOR_SELECTED_TEXT.b, COLOR_SELECTED_TEXT.a} : ::Color{COLOR_TEXT.r, COLOR_TEXT.g, COLOR_TEXT.b, COLOR_TEXT.a});
+        DrawText(item.text.c_str(), (WINDOW_WIDTH - textWidth) / 2, y, 20, item.selectable && i == selectedIndex ? ::Color{COLOR_SELECTED_TEXT.r, COLOR_SELECTED_TEXT.g, COLOR_SELECTED_TEXT.b, COLOR_SELECTED_TEXT.a} : ::Color{text.r, text.g, text.b, text.a});
         y += 35;
     }
 }

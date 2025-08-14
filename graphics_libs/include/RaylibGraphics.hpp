@@ -1,5 +1,4 @@
-#ifndef RAYLIBGRAPHICS_HPP
-#define RAYLIBGRAPHICS_HPP
+#pragma once
 
 #include "../../IGraphicsLibrary.hpp"
 #include "../../MenuSystem.hpp"
@@ -34,7 +33,7 @@ class RaylibGraphics : public IGraphicsLibrary {
     static constexpr int WINDOW_WIDTH = 1280;
     static constexpr int WINDOW_HEIGHT = 720;
 
-    // Colors
+    // Default palette
     static const Color COLOR_BACKGROUND;
     static const Color COLOR_BORDER;
     static const Color COLOR_SNAKE_HEAD;
@@ -43,6 +42,14 @@ class RaylibGraphics : public IGraphicsLibrary {
     static const Color COLOR_TEXT;
     static const Color COLOR_SELECTOR_BG;
     static const Color COLOR_SELECTED_TEXT;
+
+    // Alternative palette
+    static const Color ALT_COLOR_BACKGROUND;
+    static const Color ALT_COLOR_BORDER;
+    static const Color ALT_COLOR_SNAKE_HEAD;
+    static const Color ALT_COLOR_SNAKE_BODY;
+    static const Color ALT_COLOR_FOOD;
+    static const Color ALT_COLOR_TEXT;
 
     bool _initialized;
     bool _shouldContinue;
@@ -79,5 +86,3 @@ void destroyGraphicsLibrary(IGraphicsLibrary* lib);
 const char* getLibraryName();
 const char* getLibraryVersion();
 }
-
-#endif // RAYLIBGRAPHICS_HPP

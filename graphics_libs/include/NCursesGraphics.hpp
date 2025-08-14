@@ -45,6 +45,9 @@ class NCursesGraphics : public IGraphicsLibrary {
     WINDOW* _infoWindow;
     MenuSystem* _menuSystem;
 
+    // Track active palette for ncurses color pairs
+    bool _altColorsActive = false;
+
     enum ColorPairs { COLOR_SNAKE_HEAD = 1,
                       COLOR_SNAKE_BODY,
                       COLOR_FOOD,

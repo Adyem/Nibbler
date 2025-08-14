@@ -15,6 +15,14 @@ const SFMLGraphics::Color SFMLGraphics::COLOR_SNAKE_BODY(30, 150, 30); // Dark g
 const SFMLGraphics::Color SFMLGraphics::COLOR_FOOD(200, 50, 50);       // Red
 const SFMLGraphics::Color SFMLGraphics::COLOR_TEXT(255, 255, 255);     // White
 
+// Alternative palette
+const SFMLGraphics::Color SFMLGraphics::ALT_COLOR_BACKGROUND(15, 15, 18);
+const SFMLGraphics::Color SFMLGraphics::ALT_COLOR_BORDER(180, 160, 90);
+const SFMLGraphics::Color SFMLGraphics::ALT_COLOR_SNAKE_HEAD(80, 180, 220);
+const SFMLGraphics::Color SFMLGraphics::ALT_COLOR_SNAKE_BODY(40, 120, 180);
+const SFMLGraphics::Color SFMLGraphics::ALT_COLOR_FOOD(235, 130, 35);
+const SFMLGraphics::Color SFMLGraphics::ALT_COLOR_TEXT(240, 240, 240);
+
 // Additional colors for better UI
 const SFMLGraphics::Color SFMLGraphics::COLOR_SELECTOR_BG(70, 130, 180);    // Steel blue for selector
 const SFMLGraphics::Color SFMLGraphics::COLOR_SELECTED_TEXT(255, 255, 255); // White text for selected items
@@ -121,8 +129,16 @@ void SFMLGraphics::render(const game_data& game) {
         return;
     }
 
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& bg = useAlt ? ALT_COLOR_BACKGROUND : COLOR_BACKGROUND;
+    const Color& border = useAlt ? ALT_COLOR_BORDER : COLOR_BORDER;
+    const Color& head = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
+    const Color& body = useAlt ? ALT_COLOR_SNAKE_BODY : COLOR_SNAKE_BODY;
+    const Color& food = useAlt ? ALT_COLOR_FOOD : COLOR_FOOD;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+
     // Clear screen with background color
-    _window->clear(COLOR_BACKGROUND.toSFColor());
+    _window->clear(bg.toSFColor());
 
     // Check if we're in menu mode or game mode
     if (_menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME) {
@@ -137,7 +153,7 @@ void SFMLGraphics::render(const game_data& game) {
         size_t height = game.get_height();
 
         // Draw border
-        drawRect(offsetX - 2, offsetY - 2, static_cast<int>(width) * cellSize + 4, static_cast<int>(height) * cellSize + 4, COLOR_BORDER, false);
+        drawRect(offsetX - 2, offsetY - 2, static_cast<int>(width) * cellSize + 4, static_cast<int>(height) * cellSize + 4, border, false);
 
         // Draw game board
         for (size_t y = 0; y < height; y++) {
@@ -149,21 +165,21 @@ void SFMLGraphics::render(const game_data& game) {
                 int layer2Value = game.get_map_value(static_cast<int>(x), static_cast<int>(y), 2);
 
                 if (layer2Value == FOOD) {
-                    drawRect(pixelX, pixelY, cellSize, cellSize, COLOR_FOOD);
+                    drawRect(pixelX, pixelY, cellSize, cellSize, food);
                 } else if (layer2Value >= SNAKE_HEAD_PLAYER_1 && layer2Value < SNAKE_HEAD_PLAYER_1 + 1000000) {
                     // Snake head or body
                     if (layer2Value % 1000000 == 1) {
-                        drawRect(pixelX, pixelY, cellSize, cellSize, COLOR_SNAKE_HEAD);
+                        drawRect(pixelX, pixelY, cellSize, cellSize, head);
                     } else {
-                        drawRect(pixelX, pixelY, cellSize, cellSize, COLOR_SNAKE_BODY);
+                        drawRect(pixelX, pixelY, cellSize, cellSize, body);
                     }
                 } else {
                     // Check layer0 for walls and background
                     int layer0Value = game.get_map_value(static_cast<int>(x), static_cast<int>(y), 0);
                     if (layer0Value == GAME_TILE_WALL) {
-                        drawRect(pixelX, pixelY, cellSize, cellSize, COLOR_BORDER);
+                        drawRect(pixelX, pixelY, cellSize, cellSize, border);
                     } else if (layer0Value == GAME_TILE_ICE) {
-                        drawRect(pixelX, pixelY, cellSize, cellSize, COLOR_BACKGROUND);
+                        drawRect(pixelX, pixelY, cellSize, cellSize, bg);
                     }
                 }
             }
@@ -171,7 +187,7 @@ void SFMLGraphics::render(const game_data& game) {
 
         // Draw score
         std::string scoreText = "Length: " + std::to_string(game.get_snake_length(0));
-        drawText(scoreText, 10, 10, COLOR_TEXT, 20);
+        drawText(scoreText, 10, 10, text, 20);
     }
 
     // Present the back buffer
@@ -401,6 +417,12 @@ void SFMLGraphics::renderMenu() {
     if (!_menuSystem)
         return;
 
+    bool useAlt = _menuSystem->getSettings().useAlternativeColors;
+    const Color& bg = useAlt ? ALT_COLOR_BACKGROUND : COLOR_BACKGROUND;
+
+    // Clear with palette background
+    _window->clear(bg.toSFColor());
+
     switch (_menuSystem->getCurrentState()) {
     case MenuState::MAIN_MENU:
         renderMainMenu();
@@ -423,30 +445,46 @@ void SFMLGraphics::renderMenu() {
 }
 
 void SFMLGraphics::renderMainMenu() {
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& title = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+
     // Draw title
-    drawCenteredText(_menuSystem->getCurrentTitle(), 100, COLOR_SNAKE_HEAD, 48);
+    drawCenteredText(_menuSystem->getCurrentTitle(), 100, title, 48);
 
     // Draw menu items
     const auto& items = _menuSystem->getCurrentMenuItems();
     drawMenuItems(items, _menuSystem->getCurrentSelection(), 200);
 
     // Draw instructions
-    drawCenteredText("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 80, COLOR_TEXT, 16);
-    drawCenteredText("Press 1/2/3/4 to switch graphics libraries", WINDOW_HEIGHT - 60, COLOR_TEXT, 16);
+    drawCenteredText("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 80, text, 16);
+    drawCenteredText("Press 1/2/3/4 to switch graphics libraries", WINDOW_HEIGHT - 60, text, 16);
 }
 
 void SFMLGraphics::renderSettingsMenu() {
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& title = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+
     // Draw title
-    drawCenteredText(_menuSystem->getCurrentTitle(), 60, COLOR_SNAKE_HEAD, 36);
+    drawCenteredText(_menuSystem->getCurrentTitle(), 60, title, 36);
 
     // Draw menu items
     const auto& items = _menuSystem->getCurrentMenuItems();
     drawMenuItems(items, _menuSystem->getCurrentSelection(), 120);
+
+    // Footer colors
+    drawCenteredText("Use Arrow Keys to navigate, ENTER to toggle/adjust", WINDOW_HEIGHT - 80, text, 16);
+    drawCenteredText("ESC to go back", WINDOW_HEIGHT - 60, text, 16);
 }
 
 void SFMLGraphics::renderCreditsMenu() {
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& title = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+
     // Draw title
-    drawCenteredText(_menuSystem->getCurrentTitle(), 60, COLOR_SNAKE_HEAD, 36);
+    drawCenteredText(_menuSystem->getCurrentTitle(), 60, title, 36);
 
     // Two-column content with forced split at "BONUS FEATURES:"
     const auto& content = _menuSystem->getCreditsContent();
@@ -471,7 +509,7 @@ void SFMLGraphics::renderCreditsMenu() {
                 y1 += lineH;
                 continue;
             }
-            drawText(content[i], colX1, y1, COLOR_TEXT, 18);
+            drawText(content[i], colX1, y1, text, 18);
             y1 += lineH;
         }
         int y2 = top;
@@ -480,7 +518,7 @@ void SFMLGraphics::renderCreditsMenu() {
                 y2 += lineH;
                 continue;
             }
-            drawText(content[i], colX2, y2, COLOR_TEXT, 18);
+            drawText(content[i], colX2, y2, text, 18);
             y2 += lineH;
         }
     } else {
@@ -494,17 +532,21 @@ void SFMLGraphics::renderCreditsMenu() {
             int y = top + row * lineH;
             if (y > bottomY)
                 continue;
-            drawText(content[i], x, y, COLOR_TEXT, 18);
+            drawText(content[i], x, y, text, 18);
         }
     }
 
     // Footer
-    drawCenteredText("Press ESC or ENTER to go back", WINDOW_HEIGHT - 60, COLOR_SNAKE_HEAD, 18);
+    drawCenteredText("Press ESC or ENTER to go back", WINDOW_HEIGHT - 60, title, 18);
 }
 
 void SFMLGraphics::renderInstructionsMenu() {
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& title = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+
     // Draw title
-    drawCenteredText(_menuSystem->getCurrentTitle(), 60, COLOR_SNAKE_HEAD, 36);
+    drawCenteredText(_menuSystem->getCurrentTitle(), 60, title, 36);
 
     // Two-column content
     const auto& content = _menuSystem->getInstructionsContent();
@@ -523,20 +565,24 @@ void SFMLGraphics::renderInstructionsMenu() {
         int y = top + row * lineH;
         if (y > WINDOW_HEIGHT - 100)
             continue;
-        drawText(content[i], x, y, COLOR_TEXT, 18);
+        drawText(content[i], x, y, text, 18);
     }
 
     // Footer
-    drawCenteredText("Press ESC or ENTER to go back", WINDOW_HEIGHT - 60, COLOR_SNAKE_HEAD, 18);
+    drawCenteredText("Press ESC or ENTER to go back", WINDOW_HEIGHT - 60, title, 18);
 }
 
 void SFMLGraphics::renderGameOverMenu() {
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& title = useAlt ? ALT_COLOR_FOOD : COLOR_FOOD;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+
     // Draw title
-    drawCenteredText(_menuSystem->getCurrentTitle(), 100, COLOR_FOOD, 48);
+    drawCenteredText(_menuSystem->getCurrentTitle(), 100, title, 48);
 
     // Draw final score
     std::string scoreText = "Final Score: " + std::to_string(_menuSystem->getGameOverScore());
-    drawCenteredText(scoreText, 180, COLOR_TEXT, 24);
+    drawCenteredText(scoreText, 180, text, 24);
 
     // Draw menu items
     const auto& items = _menuSystem->getCurrentMenuItems();
@@ -546,6 +592,9 @@ void SFMLGraphics::renderGameOverMenu() {
 void SFMLGraphics::drawMenuItems(const std::vector<MenuItem>& items, int selectedIndex, int startY) {
     int yPos = startY;
 
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& textColorBase = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+
     for (int i = 0; i < static_cast<int>(items.size()); i++) {
         const MenuItem& item = items[i];
 
@@ -554,7 +603,7 @@ void SFMLGraphics::drawMenuItems(const std::vector<MenuItem>& items, int selecte
             continue;
         }
 
-        Color textColor = COLOR_TEXT;
+        Color textColor = textColorBase;
         int fontSize = 20;
 
         if (item.selectable && i == selectedIndex) {

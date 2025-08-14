@@ -91,6 +91,13 @@ void NCursesGraphics::render(const game_data& game) {
         return;
     }
 
+    // Detect palette change at runtime
+    bool wantAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    if (wantAlt != _altColorsActive) {
+        _altColorsActive = wantAlt;
+        initializeColors();
+    }
+
     // Clear screen
     clear();
 
@@ -300,14 +307,24 @@ const char* NCursesGraphics::getError() const {
 
 // Private helper methods
 void NCursesGraphics::initializeColors() {
-    // Initialize color pairs
-    init_pair(COLOR_SNAKE_HEAD, COLOR_GREEN, COLOR_BLACK);
-    init_pair(COLOR_SNAKE_BODY, COLOR_YELLOW, COLOR_BLACK);
-    init_pair(COLOR_FOOD, COLOR_RED, COLOR_BLACK);
-    init_pair(COLOR_WALL, COLOR_WHITE, COLOR_WHITE);
-    init_pair(COLOR_ICE, COLOR_CYAN, COLOR_BLACK);
-    init_pair(COLOR_BORDER, COLOR_BLUE, COLOR_BLACK);
-    init_pair(COLOR_INFO, COLOR_MAGENTA, COLOR_BLACK);
+    // Reset existing color pairs based on current palette selection
+    if (_altColorsActive) {
+        init_pair(COLOR_SNAKE_HEAD, COLOR_CYAN, COLOR_BLACK);
+        init_pair(COLOR_SNAKE_BODY, COLOR_BLUE, COLOR_BLACK);
+        init_pair(COLOR_FOOD, COLOR_YELLOW, COLOR_BLACK);
+        init_pair(COLOR_WALL, COLOR_YELLOW, COLOR_BLACK);
+        init_pair(COLOR_ICE, COLOR_BLACK, COLOR_BLACK);
+        init_pair(COLOR_BORDER, COLOR_YELLOW, COLOR_BLACK);
+        init_pair(COLOR_INFO, COLOR_WHITE, COLOR_BLACK);
+    } else {
+        init_pair(COLOR_SNAKE_HEAD, COLOR_GREEN, COLOR_BLACK);
+        init_pair(COLOR_SNAKE_BODY, COLOR_YELLOW, COLOR_BLACK);
+        init_pair(COLOR_FOOD, COLOR_RED, COLOR_BLACK);
+        init_pair(COLOR_WALL, COLOR_WHITE, COLOR_WHITE);
+        init_pair(COLOR_ICE, COLOR_CYAN, COLOR_BLACK);
+        init_pair(COLOR_BORDER, COLOR_BLUE, COLOR_BLACK);
+        init_pair(COLOR_INFO, COLOR_MAGENTA, COLOR_BLACK);
+    }
 }
 
 void NCursesGraphics::drawInfo(const game_data& game) {

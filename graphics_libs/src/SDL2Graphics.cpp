@@ -14,6 +14,14 @@ const SDL2Graphics::Color SDL2Graphics::COLOR_SNAKE_BODY(30, 150, 30); // Dark g
 const SDL2Graphics::Color SDL2Graphics::COLOR_FOOD(200, 50, 50);       // Red
 const SDL2Graphics::Color SDL2Graphics::COLOR_TEXT(255, 255, 255);     // White
 
+// Alternative palette
+const SDL2Graphics::Color SDL2Graphics::ALT_COLOR_BACKGROUND(15, 15, 18);  // Darker
+const SDL2Graphics::Color SDL2Graphics::ALT_COLOR_BORDER(180, 160, 90);    // Sand/gold
+const SDL2Graphics::Color SDL2Graphics::ALT_COLOR_SNAKE_HEAD(80, 180, 220); // Cyan head
+const SDL2Graphics::Color SDL2Graphics::ALT_COLOR_SNAKE_BODY(40, 120, 180); // Blue body
+const SDL2Graphics::Color SDL2Graphics::ALT_COLOR_FOOD(235, 130, 35);      // Orange
+const SDL2Graphics::Color SDL2Graphics::ALT_COLOR_TEXT(240, 240, 240);     // Near white
+
 // Additional colors for better UI
 const SDL2Graphics::Color SDL2Graphics::COLOR_SELECTOR_BG(70, 130, 180);    // Steel blue for selector
 const SDL2Graphics::Color SDL2Graphics::COLOR_SELECTED_TEXT(255, 255, 255); // White text for selected items
@@ -157,8 +165,16 @@ void SDL2Graphics::render(const game_data& game) {
         return;
     }
 
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& bg = useAlt ? ALT_COLOR_BACKGROUND : COLOR_BACKGROUND;
+    const Color& border = useAlt ? ALT_COLOR_BORDER : COLOR_BORDER;
+    const Color& head = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
+    const Color& body = useAlt ? ALT_COLOR_SNAKE_BODY : COLOR_SNAKE_BODY;
+    const Color& food = useAlt ? ALT_COLOR_FOOD : COLOR_FOOD;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+
     // Clear screen with background color
-    setDrawColor(COLOR_BACKGROUND);
+    setDrawColor(bg);
     SDL_RenderClear(_renderer);
 
     // Check if we should render menu instead of game
@@ -176,7 +192,7 @@ void SDL2Graphics::render(const game_data& game) {
     size_t height = game.get_height();
 
     // Draw border
-    setDrawColor(COLOR_BORDER);
+    setDrawColor(border);
     drawRect(offsetX - 2, offsetY - 2, width * cellSize + 4, height * cellSize + 4, false);
 
     // Draw game tiles
@@ -188,22 +204,22 @@ void SDL2Graphics::render(const game_data& game) {
             // Check layer 2 first (snake and food)
             int layer2Value = game.get_map_value(static_cast<int>(x), static_cast<int>(y), 2);
             if (layer2Value == FOOD) {
-                setDrawColor(COLOR_FOOD);
+                setDrawColor(food);
                 drawRect(pixelX + 2, pixelY + 2, cellSize - 4, cellSize - 4);
             } else if (layer2Value == SNAKE_HEAD_PLAYER_1) {
-                setDrawColor(COLOR_SNAKE_HEAD);
+                setDrawColor(head);
                 drawRect(pixelX, pixelY, cellSize, cellSize);
             } else if (layer2Value > SNAKE_HEAD_PLAYER_1) {
-                setDrawColor(COLOR_SNAKE_BODY);
+                setDrawColor(body);
                 drawRect(pixelX, pixelY, cellSize, cellSize);
             } else {
                 // Check layer 0 (terrain)
                 int layer0Value = game.get_map_value(static_cast<int>(x), static_cast<int>(y), 0);
                 if (layer0Value == GAME_TILE_WALL) {
-                    setDrawColor(COLOR_BORDER);
+                    setDrawColor(border);
                     drawRect(pixelX, pixelY, cellSize, cellSize);
                 } else if (layer0Value == GAME_TILE_ICE) {
-                    setDrawColor(COLOR_BACKGROUND);
+                    setDrawColor(bg);
                     drawRect(pixelX, pixelY, cellSize, cellSize);
                 }
                 // Empty space - no drawing needed
@@ -214,7 +230,7 @@ void SDL2Graphics::render(const game_data& game) {
     // HUD: show snake length in top-left
     {
         std::string scoreText = "Length: " + std::to_string(game.get_snake_length(0));
-        drawTextWithFont(scoreText, 10, 10, _fontMedium, COLOR_TEXT);
+        drawTextWithFont(scoreText, 10, 10, _fontMedium, text);
     }
 
     // Remove green switch bar; only decrement timer silently
@@ -392,6 +408,13 @@ void SDL2Graphics::renderMenu() {
     if (!_menuSystem)
         return;
 
+    bool useAlt = _menuSystem->getSettings().useAlternativeColors;
+    const Color& bg = useAlt ? ALT_COLOR_BACKGROUND : COLOR_BACKGROUND;
+
+    // Background
+    setDrawColor(bg);
+    SDL_RenderClear(_renderer);
+
     switch (_menuSystem->getCurrentState()) {
     case MenuState::MAIN_MENU:
         renderMainMenu();
@@ -414,8 +437,12 @@ void SDL2Graphics::renderMenu() {
 }
 
 void SDL2Graphics::renderMainMenu() {
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& title = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+
     // Draw title
-    drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 100, _fontLarge, COLOR_SNAKE_HEAD);
+    drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 100, _fontLarge, title);
 
     // Draw menu items
     const auto& items = _menuSystem->getCurrentMenuItems();
@@ -423,13 +450,17 @@ void SDL2Graphics::renderMainMenu() {
     drawMenuItems(items, _menuSystem->getCurrentSelection(), startY);
 
     // Draw footer
-    drawCenteredTextWithFont("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 80, _fontSmall, COLOR_TEXT);
-    drawCenteredTextWithFont("Press 1/2/3/4 to switch graphics libraries", WINDOW_HEIGHT - 60, _fontSmall, COLOR_TEXT);
+    drawCenteredTextWithFont("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 80, _fontSmall, text);
+    drawCenteredTextWithFont("Press 1/2/3/4 to switch graphics libraries", WINDOW_HEIGHT - 60, _fontSmall, text);
 }
 
 void SDL2Graphics::renderSettingsMenu() {
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& title = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+
     // Draw title
-    drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 60, _fontLarge, COLOR_SNAKE_HEAD);
+    drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 60, _fontLarge, title);
 
     // Draw menu items
     const auto& items = _menuSystem->getCurrentMenuItems();
@@ -437,13 +468,17 @@ void SDL2Graphics::renderSettingsMenu() {
     drawMenuItems(items, _menuSystem->getCurrentSelection(), startY);
 
     // Draw footer
-    drawCenteredTextWithFont("Use Arrow Keys to navigate, ENTER to toggle/adjust", WINDOW_HEIGHT - 100, _fontSmall, COLOR_TEXT);
-    drawCenteredTextWithFont("ESC to go back", WINDOW_HEIGHT - 80, _fontSmall, COLOR_TEXT);
+    drawCenteredTextWithFont("Use Arrow Keys to navigate, ENTER to toggle/adjust", WINDOW_HEIGHT - 100, _fontSmall, text);
+    drawCenteredTextWithFont("ESC to go back", WINDOW_HEIGHT - 80, _fontSmall, text);
 }
 
 void SDL2Graphics::renderCreditsMenu() {
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& title = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+
     // Draw title
-    drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 40, _fontLarge, COLOR_SNAKE_HEAD);
+    drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 40, _fontLarge, title);
 
     // Two-column content with "BONUS FEATURES:" forced to second column
     const auto& content = _menuSystem->getCreditsContent();
@@ -468,7 +503,7 @@ void SDL2Graphics::renderCreditsMenu() {
                 y1 += lineH;
                 continue;
             }
-            drawTextWithFont(content[i], colX1, y1, _fontMedium, COLOR_TEXT);
+            drawTextWithFont(content[i], colX1, y1, _fontMedium, text);
             y1 += lineH;
         }
         int y2 = top;
@@ -477,7 +512,7 @@ void SDL2Graphics::renderCreditsMenu() {
                 y2 += lineH;
                 continue;
             }
-            drawTextWithFont(content[i], colX2, y2, _fontMedium, COLOR_TEXT);
+            drawTextWithFont(content[i], colX2, y2, _fontMedium, text);
             y2 += lineH;
         }
     } else {
@@ -491,17 +526,21 @@ void SDL2Graphics::renderCreditsMenu() {
             int y = top + row * lineH;
             if (y > bottomY)
                 continue;
-            drawTextWithFont(content[i], x, y, _fontMedium, COLOR_TEXT);
+            drawTextWithFont(content[i], x, y, _fontMedium, text);
         }
     }
 
     // Footer
-    drawCenteredTextWithFont("ESC to go back", WINDOW_HEIGHT - 40, _fontSmall, COLOR_TEXT);
+    drawCenteredTextWithFont("ESC to go back", WINDOW_HEIGHT - 40, _fontSmall, text);
 }
 
 void SDL2Graphics::renderInstructionsMenu() {
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& title = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+
     // Draw title
-    drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 40, _fontLarge, COLOR_SNAKE_HEAD);
+    drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 40, _fontLarge, title);
 
     // Two-column content
     const auto& content = _menuSystem->getInstructionsContent();
@@ -520,23 +559,28 @@ void SDL2Graphics::renderInstructionsMenu() {
         int y = top + row * lineH;
         if (y > WINDOW_HEIGHT - 60)
             continue;
-        drawTextWithFont(content[i], x, y, _fontMedium, COLOR_TEXT);
+        drawTextWithFont(content[i], x, y, _fontMedium, text);
     }
 
     // Footer
-    drawCenteredTextWithFont("ESC to go back", WINDOW_HEIGHT - 40, _fontSmall, COLOR_TEXT);
+    drawCenteredTextWithFont("ESC to go back", WINDOW_HEIGHT - 40, _fontSmall, text);
 }
 
 void SDL2Graphics::renderGameOverMenu() {
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& title = useAlt ? ALT_COLOR_FOOD : COLOR_FOOD;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+    const Color& secondary = useAlt ? ALT_COLOR_SNAKE_BODY : COLOR_SNAKE_BODY;
+
     // Draw title
-    drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 40, _fontLarge, COLOR_SNAKE_HEAD);
+    drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 40, _fontLarge, title);
 
     // Draw game over message
-    drawCenteredTextWithFont("Your snake has collided!", 100, _fontMedium, COLOR_FOOD);
+    drawCenteredTextWithFont("Your snake has collided!", 100, _fontMedium, title);
 
     // Draw final score
     std::string scoreText = "Final Score: " + std::to_string(_menuSystem->getGameOverScore());
-    drawCenteredTextWithFont(scoreText, 140, _fontMedium, COLOR_SNAKE_BODY);
+    drawCenteredTextWithFont(scoreText, 140, _fontMedium, secondary);
 
     // Draw menu items
     const auto& items = _menuSystem->getCurrentMenuItems();
@@ -544,26 +588,30 @@ void SDL2Graphics::renderGameOverMenu() {
     drawMenuItems(items, selection, 200);
 
     // Draw instructions
-    drawCenteredTextWithFont("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 80, _fontSmall, COLOR_TEXT);
-    drawCenteredTextWithFont("ESC to go back", WINDOW_HEIGHT - 60, _fontSmall, COLOR_TEXT);
+    drawCenteredTextWithFont("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 80, _fontSmall, text);
+    drawCenteredTextWithFont("ESC to go back", WINDOW_HEIGHT - 60, _fontSmall, text);
 }
 
 void SDL2Graphics::drawMenuItems(const std::vector<MenuItem>& items, int selectedIndex, int startY) {
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_SELECTED_TEXT; // selected uses white
+    const Color& selector = COLOR_SELECTOR_BG; // keep same for both palettes for contrast
+
     for (size_t i = 0; i < items.size(); ++i) {
         bool isSelected = (static_cast<int>(i) == selectedIndex);
 
         // Draw selection highlight with transparency
         if (isSelected) {
             // Draw a semi-transparent background for the selected item
-            drawTransparentRect(50, startY + static_cast<int>(i) * 40 - 5, WINDOW_WIDTH - 100, 30, COLOR_SELECTOR_BG, 120);
+            drawTransparentRect(50, startY + static_cast<int>(i) * 40 - 5, WINDOW_WIDTH - 100, 30, selector, 120);
 
             // Draw a subtle border around the selected item
-            setDrawColor(COLOR_SELECTOR_BG);
+            setDrawColor(selector);
             drawRect(50, startY + static_cast<int>(i) * 40 - 5, WINDOW_WIDTH - 100, 30, false);
         }
 
-        // Use white text for both selected and unselected items for better readability
-        Color itemColor = COLOR_SELECTED_TEXT;
+        // Use white text for selected and palette text for unselected
+        Color itemColor = isSelected ? COLOR_SELECTED_TEXT : text;
         drawCenteredTextWithFont(items[i].text, startY + static_cast<int>(i) * 40, _fontMedium, itemColor);
     }
 }
