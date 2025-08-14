@@ -1,8 +1,8 @@
 #ifndef RAYLIBGRAPHICS_HPP
 #define RAYLIBGRAPHICS_HPP
 
-#include "../IGraphicsLibrary.hpp"
-#include "../MenuSystem.hpp"
+#include "../../IGraphicsLibrary.hpp"
+#include "../../MenuSystem.hpp"
 #include <string>
 #include <vector>
 
@@ -10,7 +10,7 @@
 struct Font; // not used directly; raylib manages default font internally
 
 class RaylibGraphics : public IGraphicsLibrary {
-public:
+  public:
     RaylibGraphics();
     ~RaylibGraphics() override;
 
@@ -25,11 +25,14 @@ public:
     void setMenuSystem(MenuSystem* menuSystem) override;
     void setSwitchMessage(const std::string& message, int timer) override;
 
-private:
-    struct Color { unsigned char r,g,b,a; Color(unsigned char r=255,unsigned char g=255,unsigned char b=255,unsigned char a=255):r(r),g(g),b(b),a(a){} };
+  private:
+    struct Color {
+        unsigned char r, g, b, a;
+        Color(unsigned char r = 255, unsigned char g = 255, unsigned char b = 255, unsigned char a = 255) : r(r), g(g), b(b), a(a) {}
+    };
 
-    static constexpr int WINDOW_WIDTH = 900;
-    static constexpr int WINDOW_HEIGHT = 700;
+    static constexpr int WINDOW_WIDTH = 1280;
+    static constexpr int WINDOW_HEIGHT = 720;
 
     // Colors
     static const Color COLOR_BACKGROUND;
@@ -56,7 +59,7 @@ private:
     void clearError();
 
     void calculateGameArea(const game_data& game, int& offsetX, int& offsetY, int& cellSize);
-    void drawRect(int x, int y, int w, int h, const Color& color, bool filled=true);
+    void drawRect(int x, int y, int w, int h, const Color& color, bool filled = true);
     void drawText(const std::string& text, int x, int y, const Color& color, int size);
     void drawCenteredText(const std::string& text, int y, const Color& color, int size);
 
@@ -71,10 +74,10 @@ private:
 };
 
 extern "C" {
-    IGraphicsLibrary* createGraphicsLibrary();
-    void destroyGraphicsLibrary(IGraphicsLibrary* lib);
-    const char* getLibraryName();
-    const char* getLibraryVersion();
+IGraphicsLibrary* createGraphicsLibrary();
+void destroyGraphicsLibrary(IGraphicsLibrary* lib);
+const char* getLibraryName();
+const char* getLibraryVersion();
 }
 
 #endif // RAYLIBGRAPHICS_HPP

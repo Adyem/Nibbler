@@ -1,15 +1,14 @@
-#ifndef SDL2GRAPHICS_HPP
-#define SDL2GRAPHICS_HPP
+#pragma once
 
-#include "../IGraphicsLibrary.hpp"
-#include "../MenuSystem.hpp"
+#include "../../IGraphicsLibrary.hpp"
+#include "../../MenuSystem.hpp"
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <string>
 #include <vector>
 
 class SDL2Graphics : public IGraphicsLibrary {
-public:
+  public:
     SDL2Graphics();
     virtual ~SDL2Graphics();
 
@@ -25,7 +24,7 @@ public:
     virtual void setMenuSystem(MenuSystem* menuSystem) override;
     virtual void setSwitchMessage(const std::string& message, int timer) override;
 
-private:
+  private:
     bool _initialized;
     bool _shouldContinue;
     std::string _errorMessage;
@@ -37,9 +36,9 @@ private:
     SDL_Renderer* _renderer;
 
     // Font objects
-    TTF_Font* _fontLarge;    // For titles
-    TTF_Font* _fontMedium;   // For menu items
-    TTF_Font* _fontSmall;    // For instructions
+    TTF_Font* _fontLarge;  // For titles
+    TTF_Font* _fontMedium; // For menu items
+    TTF_Font* _fontSmall;  // For instructions
 
     // Menu system
     MenuSystem* _menuSystem;
@@ -49,14 +48,14 @@ private:
     int _switchMessageTimer;
 
     // Window dimensions
-    static const int WINDOW_WIDTH = 800;
-    static const int WINDOW_HEIGHT = 600;
+    static const int WINDOW_WIDTH = 1280;
+    static const int WINDOW_HEIGHT = 720;
     static const int CELL_SIZE = 20;
 
     // Colors (RGB values)
     struct Color {
         Uint8 r, g, b, a;
-        Color(Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha = 255) 
+        Color(Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha = 255)
             : r(red), g(green), b(blue), a(alpha) {}
     };
 
@@ -97,5 +96,3 @@ private:
     void drawCenteredText(const std::string& text, int y, const Color& color = COLOR_TEXT);
     void drawMenuItems(const std::vector<MenuItem>& items, int selectedIndex, int startY);
 };
-
-#endif // SDL2GRAPHICS_HPP

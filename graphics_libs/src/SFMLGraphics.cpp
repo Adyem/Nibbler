@@ -1,6 +1,6 @@
 #include "SFMLGraphics.hpp"
-#include "../game_data.hpp"
-#include "../MenuSystem.hpp"
+#include "../../game_data.hpp"
+#include "../../MenuSystem.hpp"
 #include <SFML/System/Sleep.hpp>
 #include <iostream>
 #include <sstream>
@@ -8,15 +8,15 @@
 #include <cstring>
 
 // Static color definitions
-const SFMLGraphics::Color SFMLGraphics::COLOR_BACKGROUND(20, 20, 30);      // Dark blue-gray
-const SFMLGraphics::Color SFMLGraphics::COLOR_BORDER(100, 100, 120);       // Light gray
-const SFMLGraphics::Color SFMLGraphics::COLOR_SNAKE_HEAD(50, 200, 50);     // Bright green
-const SFMLGraphics::Color SFMLGraphics::COLOR_SNAKE_BODY(30, 150, 30);     // Dark green
-const SFMLGraphics::Color SFMLGraphics::COLOR_FOOD(200, 50, 50);           // Red
-const SFMLGraphics::Color SFMLGraphics::COLOR_TEXT(255, 255, 255);         // White
+const SFMLGraphics::Color SFMLGraphics::COLOR_BACKGROUND(20, 20, 30);  // Dark blue-gray
+const SFMLGraphics::Color SFMLGraphics::COLOR_BORDER(100, 100, 120);   // Light gray
+const SFMLGraphics::Color SFMLGraphics::COLOR_SNAKE_HEAD(50, 200, 50); // Bright green
+const SFMLGraphics::Color SFMLGraphics::COLOR_SNAKE_BODY(30, 150, 30); // Dark green
+const SFMLGraphics::Color SFMLGraphics::COLOR_FOOD(200, 50, 50);       // Red
+const SFMLGraphics::Color SFMLGraphics::COLOR_TEXT(255, 255, 255);     // White
 
 // Additional colors for better UI
-const SFMLGraphics::Color SFMLGraphics::COLOR_SELECTOR_BG(70, 130, 180);   // Steel blue for selector
+const SFMLGraphics::Color SFMLGraphics::COLOR_SELECTOR_BG(70, 130, 180);    // Steel blue for selector
 const SFMLGraphics::Color SFMLGraphics::COLOR_SELECTED_TEXT(255, 255, 255); // White text for selected items
 
 SFMLGraphics::SFMLGraphics()
@@ -70,29 +70,31 @@ void SFMLGraphics::shutdown() {
     if (_window) {
         // First, stop any rendering by making window invisible
         _window->setVisible(false);
-        
+
         // Aggressively consume ALL events to prevent them from affecting the next library
         int eventCount = 0;
-        while (eventCount < 500) {  // Increased limit
+        while (eventCount < 500) { // Increased limit
             auto event = _window->pollEvent();
-            if (!event) break;  // No more events
+            if (!event)
+                break; // No more events
             eventCount++;
         }
-        
+
         // Close the window and force immediate cleanup
         _window->close();
-        
+
         // Extended delay to ensure SFML completely releases all resources
         sf::sleep(sf::milliseconds(200));
-        
+
         // Final event cleanup after close
         eventCount = 0;
         while (eventCount < 100) {
             auto event = _window->pollEvent();
-            if (!event) break;
+            if (!event)
+                break;
             eventCount++;
         }
-        
+
         // Delete the window object
         delete _window;
         _window = nullptr;
@@ -101,7 +103,7 @@ void SFMLGraphics::shutdown() {
     // Clear all SFML resources by creating a new default font
     // This ensures the old font resources are properly released
     _font = sf::Font();
-    
+
     // Reset all other member variables to safe states
     _menuSystem = nullptr;
     _switchMessage.clear();
@@ -109,7 +111,7 @@ void SFMLGraphics::shutdown() {
     _targetFPS = 60;
 
     _initialized = false;
-    
+
     // Clear any error state
     clearError();
 }
@@ -145,7 +147,7 @@ void SFMLGraphics::render(const game_data& game) {
 
                 // Check layer 2 first (food and snake)
                 int layer2Value = game.get_map_value(static_cast<int>(x), static_cast<int>(y), 2);
-                
+
                 if (layer2Value == FOOD) {
                     drawRect(pixelX, pixelY, cellSize, cellSize, COLOR_FOOD);
                 } else if (layer2Value >= SNAKE_HEAD_PLAYER_1 && layer2Value < SNAKE_HEAD_PLAYER_1 + 1000000) {
@@ -188,11 +190,11 @@ GameKey SFMLGraphics::getInput() {
             _shouldContinue = false;
             return GameKey::QUIT;
         }
-        
+
         // Check for key press events
         if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
             GameKey key = translateSFMLKey(keyPressed->code);
-            
+
             // Handle menu input if we're in menu mode (do NOT gate on key != NONE)
             if (_menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME) {
                 // First, handle selection keys that aren't in our GameKey enum
@@ -203,18 +205,18 @@ GameKey SFMLGraphics::getInput() {
                 }
 
                 switch (key) {
-                    case GameKey::UP:
-                        _menuSystem->navigateUp();
-                        break;
-                    case GameKey::DOWN:
-                        _menuSystem->navigateDown();
-                        break;
-                    case GameKey::ESCAPE:
-                        _menuSystem->goBack();
-                        break;
-                    default:
-                        // Return other keys (like 1/2/3) for library switching
-                        return key;
+                case GameKey::UP:
+                    _menuSystem->navigateUp();
+                    break;
+                case GameKey::DOWN:
+                    _menuSystem->navigateDown();
+                    break;
+                case GameKey::ESCAPE:
+                    _menuSystem->goBack();
+                    break;
+                default:
+                    // Return other keys (like 1/2/3) for library switching
+                    return key;
                 }
                 // Continue polling events; do not return for handled menu input
                 continue;
@@ -265,11 +267,12 @@ void SFMLGraphics::clearError() {
 }
 
 void SFMLGraphics::drawRect(int x, int y, int width, int height, const Color& color, bool filled) {
-    if (!_window) return;
+    if (!_window)
+        return;
 
     sf::RectangleShape rect(sf::Vector2f(static_cast<float>(width), static_cast<float>(height)));
-    rect.setPosition(sf::Vector2f(static_cast<float>(x), static_cast<float>(y)));  // SFML 3.x uses Vector2f
-    
+    rect.setPosition(sf::Vector2f(static_cast<float>(x), static_cast<float>(y))); // SFML 3.x uses Vector2f
+
     if (filled) {
         rect.setFillColor(color.toSFColor());
         rect.setOutlineThickness(0);
@@ -278,33 +281,44 @@ void SFMLGraphics::drawRect(int x, int y, int width, int height, const Color& co
         rect.setOutlineColor(color.toSFColor());
         rect.setOutlineThickness(2.0f);
     }
-    
+
     _window->draw(rect);
 }
 
 void SFMLGraphics::drawText(const std::string& text, int x, int y, const Color& color, int fontSize) {
-    if (!_window) return;
+    if (!_window)
+        return;
 
     // SFML 3.x requires font in Text constructor
     sf::Text sfText(_font, text, static_cast<unsigned int>(fontSize));
     sfText.setFillColor(color.toSFColor());
-    sfText.setPosition(sf::Vector2f(static_cast<float>(x), static_cast<float>(y)));  // SFML 3.x uses Vector2f
-    
+    sfText.setPosition(sf::Vector2f(static_cast<float>(x), static_cast<float>(y))); // SFML 3.x uses Vector2f
+
     _window->draw(sfText);
 }
 
 GameKey SFMLGraphics::translateSFMLKey(sf::Keyboard::Key key) {
     switch (key) {
-        case sf::Keyboard::Key::Up:      return GameKey::UP;
-        case sf::Keyboard::Key::Down:    return GameKey::DOWN;
-        case sf::Keyboard::Key::Left:    return GameKey::LEFT;
-        case sf::Keyboard::Key::Right:   return GameKey::RIGHT;
-        case sf::Keyboard::Key::Num1:    return GameKey::KEY_1;
-        case sf::Keyboard::Key::Num2:    return GameKey::KEY_2;
-        case sf::Keyboard::Key::Num3:    return GameKey::KEY_3;
-        case sf::Keyboard::Key::Num4:    return GameKey::KEY_4;
-        case sf::Keyboard::Key::Escape:  return GameKey::ESCAPE;
-        default:                         return GameKey::NONE;
+    case sf::Keyboard::Key::Up:
+        return GameKey::UP;
+    case sf::Keyboard::Key::Down:
+        return GameKey::DOWN;
+    case sf::Keyboard::Key::Left:
+        return GameKey::LEFT;
+    case sf::Keyboard::Key::Right:
+        return GameKey::RIGHT;
+    case sf::Keyboard::Key::Num1:
+        return GameKey::KEY_1;
+    case sf::Keyboard::Key::Num2:
+        return GameKey::KEY_2;
+    case sf::Keyboard::Key::Num3:
+        return GameKey::KEY_3;
+    case sf::Keyboard::Key::Num4:
+        return GameKey::KEY_4;
+    case sf::Keyboard::Key::Escape:
+        return GameKey::ESCAPE;
+    default:
+        return GameKey::NONE;
     }
 }
 
@@ -312,8 +326,8 @@ void SFMLGraphics::calculateGameArea(const game_data& game, int& offsetX, int& o
     // Calculate the best cell size that fits the window
     size_t gameWidth = game.get_width();
     size_t gameHeight = game.get_height();
-    
-    int maxCellWidth = (WINDOW_WIDTH - 40) / static_cast<int>(gameWidth);   // Leave 20px margin on each side
+
+    int maxCellWidth = (WINDOW_WIDTH - 40) / static_cast<int>(gameWidth);     // Leave 20px margin on each side
     int maxCellHeight = (WINDOW_HEIGHT - 100) / static_cast<int>(gameHeight); // Leave space for UI
 
     cellSize = std::min(maxCellWidth, maxCellHeight);
@@ -322,7 +336,7 @@ void SFMLGraphics::calculateGameArea(const game_data& game, int& offsetX, int& o
     // Center the game area
     int gameAreaWidth = static_cast<int>(gameWidth) * cellSize;
     int gameAreaHeight = static_cast<int>(gameHeight) * cellSize;
-    
+
     offsetX = (WINDOW_WIDTH - gameAreaWidth) / 2;
     offsetY = 50 + (WINDOW_HEIGHT - 50 - gameAreaHeight) / 2; // 50px from top for UI
 }
@@ -330,17 +344,17 @@ void SFMLGraphics::calculateGameArea(const game_data& game, int& offsetX, int& o
 bool SFMLGraphics::initializeFont() {
     // Try to load a system font
     std::vector<std::string> fontPaths = {
-        "/System/Library/Fonts/Helvetica.ttc",           // macOS
-        "/System/Library/Fonts/Supplemental/Arial.ttf",  // macOS alternative
+        "/System/Library/Fonts/Helvetica.ttc",             // macOS
+        "/System/Library/Fonts/Supplemental/Arial.ttf",    // macOS alternative
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", // Linux
-        "/usr/share/fonts/TTF/arial.ttf",                // Linux alternative
-        "/Windows/Fonts/arial.ttf",                      // Windows
-        "/System/Fonts/Helvetica.ttc",                   // macOS Big Sur+
-        "C:\\Windows\\Fonts\\arial.ttf"                  // Windows alternative
+        "/usr/share/fonts/TTF/arial.ttf",                  // Linux alternative
+        "/Windows/Fonts/arial.ttf",                        // Windows
+        "/System/Fonts/Helvetica.ttc",                     // macOS Big Sur+
+        "C:\\Windows\\Fonts\\arial.ttf"                    // Windows alternative
     };
 
     for (const auto& fontPath : fontPaths) {
-        if (_font.openFromFile(fontPath)) {  // SFML 3.x uses openFromFile instead of loadFromFile
+        if (_font.openFromFile(fontPath)) { // SFML 3.x uses openFromFile instead of loadFromFile
             std::cout << "Loaded font: " << fontPath << std::endl;
             return true;
         }
@@ -351,24 +365,25 @@ bool SFMLGraphics::initializeFont() {
 }
 
 void SFMLGraphics::drawCenteredText(const std::string& text, int y, const Color& color, int fontSize) {
-    if (!_window) return;
+    if (!_window)
+        return;
 
     // SFML 3.x requires font in Text constructor
     sf::Text sfText(_font, text, static_cast<unsigned int>(fontSize));
     sfText.setFillColor(color.toSFColor());
-    
+
     // Center horizontally - SFML 3.x getLocalBounds() returns different struct
     sf::FloatRect textBounds = sfText.getLocalBounds();
-    float textWidth = textBounds.size.x;  // SFML 3.x uses .size.x instead of .width
+    float textWidth = textBounds.size.x; // SFML 3.x uses .size.x instead of .width
     sfText.setPosition(sf::Vector2f((WINDOW_WIDTH - textWidth) / 2.0f, static_cast<float>(y)));
-    
+
     _window->draw(sfText);
 }
 
 int SFMLGraphics::getTextWidth(const std::string& text, int fontSize) {
     // SFML 3.x requires font in Text constructor
     sf::Text sfText(_font, text, static_cast<unsigned int>(fontSize));
-    
+
     // SFML 3.x uses .size.x instead of .width
     return static_cast<int>(sfText.getLocalBounds().size.x);
 }
@@ -376,33 +391,34 @@ int SFMLGraphics::getTextWidth(const std::string& text, int fontSize) {
 int SFMLGraphics::getTextHeight(int fontSize) {
     // SFML 3.x requires font in Text constructor
     sf::Text sfText(_font, "Tg", static_cast<unsigned int>(fontSize)); // Text with ascenders and descenders
-    
+
     // SFML 3.x uses .size.y instead of .height
     return static_cast<int>(sfText.getLocalBounds().size.y);
 }
 
 // Menu rendering methods
 void SFMLGraphics::renderMenu() {
-    if (!_menuSystem) return;
+    if (!_menuSystem)
+        return;
 
     switch (_menuSystem->getCurrentState()) {
-        case MenuState::MAIN_MENU:
-            renderMainMenu();
-            break;
-        case MenuState::SETTINGS_MENU:
-            renderSettingsMenu();
-            break;
-        case MenuState::CREDITS_PAGE:
-            renderCreditsMenu();
-            break;
-        case MenuState::INSTRUCTIONS_PAGE:
-            renderInstructionsMenu();
-            break;
-        case MenuState::GAME_OVER:
-            renderGameOverMenu();
-            break;
-        default:
-            break;
+    case MenuState::MAIN_MENU:
+        renderMainMenu();
+        break;
+    case MenuState::SETTINGS_MENU:
+        renderSettingsMenu();
+        break;
+    case MenuState::CREDITS_PAGE:
+        renderCreditsMenu();
+        break;
+    case MenuState::INSTRUCTIONS_PAGE:
+        renderInstructionsMenu();
+        break;
+    case MenuState::GAME_OVER:
+        renderGameOverMenu();
+        break;
+    default:
+        break;
     }
 }
 
@@ -432,18 +448,57 @@ void SFMLGraphics::renderCreditsMenu() {
     // Draw title
     drawCenteredText(_menuSystem->getCurrentTitle(), 60, COLOR_SNAKE_HEAD, 36);
 
-    // Draw credits content
+    // Two-column content with forced split at "BONUS FEATURES:"
     const auto& content = _menuSystem->getCreditsContent();
-    int yPos = 120;
-    for (const auto& line : content) {
-        if (!line.empty()) {
-            drawCenteredText(line, yPos, COLOR_TEXT, 16);
+    int top = 120;
+    int lineH = std::max(22, getTextHeight(18) + 6);
+    int colX1 = 80;
+    int colX2 = WINDOW_WIDTH / 2 + 40;
+    int bottomY = WINDOW_HEIGHT - 100;
+
+    int bonusIdx = -1;
+    for (size_t i = 0; i < content.size(); ++i) {
+        if (content[i] == "BONUS FEATURES:") {
+            bonusIdx = static_cast<int>(i);
+            break;
         }
-        yPos += 25;
-        if (yPos > WINDOW_HEIGHT - 100) break; // Don't overflow
     }
 
-    // Draw back instruction
+    if (bonusIdx >= 0) {
+        int y1 = top;
+        for (int i = 0; i < bonusIdx && y1 <= bottomY - lineH; ++i) {
+            if (content[i].empty()) {
+                y1 += lineH;
+                continue;
+            }
+            drawText(content[i], colX1, y1, COLOR_TEXT, 18);
+            y1 += lineH;
+        }
+        int y2 = top;
+        for (size_t i = bonusIdx; i < content.size() && y2 <= bottomY - lineH; ++i) {
+            if (content[i].empty()) {
+                y2 += lineH;
+                continue;
+            }
+            drawText(content[i], colX2, y2, COLOR_TEXT, 18);
+            y2 += lineH;
+        }
+    } else {
+        // Fallback auto two-column flow
+        int usableH = bottomY - top - 20;
+        int linesPerCol = std::max(1, usableH / lineH);
+        for (size_t i = 0; i < content.size(); ++i) {
+            int col = static_cast<int>(i) / linesPerCol;
+            int row = static_cast<int>(i) % linesPerCol;
+            int x = (col % 2 == 0) ? colX1 : colX2;
+            int y = top + row * lineH;
+            if (y > bottomY)
+                continue;
+            drawText(content[i], x, y, COLOR_TEXT, 18);
+        }
+    }
+
+    // Footer
     drawCenteredText("Press ESC or ENTER to go back", WINDOW_HEIGHT - 60, COLOR_SNAKE_HEAD, 18);
 }
 
@@ -451,18 +506,27 @@ void SFMLGraphics::renderInstructionsMenu() {
     // Draw title
     drawCenteredText(_menuSystem->getCurrentTitle(), 60, COLOR_SNAKE_HEAD, 36);
 
-    // Draw instructions content
+    // Two-column content
     const auto& content = _menuSystem->getInstructionsContent();
-    int yPos = 120;
-    for (const auto& line : content) {
-        if (!line.empty()) {
-            drawCenteredText(line, yPos, COLOR_TEXT, 16);
-        }
-        yPos += 25;
-        if (yPos > WINDOW_HEIGHT - 100) break; // Don't overflow
+    int top = 120;
+    int lineH = std::max(22, getTextHeight(18) + 6);
+    int usableH = WINDOW_HEIGHT - top - 100;
+    int linesPerCol = std::max(1, usableH / lineH);
+
+    int colX1 = 80;
+    int colX2 = WINDOW_WIDTH / 2 + 40;
+
+    for (size_t i = 0; i < content.size(); ++i) {
+        int col = static_cast<int>(i) / linesPerCol;
+        int row = static_cast<int>(i) % linesPerCol;
+        int x = (col % 2 == 0) ? colX1 : colX2;
+        int y = top + row * lineH;
+        if (y > WINDOW_HEIGHT - 100)
+            continue;
+        drawText(content[i], x, y, COLOR_TEXT, 18);
     }
 
-    // Draw back instruction
+    // Footer
     drawCenteredText("Press ESC or ENTER to go back", WINDOW_HEIGHT - 60, COLOR_SNAKE_HEAD, 18);
 }
 
@@ -481,18 +545,18 @@ void SFMLGraphics::renderGameOverMenu() {
 
 void SFMLGraphics::drawMenuItems(const std::vector<MenuItem>& items, int selectedIndex, int startY) {
     int yPos = startY;
-    
+
     for (int i = 0; i < static_cast<int>(items.size()); i++) {
         const MenuItem& item = items[i];
-        
+
         if (item.text.empty()) {
             yPos += 15; // Spacer
             continue;
         }
-        
+
         Color textColor = COLOR_TEXT;
         int fontSize = 20;
-        
+
         if (item.selectable && i == selectedIndex) {
             // Draw selection background
             int textWidth = getTextWidth(item.text, fontSize);
@@ -503,7 +567,7 @@ void SFMLGraphics::drawMenuItems(const std::vector<MenuItem>& items, int selecte
             textColor = Color(150, 150, 150); // Gray for non-selectable items
             fontSize = 16;
         }
-        
+
         drawCenteredText(item.text, yPos, textColor, fontSize);
         yPos += 35;
     }
@@ -511,19 +575,19 @@ void SFMLGraphics::drawMenuItems(const std::vector<MenuItem>& items, int selecte
 
 // C interface for dynamic library loading
 extern "C" {
-    IGraphicsLibrary* createGraphicsLibrary() {
-        return new SFMLGraphics();
-    }
+IGraphicsLibrary* createGraphicsLibrary() {
+    return new SFMLGraphics();
+}
 
-    void destroyGraphicsLibrary(IGraphicsLibrary* lib) {
-        delete lib;
-    }
+void destroyGraphicsLibrary(IGraphicsLibrary* lib) {
+    delete lib;
+}
 
-    const char* getLibraryName() {
-        return "SFML Graphics Library";
-    }
+const char* getLibraryName() {
+    return "SFML Graphics Library";
+}
 
-    const char* getLibraryVersion() {
-        return "1.0.0";
-    }
+const char* getLibraryVersion() {
+    return "1.0.0";
+}
 }

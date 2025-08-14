@@ -9,9 +9,7 @@ int parseArguments(int argc, char** argv, int& width, int& height);
 void printUsage(const char* programName);
 int selectGraphicsLibrary();
 
-int main(int argc, char** argv)
-{
-
+int main(int argc, char** argv) {
 
     int width, height;
 
@@ -125,5 +123,3 @@ int selectGraphicsLibrary() {
         return 0;
     }
 }
-
-

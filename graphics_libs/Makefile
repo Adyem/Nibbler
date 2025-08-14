@@ -1,32 +1,38 @@
 # Makefile for graphics libraries
 
 CXX = g++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++17 -fPIC -O2
+CXXFLAGS = -Wall -Wextra -Werror -std=c++17 -fPIC -O2 -Iinclude
 LDFLAGS = -shared
 
+# Parent-provided object directory fallback
+OBJ_DIR ?= ../objs
+
+# Output directory for shared libs
+OUT_DIR = ../dllibs
+
 # Library targets
-SDL2_LIB = ../lib_sdl2.so
-NCURSES_LIB = ../lib_ncurses.so
-SFML_LIB = ../lib_sfml.so
-RAYLIB_LIB = ../lib_raylib.so
+SDL2_LIB = $(OUT_DIR)/lib_sdl2.so
+NCURSES_LIB = $(OUT_DIR)/lib_ncurses.so
+SFML_LIB = $(OUT_DIR)/lib_sfml.so
+RAYLIB_LIB = $(OUT_DIR)/lib_raylib.so
 
 # All libraries
 ALL_LIBS = $(NCURSES_LIB) $(SDL2_LIB) $(SFML_LIB) $(RAYLIB_LIB)
 
-# Sources
-SDL2_SOURCES = SDL2Graphics.cpp
-NCURSES_SOURCES = NCursesGraphics.cpp
-SFML_SOURCES = SFMLGraphics.cpp
-RAYLIB_SOURCES = RaylibGraphics.cpp
+# Sources (moved to src/)
+SDL2_SOURCES = src/SDL2Graphics.cpp
+NCURSES_SOURCES = src/NCursesGraphics.cpp
+SFML_SOURCES = src/SFMLGraphics.cpp
+RAYLIB_SOURCES = src/RaylibGraphics.cpp
 
-# Headers
-SDL2_HEADERS = SDL2Graphics.hpp ../IGraphicsLibrary.hpp
-NCURSES_HEADERS = NCursesGraphics.hpp ../IGraphicsLibrary.hpp
-SFML_HEADERS = SFMLGraphics.hpp ../IGraphicsLibrary.hpp
-RAYLIB_HEADERS = RaylibGraphics.hpp ../IGraphicsLibrary.hpp
+# Headers (moved to include/)
+SDL2_HEADERS = include/SDL2Graphics.hpp ../IGraphicsLibrary.hpp
+NCURSES_HEADERS = include/NCursesGraphics.hpp ../IGraphicsLibrary.hpp
+SFML_HEADERS = include/SFMLGraphics.hpp ../IGraphicsLibrary.hpp
+RAYLIB_HEADERS = include/RaylibGraphics.hpp ../IGraphicsLibrary.hpp
 
-# Game data dependencies (we need these object files)
-GAME_DATA_OBJS = ../objs/game_data_core.o ../objs/game_data_board.o ../objs/game_data_movement.o ../objs/game_data_io.o ../objs/MenuSystem.o
+# Game data dependencies (object files produced by top-level)
+GAME_DATA_OBJS = $(OBJ_DIR)/game_data_core.o $(OBJ_DIR)/game_data_board.o $(OBJ_DIR)/game_data_movement.o $(OBJ_DIR)/game_data_io.o $(OBJ_DIR)/MenuSystem.o
 LIBFT = ../libft/Full_Libft.a
 
 # System libraries
@@ -39,10 +45,13 @@ RAYLIB_CFLAGS = $(shell pkg-config --cflags raylib 2>/dev/null || echo "-I/opt/h
 RAYLIB_LIBS = $(shell pkg-config --libs raylib 2>/dev/null || echo "-L/opt/homebrew/lib -lraylib")
 
 # Default target
-all: $(ALL_LIBS)
+all: $(OUT_DIR) $(ALL_LIBS)
+
+$(OUT_DIR):
+	@mkdir -p $(OUT_DIR)
 
 # NCurses graphics library (requires ncurses)
-$(NCURSES_LIB): $(NCURSES_SOURCES) $(NCURSES_HEADERS) $(GAME_DATA_OBJS)
+$(NCURSES_LIB): $(NCURSES_SOURCES) $(NCURSES_HEADERS) $(GAME_DATA_OBJS) | $(OUT_DIR)
 	@echo "Building NCurses Graphics Library..."
 	@if ! pkg-config --exists ncurses 2>/dev/null && ! [ -f /usr/include/ncurses.h ] && ! [ -f /usr/local/include/ncurses.h ] && ! [ -f /opt/homebrew/include/ncurses.h ]; then \
 		echo "Warning: NCurses development headers not found. Skipping NCurses library."; \
@@ -54,7 +63,7 @@ $(NCURSES_LIB): $(NCURSES_SOURCES) $(NCURSES_HEADERS) $(GAME_DATA_OBJS)
 	fi
 
 # SDL2 graphics library (requires SDL2 and SDL2_ttf)
-$(SDL2_LIB): $(SDL2_SOURCES) $(SDL2_HEADERS) $(GAME_DATA_OBJS)
+$(SDL2_LIB): $(SDL2_SOURCES) $(SDL2_HEADERS) $(GAME_DATA_OBJS) | $(OUT_DIR)
 	@echo "Building SDL2 Graphics Library..."
 	@if ! pkg-config --exists sdl2 2>/dev/null && ! [ -f /usr/include/SDL2/SDL.h ] && ! [ -f /usr/local/include/SDL2/SDL.h ] && ! [ -f /opt/homebrew/include/SDL2/SDL.h ]; then \
 		echo "Warning: SDL2 development headers not found. Skipping SDL2 library."; \
@@ -70,7 +79,7 @@ $(SDL2_LIB): $(SDL2_SOURCES) $(SDL2_HEADERS) $(GAME_DATA_OBJS)
 	fi
 
 # SFML graphics library (requires SFML)
-$(SFML_LIB): $(SFML_SOURCES) $(SFML_HEADERS) $(GAME_DATA_OBJS)
+$(SFML_LIB): $(SFML_SOURCES) $(SFML_HEADERS) $(GAME_DATA_OBJS) | $(OUT_DIR)
 	@echo "Building SFML Graphics Library..."
 	@if ! pkg-config --exists sfml-graphics 2>/dev/null && ! [ -f /usr/include/SFML/Graphics.hpp ] && ! [ -f /usr/local/include/SFML/Graphics.hpp ] && ! [ -f /opt/homebrew/include/SFML/Graphics.hpp ]; then \
 		echo "Warning: SFML development headers not found. Skipping SFML library."; \
@@ -82,7 +91,7 @@ $(SFML_LIB): $(SFML_SOURCES) $(SFML_HEADERS) $(GAME_DATA_OBJS)
 	fi
 
 # Raylib graphics library (requires raylib)
-$(RAYLIB_LIB): $(RAYLIB_SOURCES) $(RAYLIB_HEADERS) $(GAME_DATA_OBJS)
+$(RAYLIB_LIB): $(RAYLIB_SOURCES) $(RAYLIB_HEADERS) $(GAME_DATA_OBJS) | $(OUT_DIR)
 	@echo "Building Raylib Graphics Library..."
 	@if ! pkg-config --exists raylib 2>/dev/null && ! [ -f /opt/homebrew/lib/libraylib.a ] && ! [ -f /usr/local/lib/libraylib.a ]; then \
 		echo "Warning: raylib development package not found. Skipping raylib library."; \

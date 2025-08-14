@@ -1,5 +1,4 @@
-#ifndef GAMEENGINE_HPP
-#define GAMEENGINE_HPP
+#pragma once
 
 #include "game_data.hpp"
 #include "LibraryManager.hpp"
@@ -8,48 +7,29 @@
 #include <string>
 
 class GameEngine {
-public:
+  public:
     GameEngine(int width, int height);
     ~GameEngine();
-
-    // Initialize the game engine
     int initialize(int preferredLibraryIndex = 0);
-
-    // Run the main game loop
     void run();
-
-    // Get error message
     const char* getError() const;
-
-    // Check if engine is properly initialized
     bool isInitialized() const;
 
-
-
-private:
+  private:
     game_data _gameData;
     LibraryManager _libraryManager;
     MenuSystem _menuSystem;
     bool _initialized;
     std::string _errorMessage;
+    bool _gameStarted;
 
-    // Game state
-    bool _gameStarted;    // Whether the game has started (user pressed a key)
-
-    // Game loop components
     void gameLoop();
     void handleInput(GameKey key, bool& shouldQuit);
     void updateGame(bool& shouldQuit);
     void renderGame();
     void applyMenuSettings();
-
-    // Library management
     int loadDefaultLibraries();
     void switchGraphicsLibrary(int libraryIndex);
-
-    // Helper methods
     void setError(const std::string& error);
     void clearError();
 };
-
-#endif // GAMEENGINE_HPP

@@ -1,14 +1,13 @@
-#ifndef SFMLGRAPHICS_HPP
-#define SFMLGRAPHICS_HPP
+#pragma once
 
-#include "../IGraphicsLibrary.hpp"
-#include "../MenuSystem.hpp"
+#include "../../IGraphicsLibrary.hpp"
+#include "../../MenuSystem.hpp"
 #include <SFML/Graphics.hpp>
 #include <string>
 #include <vector>
 
 class SFMLGraphics : public IGraphicsLibrary {
-public:
+  public:
     SFMLGraphics();
     virtual ~SFMLGraphics();
 
@@ -24,7 +23,7 @@ public:
     virtual void setMenuSystem(MenuSystem* menuSystem) override;
     virtual void setSwitchMessage(const std::string& message, int timer) override;
 
-private:
+  private:
     bool _initialized;
     bool _shouldContinue;
     std::string _errorMessage;
@@ -42,16 +41,16 @@ private:
     int _switchMessageTimer;
 
     // Window dimensions
-    static const int WINDOW_WIDTH = 800;
-    static const int WINDOW_HEIGHT = 600;
+    static const int WINDOW_WIDTH = 1280;
+    static const int WINDOW_HEIGHT = 720;
     static const int CELL_SIZE = 20;
 
     // Colors
     struct Color {
         unsigned char r, g, b, a;
-        Color(unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) 
+        Color(unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255)
             : r(red), g(green), b(blue), a(alpha) {}
-        
+
         sf::Color toSFColor() const {
             return sf::Color(r, g, b, a);
         }
@@ -90,5 +89,3 @@ private:
     void renderGameOverMenu();
     void drawMenuItems(const std::vector<MenuItem>& items, int selectedIndex, int startY);
 };
-
-#endif // SFMLGRAPHICS_HPP

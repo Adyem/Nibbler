@@ -20,7 +20,7 @@ void MenuSystem::setState(MenuState state) {
 void MenuSystem::navigateUp() {
     if (_currentSelection > 0) {
         _currentSelection--;
-        
+
         // Skip non-selectable items
         const auto& items = getCurrentMenuItems();
         while (_currentSelection > 0 && !items[_currentSelection].selectable) {
@@ -33,7 +33,7 @@ void MenuSystem::navigateDown() {
     const auto& items = getCurrentMenuItems();
     if (_currentSelection < static_cast<int>(items.size()) - 1) {
         _currentSelection++;
-        
+
         // Skip non-selectable items
         while (_currentSelection < static_cast<int>(items.size()) - 1 && !items[_currentSelection].selectable) {
             _currentSelection++;
@@ -43,111 +43,118 @@ void MenuSystem::navigateDown() {
 
 void MenuSystem::selectCurrentItem() {
     switch (_currentState) {
-        case MenuState::MAIN_MENU:
-            switch (_currentSelection) {
-                case 0: // Start Game
-                    setState(MenuState::IN_GAME);
-                    break;
-                case 1: // Settings
-                    setState(MenuState::SETTINGS_MENU);
-                    break;
-                case 2: // Credits
-                    setState(MenuState::CREDITS_PAGE);
-                    break;
-                case 3: // Instructions
-                    setState(MenuState::INSTRUCTIONS_PAGE);
-                    break;
-                case 4: // Exit
-                    setState(MenuState::EXIT_REQUESTED);
-                    break;
-            }
+    case MenuState::MAIN_MENU:
+        switch (_currentSelection) {
+        case 0: // Start Game
+            setState(MenuState::IN_GAME);
             break;
-            
-        case MenuState::SETTINGS_MENU:
-            // Handle settings selection based on current item
-            if (_currentSelection == 0) toggleGameMode();
-            else if (_currentSelection == 1) adjustGameSpeed(10);
-            else if (_currentSelection == 2) toggleWrapAround();
-            // Board size (index 3) is non-selectable - skip
-            else if (_currentSelection == 4) toggleAlternativeColors();
-            else if (_currentSelection == 5) toggleGrid();
-            else if (_currentSelection == 6) toggleFPS();
-            else if (_currentSelection == 8) goBack(); // Back to Main Menu (adjusted index)
+        case 1: // Settings
+            setState(MenuState::SETTINGS_MENU);
+            break;
+        case 2: // Credits
+            setState(MenuState::CREDITS_PAGE);
+            break;
+        case 3: // Instructions
+            setState(MenuState::INSTRUCTIONS_PAGE);
+            break;
+        case 4: // Exit
+            setState(MenuState::EXIT_REQUESTED);
+            break;
+        }
+        break;
 
-            updateSettingsMenu();
-            break;
-            
-        case MenuState::CREDITS_PAGE:
-        case MenuState::INSTRUCTIONS_PAGE:
-            goBack();
-            break;
+    case MenuState::SETTINGS_MENU:
+        // Handle settings selection based on current item
+        if (_currentSelection == 0)
+            toggleGameMode();
+        else if (_currentSelection == 1)
+            adjustGameSpeed(10);
+        else if (_currentSelection == 2)
+            toggleWrapAround();
+        // Board size (index 3) is non-selectable - skip
+        else if (_currentSelection == 4)
+            toggleAlternativeColors();
+        else if (_currentSelection == 5)
+            toggleGrid();
+        else if (_currentSelection == 6)
+            toggleFPS();
+        else if (_currentSelection == 8)
+            goBack(); // Back to Main Menu (adjusted index)
 
-        case MenuState::GAME_OVER:
-            switch (_currentSelection) {
-                case 0: // Play Again
-                    setState(MenuState::IN_GAME);
-                    break;
-                case 1: // Main Menu
-                    setState(MenuState::MAIN_MENU);
-                    break;
-                case 2: // Exit
-                    setState(MenuState::EXIT_REQUESTED);
-                    break;
-            }
-            break;
+        updateSettingsMenu();
+        break;
 
-        default:
+    case MenuState::CREDITS_PAGE:
+    case MenuState::INSTRUCTIONS_PAGE:
+        goBack();
+        break;
+
+    case MenuState::GAME_OVER:
+        switch (_currentSelection) {
+        case 0: // Play Again
+            setState(MenuState::IN_GAME);
             break;
+        case 1: // Main Menu
+            setState(MenuState::MAIN_MENU);
+            break;
+        case 2: // Exit
+            setState(MenuState::EXIT_REQUESTED);
+            break;
+        }
+        break;
+
+    default:
+        break;
     }
 }
 
 void MenuSystem::goBack() {
     switch (_currentState) {
-        case MenuState::SETTINGS_MENU:
-        case MenuState::CREDITS_PAGE:
-        case MenuState::INSTRUCTIONS_PAGE:
-            setState(MenuState::MAIN_MENU);
-            break;
-        case MenuState::IN_GAME:
-            setState(MenuState::MAIN_MENU);
-            break;
-        case MenuState::GAME_OVER:
-            setState(MenuState::EXIT_REQUESTED);
-            break;
-        default:
-            break;
+    case MenuState::SETTINGS_MENU:
+    case MenuState::CREDITS_PAGE:
+    case MenuState::INSTRUCTIONS_PAGE:
+        setState(MenuState::MAIN_MENU);
+        break;
+    case MenuState::IN_GAME:
+        setState(MenuState::MAIN_MENU);
+        break;
+    case MenuState::GAME_OVER:
+        setState(MenuState::EXIT_REQUESTED);
+        break;
+    default:
+        break;
     }
 }
 
 const std::vector<MenuItem>& MenuSystem::getCurrentMenuItems() const {
     switch (_currentState) {
-        case MenuState::MAIN_MENU:
-            return _mainMenuItems;
-        case MenuState::SETTINGS_MENU:
-            return _settingsMenuItems;
-        case MenuState::GAME_OVER:
-            return _gameOverMenuItems;
-        default:
-            return _mainMenuItems;
+    case MenuState::MAIN_MENU:
+        return _mainMenuItems;
+    case MenuState::SETTINGS_MENU:
+        return _settingsMenuItems;
+    case MenuState::GAME_OVER:
+        return _gameOverMenuItems;
+    default:
+        return _mainMenuItems;
     }
 }
 
 std::string MenuSystem::getCurrentTitle() const {
     switch (_currentState) {
-        case MenuState::MAIN_MENU:
-            return "NIBBLER";
-        case MenuState::SETTINGS_MENU:
-            return "GAME SETTINGS";
-        case MenuState::CREDITS_PAGE:
-            return "CREDITS";
-        case MenuState::INSTRUCTIONS_PAGE:
-            return "INSTRUCTIONS";
-        case MenuState::IN_GAME:
-            return "NIBBLER";
-        case MenuState::GAME_OVER:
-            return "GAME OVER";
-        default:
-            return "NIBBLER";
+    case MenuState::MAIN_MENU:
+        return "NIBBLER";
+    case MenuState::SETTINGS_MENU:
+        return "GAME SETTINGS";
+    case MenuState::CREDITS_PAGE:
+        return "CREDITS";
+    case MenuState::INSTRUCTIONS_PAGE:
+        return "INSTRUCTIONS";
+    case MenuState::IN_GAME:
+        return "NIBBLER";
+    case MenuState::GAME_OVER:
+        return "GAME OVER";
+    default:
+        return "NIBBLER";
     }
 }
 
@@ -158,41 +165,38 @@ void MenuSystem::initializeMenus() {
         MenuItem("Settings"),
         MenuItem("Credits"),
         MenuItem("Instructions"),
-        MenuItem("Exit")
-    };
+        MenuItem("Exit")};
 
     // Game over menu
     _gameOverMenuItems = {
         MenuItem("Play Again"),
         MenuItem("Main Menu"),
-        MenuItem("Exit")
-    };
+        MenuItem("Exit")};
 
     updateSettingsMenu();
 }
 
 void MenuSystem::updateSettingsMenu() {
     _settingsMenuItems.clear();
-    
+
     std::string gameModeText = std::string("Game Mode: ") +
-        (_settings.gameMode == GameMode::SINGLE_PLAYER ? "Single Player" : "Multiplayer");
+                               (_settings.gameMode == GameMode::SINGLE_PLAYER ? "Single Player" : "Multiplayer");
     _settingsMenuItems.emplace_back(gameModeText);
-    
+
     _settingsMenuItems.emplace_back("Game Speed: " + std::to_string(_settings.gameSpeed) + " FPS");
     _settingsMenuItems.emplace_back("Wrap Around Edges: " + std::string(_settings.wrapAroundEdges ? "ON" : "OFF"));
     _settingsMenuItems.emplace_back("Board Size: " + std::to_string(_settings.boardWidth) + "x" + std::to_string(_settings.boardHeight) + " (from command line)", false);
     _settingsMenuItems.emplace_back("Alternative Colors: " + std::string(_settings.useAlternativeColors ? "ON" : "OFF"));
     _settingsMenuItems.emplace_back("Show Grid: " + std::string(_settings.showGrid ? "ON" : "OFF"));
     _settingsMenuItems.emplace_back("Show FPS: " + std::string(_settings.showFPS ? "ON" : "OFF"));
-    
+
     _settingsMenuItems.emplace_back("", false); // Spacer
     _settingsMenuItems.emplace_back("Back to Main Menu");
 }
 
 // Settings modification methods
 void MenuSystem::toggleGameMode() {
-    _settings.gameMode = (_settings.gameMode == GameMode::SINGLE_PLAYER) ? 
-        GameMode::MULTIPLAYER : GameMode::SINGLE_PLAYER;
+    _settings.gameMode = (_settings.gameMode == GameMode::SINGLE_PLAYER) ? GameMode::MULTIPLAYER : GameMode::SINGLE_PLAYER;
 }
 
 void MenuSystem::adjustGameSpeed(int delta) {
@@ -249,8 +253,7 @@ std::vector<std::string> MenuSystem::getCreditsContent() const {
         "BONUS FEATURES:",
         "Comprehensive menu system across all libraries",
         "Multiplayer support (two snakes, one food!)",
-        "Customizable game settings graphicaly (skins, background, grid, etc.)"
-    };
+        "Customizable game settings graphicaly (skins, background, grid, etc.)"};
 }
 
 std::vector<std::string> MenuSystem::getInstructionsContent() const {
@@ -283,8 +286,7 @@ std::vector<std::string> MenuSystem::getInstructionsContent() const {
         "Key 2 - SDL2 (modern windowed graphics)",
         "Key 3 - SFML (advanced graphics)",
         "Key 4 - Raylib (simple 2D graphics)",
-        ""
-    };
+        ""};
 }
 
 void MenuSystem::setGameOverScore(int score) {

@@ -1,25 +1,25 @@
 #include "SDL2Graphics.hpp"
-#include "../game_data.hpp"
-#include "../MenuSystem.hpp"
+#include "../../game_data.hpp"
+#include "../../MenuSystem.hpp"
 #include <iostream>
 #include <sstream>
 #include <algorithm>
 #include <cstring>
 
 // Static color definitions
-const SDL2Graphics::Color SDL2Graphics::COLOR_BACKGROUND(20, 20, 30);      // Dark blue-gray
-const SDL2Graphics::Color SDL2Graphics::COLOR_BORDER(100, 100, 120);       // Light gray
-const SDL2Graphics::Color SDL2Graphics::COLOR_SNAKE_HEAD(50, 200, 50);     // Bright green
-const SDL2Graphics::Color SDL2Graphics::COLOR_SNAKE_BODY(30, 150, 30);     // Dark green
-const SDL2Graphics::Color SDL2Graphics::COLOR_FOOD(200, 50, 50);           // Red
-const SDL2Graphics::Color SDL2Graphics::COLOR_TEXT(255, 255, 255);         // White
+const SDL2Graphics::Color SDL2Graphics::COLOR_BACKGROUND(20, 20, 30);  // Dark blue-gray
+const SDL2Graphics::Color SDL2Graphics::COLOR_BORDER(100, 100, 120);   // Light gray
+const SDL2Graphics::Color SDL2Graphics::COLOR_SNAKE_HEAD(50, 200, 50); // Bright green
+const SDL2Graphics::Color SDL2Graphics::COLOR_SNAKE_BODY(30, 150, 30); // Dark green
+const SDL2Graphics::Color SDL2Graphics::COLOR_FOOD(200, 50, 50);       // Red
+const SDL2Graphics::Color SDL2Graphics::COLOR_TEXT(255, 255, 255);     // White
 
 // Additional colors for better UI
-const SDL2Graphics::Color SDL2Graphics::COLOR_SELECTOR_BG(70, 130, 180);   // Steel blue for selector
+const SDL2Graphics::Color SDL2Graphics::COLOR_SELECTOR_BG(70, 130, 180);    // Steel blue for selector
 const SDL2Graphics::Color SDL2Graphics::COLOR_SELECTED_TEXT(255, 255, 255); // White text for selected items
 
 SDL2Graphics::SDL2Graphics()
-    : _initialized(false), _shouldContinue(true), _targetFPS(60), _frameDelay(1000/60),
+    : _initialized(false), _shouldContinue(true), _targetFPS(60), _frameDelay(1000 / 60),
       _window(nullptr), _renderer(nullptr), _fontLarge(nullptr), _fontMedium(nullptr),
       _fontSmall(nullptr), _menuSystem(nullptr), _switchMessageTimer(0) {
 }
@@ -57,8 +57,7 @@ int SDL2Graphics::initialize() {
         SDL_WINDOWPOS_CENTERED,
         WINDOW_WIDTH,
         WINDOW_HEIGHT,
-        SDL_WINDOW_SHOWN
-    );
+        SDL_WINDOW_SHOWN);
 
     if (!_window) {
         setError(std::string("Window could not be created: ") + SDL_GetError());
@@ -212,20 +211,14 @@ void SDL2Graphics::render(const game_data& game) {
         }
     }
 
-    // Draw UI text (simplified for now)
-    // Note: For proper text rendering, we'd need SDL_ttf, but for now we'll skip text
+    // HUD: show snake length in top-left
+    {
+        std::string scoreText = "Length: " + std::to_string(game.get_snake_length(0));
+        drawTextWithFont(scoreText, 10, 10, _fontMedium, COLOR_TEXT);
+    }
 
-    // Display switch message if active
+    // Remove green switch bar; only decrement timer silently
     if (_switchMessageTimer > 0) {
-        // Draw a colored notification bar at the bottom
-        setDrawColor(COLOR_SNAKE_HEAD);
-        drawRect(10, WINDOW_HEIGHT - 40, WINDOW_WIDTH - 20, 30, true);
-
-        // Draw border around notification
-        setDrawColor(COLOR_BORDER);
-        drawRect(10, WINDOW_HEIGHT - 40, WINDOW_WIDTH - 20, 30, false);
-
-        // Decrement timer
         _switchMessageTimer--;
     }
 
@@ -241,43 +234,47 @@ GameKey SDL2Graphics::getInput() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
-            case SDL_QUIT:
-                _shouldContinue = false;
-                return GameKey::QUIT;
+        case SDL_QUIT:
+            _shouldContinue = false;
+            return GameKey::QUIT;
 
-            case SDL_KEYDOWN: {
-                SDL_Keycode key = event.key.keysym.sym;
+        case SDL_KEYDOWN: {
+            SDL_Keycode key = event.key.keysym.sym;
 
-                // Handle graphics switching first (works in any state)
-                if (key == SDLK_1) return GameKey::KEY_1;
-                if (key == SDLK_2) return GameKey::KEY_2;
-                if (key == SDLK_3) return GameKey::KEY_3;
-                if (key == SDLK_4) return GameKey::KEY_4;
+            // Handle graphics switching first (works in any state)
+            if (key == SDLK_1)
+                return GameKey::KEY_1;
+            if (key == SDLK_2)
+                return GameKey::KEY_2;
+            if (key == SDLK_3)
+                return GameKey::KEY_3;
+            if (key == SDLK_4)
+                return GameKey::KEY_4;
 
-                // Handle menu navigation if in menu mode
-                if (_menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME) {
-                    switch (key) {
-                        case SDLK_UP:
-                            _menuSystem->navigateUp();
-                            return GameKey::NONE;
-                        case SDLK_DOWN:
-                            _menuSystem->navigateDown();
-                            return GameKey::NONE;
-                        case SDLK_RETURN:
-                        case SDLK_SPACE:
-                            _menuSystem->selectCurrentItem();
-                            return GameKey::NONE;
-                        case SDLK_ESCAPE:
-                            _menuSystem->goBack();
-                            return GameKey::NONE;
-                        default:
-                            return GameKey::NONE;
-                    }
+            // Handle menu navigation if in menu mode
+            if (_menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME) {
+                switch (key) {
+                case SDLK_UP:
+                    _menuSystem->navigateUp();
+                    return GameKey::NONE;
+                case SDLK_DOWN:
+                    _menuSystem->navigateDown();
+                    return GameKey::NONE;
+                case SDLK_RETURN:
+                case SDLK_SPACE:
+                    _menuSystem->selectCurrentItem();
+                    return GameKey::NONE;
+                case SDLK_ESCAPE:
+                    _menuSystem->goBack();
+                    return GameKey::NONE;
+                default:
+                    return GameKey::NONE;
                 }
-
-                // In game mode, translate all keys normally
-                return translateSDLKey(key);
             }
+
+            // In game mode, translate all keys normally
+            return translateSDLKey(key);
+        }
         }
     }
 
@@ -344,43 +341,43 @@ void SDL2Graphics::drawTransparentRect(int x, int y, int width, int height, cons
 
 GameKey SDL2Graphics::translateSDLKey(SDL_Keycode key) {
     switch (key) {
-        case SDLK_UP:
-            return GameKey::UP;
-        case SDLK_DOWN:
-            return GameKey::DOWN;
-        case SDLK_LEFT:
-            return GameKey::LEFT;
-        case SDLK_RIGHT:
-            return GameKey::RIGHT;
-        case SDLK_1:
-            return GameKey::KEY_1;
-        case SDLK_2:
-            return GameKey::KEY_2;
-        case SDLK_3:
-            return GameKey::KEY_3;
-        case SDLK_ESCAPE:
-        case SDLK_q:
-            return GameKey::ESCAPE;
-        default:
-            return GameKey::NONE;
+    case SDLK_UP:
+        return GameKey::UP;
+    case SDLK_DOWN:
+        return GameKey::DOWN;
+    case SDLK_LEFT:
+        return GameKey::LEFT;
+    case SDLK_RIGHT:
+        return GameKey::RIGHT;
+    case SDLK_1:
+        return GameKey::KEY_1;
+    case SDLK_2:
+        return GameKey::KEY_2;
+    case SDLK_3:
+        return GameKey::KEY_3;
+    case SDLK_ESCAPE:
+    case SDLK_q:
+        return GameKey::ESCAPE;
+    default:
+        return GameKey::NONE;
     }
 }
 
 void SDL2Graphics::calculateGameArea(const game_data& game, int& offsetX, int& offsetY, int& cellSize) {
     size_t gameWidth = game.get_width();
     size_t gameHeight = game.get_height();
-    
+
     // Calculate the best cell size that fits in the window
-    int maxCellWidth = (WINDOW_WIDTH - 100) / gameWidth;   // Leave 100px margin
+    int maxCellWidth = (WINDOW_WIDTH - 100) / gameWidth;    // Leave 100px margin
     int maxCellHeight = (WINDOW_HEIGHT - 150) / gameHeight; // Leave 150px for UI
-    
+
     cellSize = std::min(maxCellWidth, maxCellHeight);
     cellSize = std::max(cellSize, 10); // Minimum cell size
-    
+
     // Center the game area
     int totalGameWidth = gameWidth * cellSize;
     int totalGameHeight = gameHeight * cellSize;
-    
+
     offsetX = (WINDOW_WIDTH - totalGameWidth) / 2;
     offsetY = (WINDOW_HEIGHT - totalGameHeight) / 2;
 }
@@ -392,26 +389,27 @@ void SDL2Graphics::setSwitchMessage(const std::string& message, int timer) {
 
 // Menu rendering methods
 void SDL2Graphics::renderMenu() {
-    if (!_menuSystem) return;
+    if (!_menuSystem)
+        return;
 
     switch (_menuSystem->getCurrentState()) {
-        case MenuState::MAIN_MENU:
-            renderMainMenu();
-            break;
-        case MenuState::SETTINGS_MENU:
-            renderSettingsMenu();
-            break;
-        case MenuState::CREDITS_PAGE:
-            renderCreditsMenu();
-            break;
-        case MenuState::INSTRUCTIONS_PAGE:
-            renderInstructionsMenu();
-            break;
-        case MenuState::GAME_OVER:
-            renderGameOverMenu();
-            break;
-        default:
-            break;
+    case MenuState::MAIN_MENU:
+        renderMainMenu();
+        break;
+    case MenuState::SETTINGS_MENU:
+        renderSettingsMenu();
+        break;
+    case MenuState::CREDITS_PAGE:
+        renderCreditsMenu();
+        break;
+    case MenuState::INSTRUCTIONS_PAGE:
+        renderInstructionsMenu();
+        break;
+    case MenuState::GAME_OVER:
+        renderGameOverMenu();
+        break;
+    default:
+        break;
     }
 }
 
@@ -447,18 +445,57 @@ void SDL2Graphics::renderCreditsMenu() {
     // Draw title
     drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 40, _fontLarge, COLOR_SNAKE_HEAD);
 
-    // Draw content
-    auto content = _menuSystem->getCreditsContent();
-    int startY = 100;
+    // Two-column content with "BONUS FEATURES:" forced to second column
+    const auto& content = _menuSystem->getCreditsContent();
+    int top = 100;
+    int lineH = std::max(22, getTextHeight(_fontMedium) + 4);
+    int colX1 = 80;
+    int colX2 = WINDOW_WIDTH / 2 + 40;
+    int bottomY = WINDOW_HEIGHT - 60;
 
-    for (size_t i = 0; i < content.size() && startY + static_cast<int>(i) * 25 < WINDOW_HEIGHT - 60; ++i) {
-        const std::string& line = content[i];
-        if (line.empty()) continue;
-
-        drawCenteredTextWithFont(line, startY + static_cast<int>(i) * 25, _fontMedium, COLOR_TEXT);
+    int bonusIdx = -1;
+    for (size_t i = 0; i < content.size(); ++i) {
+        if (content[i] == "BONUS FEATURES:") {
+            bonusIdx = static_cast<int>(i);
+            break;
+        }
     }
 
-    // Draw footer
+    if (bonusIdx >= 0) {
+        int y1 = top;
+        for (int i = 0; i < bonusIdx && y1 <= bottomY - lineH; ++i) {
+            if (content[i].empty()) {
+                y1 += lineH;
+                continue;
+            }
+            drawTextWithFont(content[i], colX1, y1, _fontMedium, COLOR_TEXT);
+            y1 += lineH;
+        }
+        int y2 = top;
+        for (size_t i = bonusIdx; i < content.size() && y2 <= bottomY - lineH; ++i) {
+            if (content[i].empty()) {
+                y2 += lineH;
+                continue;
+            }
+            drawTextWithFont(content[i], colX2, y2, _fontMedium, COLOR_TEXT);
+            y2 += lineH;
+        }
+    } else {
+        // Fallback: auto two-column flow
+        int usableH = bottomY - top - 20;
+        int linesPerCol = std::max(1, usableH / lineH);
+        for (size_t i = 0; i < content.size(); ++i) {
+            int col = static_cast<int>(i) / linesPerCol;
+            int row = static_cast<int>(i) % linesPerCol;
+            int x = (col % 2 == 0) ? colX1 : colX2;
+            int y = top + row * lineH;
+            if (y > bottomY)
+                continue;
+            drawTextWithFont(content[i], x, y, _fontMedium, COLOR_TEXT);
+        }
+    }
+
+    // Footer
     drawCenteredTextWithFont("ESC to go back", WINDOW_HEIGHT - 40, _fontSmall, COLOR_TEXT);
 }
 
@@ -466,18 +503,27 @@ void SDL2Graphics::renderInstructionsMenu() {
     // Draw title
     drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 40, _fontLarge, COLOR_SNAKE_HEAD);
 
-    // Draw content
-    auto content = _menuSystem->getInstructionsContent();
-    int startY = 100;
+    // Two-column content
+    const auto& content = _menuSystem->getInstructionsContent();
+    int top = 100;
+    int lineH = std::max(22, getTextHeight(_fontMedium) + 4);
+    int usableH = WINDOW_HEIGHT - top - 80;
+    int linesPerCol = std::max(1, usableH / lineH);
 
-    for (size_t i = 0; i < content.size() && startY + static_cast<int>(i) * 25 < WINDOW_HEIGHT - 60; ++i) {
-        const std::string& line = content[i];
-        if (line.empty()) continue;
+    int colX1 = 80;
+    int colX2 = WINDOW_WIDTH / 2 + 40;
 
-        drawCenteredTextWithFont(line, startY + static_cast<int>(i) * 25, _fontMedium, COLOR_TEXT);
+    for (size_t i = 0; i < content.size(); ++i) {
+        int col = static_cast<int>(i) / linesPerCol;
+        int row = static_cast<int>(i) % linesPerCol;
+        int x = (col % 2 == 0) ? colX1 : colX2;
+        int y = top + row * lineH;
+        if (y > WINDOW_HEIGHT - 60)
+            continue;
+        drawTextWithFont(content[i], x, y, _fontMedium, COLOR_TEXT);
     }
 
-    // Draw footer
+    // Footer
     drawCenteredTextWithFont("ESC to go back", WINDOW_HEIGHT - 40, _fontSmall, COLOR_TEXT);
 }
 
@@ -542,8 +588,7 @@ bool SDL2Graphics::initializeFonts() {
         "/usr/share/fonts/TTF/arial.ttf",
         // Fallback - try to find any reasonable font
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        nullptr
-    };
+        nullptr};
 
     TTF_Font* testFont = nullptr;
     const char* selectedFontPath = nullptr;
@@ -564,9 +609,9 @@ bool SDL2Graphics::initializeFonts() {
     }
 
     // Load fonts in different sizes
-    _fontLarge = TTF_OpenFont(selectedFontPath, 32);   // For titles
-    _fontMedium = TTF_OpenFont(selectedFontPath, 20);  // For menu items
-    _fontSmall = TTF_OpenFont(selectedFontPath, 16);   // For instructions
+    _fontLarge = TTF_OpenFont(selectedFontPath, 32);  // For titles
+    _fontMedium = TTF_OpenFont(selectedFontPath, 20); // For menu items
+    _fontSmall = TTF_OpenFont(selectedFontPath, 16);  // For instructions
 
     if (!_fontLarge || !_fontMedium || !_fontSmall) {
         setError(std::string("Failed to load font: ") + TTF_GetError());
@@ -593,7 +638,8 @@ void SDL2Graphics::shutdownFonts() {
 }
 
 void SDL2Graphics::drawTextWithFont(const std::string& text, int x, int y, TTF_Font* font, const Color& color) {
-    if (!font || text.empty()) return;
+    if (!font || text.empty())
+        return;
 
     // Clean the text string to handle problematic ASCII characters
     std::string cleanText = text;
@@ -642,7 +688,8 @@ void SDL2Graphics::drawTextWithFont(const std::string& text, int x, int y, TTF_F
 }
 
 void SDL2Graphics::drawCenteredTextWithFont(const std::string& text, int y, TTF_Font* font, const Color& color) {
-    if (!font || text.empty()) return;
+    if (!font || text.empty())
+        return;
 
     int textWidth = getTextWidth(text, font);
     int x = (WINDOW_WIDTH - textWidth) / 2;
@@ -650,7 +697,8 @@ void SDL2Graphics::drawCenteredTextWithFont(const std::string& text, int y, TTF_
 }
 
 int SDL2Graphics::getTextWidth(const std::string& text, TTF_Font* font) {
-    if (!font || text.empty()) return 0;
+    if (!font || text.empty())
+        return 0;
 
     int width, height;
     if (TTF_SizeText(font, text.c_str(), &width, &height) != 0) {
@@ -660,25 +708,26 @@ int SDL2Graphics::getTextWidth(const std::string& text, TTF_Font* font) {
 }
 
 int SDL2Graphics::getTextHeight(TTF_Font* font) {
-    if (!font) return 0;
+    if (!font)
+        return 0;
     return TTF_FontHeight(font);
 }
 
 // C interface for dynamic library loading
 extern "C" {
-    IGraphicsLibrary* createGraphicsLibrary() {
-        return new SDL2Graphics();
-    }
+IGraphicsLibrary* createGraphicsLibrary() {
+    return new SDL2Graphics();
+}
 
-    void destroyGraphicsLibrary(IGraphicsLibrary* lib) {
-        delete lib;
-    }
+void destroyGraphicsLibrary(IGraphicsLibrary* lib) {
+    delete lib;
+}
 
-    const char* getLibraryName() {
-        return "SDL2 Graphics Library";
-    }
+const char* getLibraryName() {
+    return "SDL2 Graphics Library";
+}
 
-    const char* getLibraryVersion() {
-        return "1.0.0";
-    }
+const char* getLibraryVersion() {
+    return "1.0.0";
+}
 }

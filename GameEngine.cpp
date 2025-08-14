@@ -54,7 +54,7 @@ int GameEngine::initialize(int preferredLibraryIndex) {
 
     if (currentLib->initialize() != 0) {
         setError(std::string("Failed to initialize graphics library: ") +
-                (currentLib->getError() ? currentLib->getError() : "Unknown error"));
+                 (currentLib->getError() ? currentLib->getError() : "Unknown error"));
         return 1;
     }
 
@@ -100,14 +100,10 @@ bool GameEngine::isInitialized() const {
     return _initialized;
 }
 
-
-
 void GameEngine::gameLoop() {
     bool shouldQuit = false;
     const int targetFPS = 60;
     const auto frameDuration = std::chrono::microseconds(1000000 / targetFPS);
-
-
 
     while (!shouldQuit) {
         auto frameStart = std::chrono::steady_clock::now();
@@ -203,8 +199,6 @@ void GameEngine::gameLoop() {
             shouldQuit = true;
         }
 
-
-
         // Frame rate limiting for smooth 60 FPS
         auto frameEnd = std::chrono::steady_clock::now();
         auto elapsed = frameEnd - frameStart;
@@ -217,63 +211,63 @@ void GameEngine::gameLoop() {
 void GameEngine::handleInput(GameKey key, bool& shouldQuit) {
     // Handle graphics library switching (works in any state)
     switch (key) {
-        case GameKey::KEY_1:
-            switchGraphicsLibrary(0);
-            return;
-        case GameKey::KEY_2:
-            switchGraphicsLibrary(1);
-            return;
-        case GameKey::KEY_3:
-            switchGraphicsLibrary(2);
-            return;
-        case GameKey::KEY_4:
-            switchGraphicsLibrary(3);
-            return;
-        default:
-            break;
+    case GameKey::KEY_1:
+        switchGraphicsLibrary(0);
+        return;
+    case GameKey::KEY_2:
+        switchGraphicsLibrary(1);
+        return;
+    case GameKey::KEY_3:
+        switchGraphicsLibrary(2);
+        return;
+    case GameKey::KEY_4:
+        switchGraphicsLibrary(3);
+        return;
+    default:
+        break;
     }
 
     // Handle menu state transitions
     if (_menuSystem.getCurrentState() == MenuState::IN_GAME) {
         // Handle game input
         switch (key) {
-            case GameKey::UP:
-                _gameData.set_direction_moving(0, DIRECTION_UP);
-                if (!_gameStarted) {
-                    _gameStarted = true;
-                    std::cout << "Game Started! Use arrow keys to control the snake." << std::endl;
-                }
-                break;
-            case GameKey::DOWN:
-                _gameData.set_direction_moving(0, DIRECTION_DOWN);
-                if (!_gameStarted) {
-                    _gameStarted = true;
-                    std::cout << "Game Started! Use arrow keys to control the snake." << std::endl;
-                }
-                break;
-            case GameKey::LEFT:
-                _gameData.set_direction_moving(0, DIRECTION_LEFT);
-                if (!_gameStarted) {
-                    _gameStarted = true;
-                    std::cout << "Game Started! Use arrow keys to control the snake." << std::endl;
-                }
-                break;
-            case GameKey::RIGHT:
-                _gameData.set_direction_moving(0, DIRECTION_RIGHT);
-                if (!_gameStarted) {
-                    _gameStarted = true;
-                    std::cout << "Game Started! Use arrow keys to control the snake." << std::endl;
-                }
-                break;
-            case GameKey::ESCAPE:
-            case GameKey::QUIT:
-                // Go back to main menu instead of quitting directly
-                _menuSystem.setState(MenuState::MAIN_MENU);
-                break;
-            case GameKey::NONE:
-            default:
-                // No input or unknown input, do nothing
-                break;
+        case GameKey::UP:
+            _gameData.set_direction_moving(0, DIRECTION_UP);
+            if (!_gameStarted) {
+                _gameStarted = true;
+                std::cout << "Game Started! Use arrow keys to control the snake." << std::endl;
+            }
+            break;
+        case GameKey::DOWN:
+            _gameData.set_direction_moving(0, DIRECTION_DOWN);
+            if (!_gameStarted) {
+                _gameStarted = true;
+                std::cout << "Game Started! Use arrow keys to control the snake." << std::endl;
+            }
+            break;
+        case GameKey::LEFT:
+            _gameData.set_direction_moving(0, DIRECTION_LEFT);
+            if (!_gameStarted) {
+                _gameStarted = true;
+                std::cout << "Game Started! Use arrow keys to control the snake." << std::endl;
+            }
+            break;
+        case GameKey::RIGHT:
+            _gameData.set_direction_moving(0, DIRECTION_RIGHT);
+            if (!_gameStarted) {
+                _gameStarted = true;
+                std::cout << "Game Started! Use arrow keys to control the snake." << std::endl;
+            }
+            break;
+        case GameKey::ESCAPE:
+        case GameKey::QUIT:
+            // Go back to main menu instead of quitting directly
+            _menuSystem.setState(MenuState::MAIN_MENU);
+            break;
+        case GameKey::NONE:
+        default:
+            // No input or unknown input, do nothing
+            break;
         }
     } else {
         // In menu mode - input is handled by the graphics library
@@ -319,22 +313,22 @@ void GameEngine::renderGame() {
 
 int GameEngine::loadDefaultLibraries() {
     // Try to load the NCurses library first (index 0)
-    if (_libraryManager.loadLibrary("./lib_ncurses.so") != 0) {
+    if (_libraryManager.loadLibrary("./dllibs/lib_ncurses.so") != 0) {
         std::cerr << "Warning: Failed to load NCurses library: " << _libraryManager.getError() << std::endl;
     }
 
     // Try to load the SDL2 library (index 1)
-    if (_libraryManager.loadLibrary("./lib_sdl2.so") != 0) {
+    if (_libraryManager.loadLibrary("./dllibs/lib_sdl2.so") != 0) {
         std::cerr << "Warning: Failed to load SDL2 library: " << _libraryManager.getError() << std::endl;
     }
 
     // Try to load the SFML library (index 2)
-    if (_libraryManager.loadLibrary("./lib_sfml.so") != 0) {
+    if (_libraryManager.loadLibrary("./dllibs/lib_sfml.so") != 0) {
         std::cerr << "Warning: Failed to load SFML library: " << _libraryManager.getError() << std::endl;
     }
 
     // Try to load the Raylib library (index 3)
-    if (_libraryManager.loadLibrary("./lib_raylib.so") != 0) {
+    if (_libraryManager.loadLibrary("./dllibs/lib_raylib.so") != 0) {
         std::cerr << "Warning: Failed to load Raylib library: " << _libraryManager.getError() << std::endl;
     }
 
@@ -374,7 +368,7 @@ void GameEngine::switchGraphicsLibrary(int libraryIndex) {
         // Check if we're switching from SFML (which needs extra time for clean shutdown)
         const char* currentLibName = _libraryManager.getLibraryName(_libraryManager.getCurrentLibraryIndex());
         bool switchingFromSFML = (currentLibName && std::string(currentLibName).find("SFML") != std::string::npos);
-        
+
         currentLib->shutdown();
 
         // Much longer delay when switching from SFML to ensure graphics context is properly released
