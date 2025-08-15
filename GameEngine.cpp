@@ -107,8 +107,11 @@ void GameEngine::gameLoop() {
 
 
 
+    auto lastFrameTime = std::chrono::steady_clock::now();
     while (!shouldQuit) {
         auto frameStart = std::chrono::steady_clock::now();
+        double deltaTime = std::chrono::duration<double>(frameStart - lastFrameTime).count();
+        lastFrameTime = frameStart;
 
         IGraphicsLibrary* currentLib = _libraryManager.getCurrentLibrary();
         if (!currentLib) {
@@ -147,7 +150,7 @@ void GameEngine::gameLoop() {
         // Update game logic only if we're in game mode
         bool gameUpdated = false;
         if (_menuSystem.getCurrentState() == MenuState::IN_GAME) {
-            updateGame(shouldQuit);
+            updateGame(shouldQuit, deltaTime);
             gameUpdated = true;
         }
 
@@ -267,14 +270,14 @@ void GameEngine::handleInput(GameKey key, bool& shouldQuit) {
     }
 }
 
-void GameEngine::updateGame(bool& /* shouldQuit */) {
+void GameEngine::updateGame(bool& /* shouldQuit */, double deltaTime) {
     // Only update game logic if the game has started
     if (!_gameStarted) {
         return;
     }
 
-    // Update game logic every frame - the game_data class handles its own timing
-    int updateResult = _gameData.update_game_map();
+    // Update game logic based on elapsed time
+    int updateResult = _gameData.update_game_map(deltaTime);
     if (updateResult != 0) {
         int finalScore = _gameData.get_snake_length(0);
         std::cout << "Game Over! Snake collided. Final length: " << finalScore << std::endl;

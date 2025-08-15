@@ -295,7 +295,7 @@ int game_data::update_snake_position(int player_head)
     return (0);
 }
 
-int game_data::update_game_map()
+int game_data::update_game_map(double deltaTime)
 {
     int ret = 0;
     int heads[4] = {
@@ -303,15 +303,16 @@ int game_data::update_game_map()
         SNAKE_HEAD_PLAYER_2,
         SNAKE_HEAD_PLAYER_3,
         SNAKE_HEAD_PLAYER_4};
+    const double moveInterval = 1.0 / 12.0; // Move 12 times per second
     int i = 0;
     while (i < 4)
     {
         if (this->_snake_length[i] > 0)
         {
-            this->_update_counter[i]++;
-            if (this->_update_counter[i] >= 5)  // Move every 5 frames (12 times per second at 60 FPS)
+            this->_update_timer[i] += deltaTime;
+            while (this->_update_timer[i] >= moveInterval)
             {
-                this->_update_counter[i] = 0;
+                this->_update_timer[i] -= moveInterval;
                 if (this->update_snake_position(heads[i]))
                     ret = 1;
             }
