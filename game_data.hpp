@@ -53,7 +53,7 @@ class game_data
 
     	t_coordinates get_head_coordinate(int head_to_find);
 
-        int           update_game_map();
+        int         update_game_map();
 
         void        set_profile_name(const ft_string &name);
         const ft_string &get_profile_name() const;
@@ -67,13 +67,14 @@ class game_data
 
     private:
         t_coordinates get_next_piece(t_coordinates current_coordinate, int piece_id);
-        int           determine_player_number(int player_head);
-        void          add_empty_cell(int x, int y);
-        void          remove_empty_cell(int x, int y);
-        void          initialize_empty_cells();
+        int         determine_player_number(int player_head);
+        void        add_empty_cell(int x, int y);
+        void        remove_empty_cell(int x, int y);
+        void        initialize_empty_cells();
 
-        int           is_valid_move(int player_head);
-        int           update_snake_position(int player_head);
+        int         is_valid_move(int player_head);
+        int         update_snake_position(int player_head);
+		void 		spawn_food();
 
     	mutable int _error;
     	int         _wrap_around_edges;
@@ -84,12 +85,11 @@ class game_data
         int         _update_counter[4];
         ft_string   _profile_name;
         bool        _achievement_snake50;
-		void spawn_food();
 
-        ft_map3d     _map;
-        ft_character _character;
-        std::vector<t_coordinates> _empty_cells;
-        std::vector<int>           _empty_cell_indices;
+        ft_map3d     				_map;
+        ft_character 				_character;
+        std::vector<t_coordinates> 	_empty_cells;
+        std::vector<int>           	_empty_cell_indices;
 };
 
 #endif // GAME_DATA_HPP

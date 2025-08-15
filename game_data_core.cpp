@@ -83,6 +83,8 @@ int game_data::get_direction_moving(int player) const
 void game_data::set_profile_name(const ft_string &name)
 {
     this->_profile_name = name;
+	if (this->_profile_name.get_error())
+		this->_error = this->_profile_name.get_error();
     return ;
 }
 
