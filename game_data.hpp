@@ -53,7 +53,7 @@ class game_data
 
     	t_coordinates get_head_coordinate(int head_to_find);
 
-        int         update_game_map();
+        int         update_game_map(double deltaTime);
 
         void        set_profile_name(const ft_string &name);
         const ft_string &get_profile_name() const;
@@ -82,7 +82,7 @@ class game_data
         int         _direction_moving[4];
         int         _direction_moving_ice[4];
         int         _snake_length[4];
-        int         _update_counter[4];
+        double      _update_timer[4];
         ft_string   _profile_name;
         bool        _achievement_snake50;
 

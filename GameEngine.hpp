@@ -39,7 +39,7 @@ private:
     // Game loop components
     void gameLoop();
     void handleInput(GameKey key, bool& shouldQuit);
-    void updateGame(bool& shouldQuit);
+    void updateGame(bool& shouldQuit, double deltaTime);
     void renderGame();
     void applyMenuSettings();
 

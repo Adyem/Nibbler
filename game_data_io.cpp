@@ -36,7 +36,7 @@ game_data::game_data(int width, int height) :
                 this->_direction_moving[index] = DIRECTION_NONE;
                 // Only initialize Player 1 snake, others are inactive (length 0)
                 this->_snake_length[index] = (index == 0) ? 4 : 0;
-                this->_update_counter[index] = 0;
+                this->_update_timer[index] = 0.0;
                 index++;
         }
         ensure_save_dir_exists();
