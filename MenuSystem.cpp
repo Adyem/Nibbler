@@ -308,6 +308,7 @@ std::vector<std::string> MenuSystem::getAchievementsContent(const game_data& gam
     };
 
     content.push_back(std::string("• Reach length 50: ") + (game.get_achievement_snake50() ? "Unlocked" : "Locked"));
+    content.push_back(std::string("• Apples eaten: ") + std::to_string(game.get_apples_eaten()));
     content.push_back("");
     content.push_back("Press ESC or ENTER to return to main menu");
     return content;

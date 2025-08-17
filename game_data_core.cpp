@@ -102,5 +102,18 @@ int game_data::get_snake_length(int player) const
 
 bool game_data::get_achievement_snake50() const
 {
-    return (this->_achievement_snake50);
+    const Pair<int, ft_achievement> *ach =
+        this->_character.get_achievements().find(ACH_SNAKE_50);
+    if (!ach)
+        return false;
+    return ach->value.is_goal_complete(ACH_GOAL_PRIMARY);
+}
+
+int game_data::get_apples_eaten() const
+{
+    const Pair<int, ft_achievement> *ach =
+        this->_character.get_achievements().find(ACH_APPLES_EATEN);
+    if (!ach)
+        return 0;
+    return ach->value.get_progress(ACH_GOAL_PRIMARY);
 }
