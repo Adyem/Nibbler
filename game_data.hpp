@@ -27,6 +27,10 @@
 static const int MAX_SNAKE_LENGTH = 40000;
 #define FOOD 1
 
+#define ACH_APPLES_EATEN 0
+#define ACH_SNAKE_50 1
+#define ACH_GOAL_PRIMARY 0
+
 typedef struct s_coordinates
 {
     int x;
@@ -60,7 +64,8 @@ class game_data
         int         save_game() const;
         int         load_game();
         int         get_snake_length(int player) const;
-    	bool        get_achievement_snake50() const;
+        bool        get_achievement_snake50() const;
+        int         get_apples_eaten() const;
 
         // Testing method - exposes private is_valid_move for unit tests
         int         test_is_valid_move(int player_head);
@@ -84,8 +89,6 @@ class game_data
         int         _snake_length[4];
         double      _update_timer[4];
         ft_string   _profile_name;
-        bool        _achievement_snake50;
-
         ft_map3d     				_map;
         ft_character 				_character;
         std::vector<t_coordinates> 	_empty_cells;

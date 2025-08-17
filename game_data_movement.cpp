@@ -1,4 +1,5 @@
 #include "game_data.hpp"
+#include <climits>
 
 t_coordinates game_data::get_head_coordinate(int head_to_find)
 {
@@ -286,11 +287,22 @@ int game_data::update_snake_position(int player_head)
     }
 
     // Handle food consumption
-    if (ate_food && this->_snake_length[player_number] < MAX_SNAKE_LENGTH) {
-        this->_snake_length[player_number]++;
-        if (this->_snake_length[player_number] >= 50)
-            this->_achievement_snake50 = true;
-        this->spawn_food();
+    if (ate_food) {
+        ft_achievement &apple =
+            this->_character.get_achievements().at(ACH_APPLES_EATEN);
+        int progress = apple.get_progress(ACH_GOAL_PRIMARY);
+        if (progress < INT_MAX)
+            apple.set_progress(ACH_GOAL_PRIMARY, progress + 1);
+        if (this->_snake_length[player_number] < MAX_SNAKE_LENGTH) {
+            this->_snake_length[player_number]++;
+            ft_achievement &snake =
+                this->_character.get_achievements().at(ACH_SNAKE_50);
+            int goal = snake.get_goal(ACH_GOAL_PRIMARY);
+            if (this->_snake_length[player_number] >= goal &&
+                !snake.is_goal_complete(ACH_GOAL_PRIMARY))
+                snake.set_progress(ACH_GOAL_PRIMARY, goal);
+            this->spawn_food();
+        }
     }
     return (0);
 }

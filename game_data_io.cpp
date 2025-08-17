@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <string>
 #include <cstring>
+#include <climits>
 
 static std::filesystem::path get_save_dir()
 {
@@ -22,7 +23,7 @@ static void ensure_save_dir_exists()
 
 game_data::game_data(int width, int height) :
         _error(0), _wrap_around_edges(0), _amount_players_dead(0),
-        _profile_name("default"), _achievement_snake50(false),
+        _profile_name("default"),
         _map(width, height, 3), _character()
 {
         if (this->_map.get_error())
@@ -39,6 +40,19 @@ game_data::game_data(int width, int height) :
                 this->_update_timer[index] = 0.0;
                 index++;
         }
+        ft_achievement apple;
+        apple.set_id(ACH_APPLES_EATEN);
+        apple.set_goal(ACH_GOAL_PRIMARY, INT_MAX);
+        ft_map<int, ft_achievement> &ach = this->_character.get_achievements();
+        ach.insert(ACH_APPLES_EATEN, apple);
+        if (ach.get_error())
+                this->_error = ach.get_error();
+        ft_achievement snake50;
+        snake50.set_id(ACH_SNAKE_50);
+        snake50.set_goal(ACH_GOAL_PRIMARY, 50);
+        ach.insert(ACH_SNAKE_50, snake50);
+        if (ach.get_error())
+                this->_error = ach.get_error();
         ensure_save_dir_exists();
         this->reset_board();
         return ;
@@ -54,8 +68,19 @@ int game_data::save_game() const
         return (1);
     json_add_item_to_group(group, json_create_item
                         ("snake_length", this->_snake_length[0]));
+    const ft_map<int, ft_achievement> &achievements =
+        this->_character.get_achievements();
+    const Pair<int, ft_achievement> *apple =
+        achievements.find(ACH_APPLES_EATEN);
+    int appleCount = apple ? apple->value.get_progress(ACH_GOAL_PRIMARY) : 0;
+    const Pair<int, ft_achievement> *snake =
+        achievements.find(ACH_SNAKE_50);
+    bool snake50 = snake ?
+        snake->value.is_goal_complete(ACH_GOAL_PRIMARY) : false;
     json_add_item_to_group(group, json_create_item
-                        ("achievement_snake50", this->_achievement_snake50));
+                        ("achievement_snake50", snake50));
+    json_add_item_to_group(group, json_create_item
+                        ("apples_eaten", appleCount));
     int ret = json_write_to_file(file.c_str(), group);
     json_free_groups(group);
     return (ret);
@@ -80,8 +105,28 @@ int game_data::load_game()
         this->_snake_length[0] = std::atoi(len->value);
     json_item *ach = json_find_item(group, "achievement_snake50");
     if (ach)
-        this->_achievement_snake50 = (std::strcmp(ach->value, "true")
-                                == 0 || std::strcmp(ach->value, "1") == 0);
+    {
+        bool unlocked = (std::strcmp(ach->value, "true") == 0
+                        || std::strcmp(ach->value, "1") == 0);
+        ft_achievement &a =
+            this->_character.get_achievements().at(ACH_SNAKE_50);
+        if (unlocked)
+            a.set_progress(ACH_GOAL_PRIMARY, a.get_goal(ACH_GOAL_PRIMARY));
+        else
+            a.set_progress(ACH_GOAL_PRIMARY, 0);
+    }
+    json_item *apples = json_find_item(group, "apples_eaten");
+    if (apples)
+    {
+        int value = std::atoi(apples->value);
+        if (value < 0)
+            value = 0;
+        ft_achievement &a =
+            this->_character.get_achievements().at(ACH_APPLES_EATEN);
+        if (value > INT_MAX)
+            value = INT_MAX;
+        a.set_progress(ACH_GOAL_PRIMARY, value);
+    }
     json_free_groups(root);
     return (0);
 }
