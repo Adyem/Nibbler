@@ -23,6 +23,7 @@ static void ensure_save_dir_exists()
 
 game_data::game_data(int width, int height) :
         _error(0), _wrap_around_edges(0), _amount_players_dead(0),
+        _moves_per_second(1.0),
         _profile_name("default"),
         _map(width, height, 3), _character()
 {

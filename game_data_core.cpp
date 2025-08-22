@@ -16,6 +16,17 @@ int game_data::get_wrap_around_edges() const
     return (this->_wrap_around_edges);
 }
 
+void game_data::set_moves_per_second(double moves)
+{
+    this->_moves_per_second = moves;
+    return ;
+}
+
+double game_data::get_moves_per_second() const
+{
+    return (this->_moves_per_second);
+}
+
 
 void game_data::set_direction_moving(int player, int direction)
 {
