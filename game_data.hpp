@@ -46,9 +46,12 @@ class game_data
 
     	int  get_error() const;
     	void set_wrap_around_edges(int value);
-    	int  get_wrap_around_edges() const;
-    	void set_direction_moving(int player, int direction);
-    	int  get_direction_moving(int player) const;
+        int  get_wrap_around_edges() const;
+        void set_direction_moving(int player, int direction);
+        int  get_direction_moving(int player) const;
+
+        void set_moves_per_second(double moves);
+        double get_moves_per_second() const;
 
     	void   set_map_value(int x, int y, int layer, int value);
     	int    get_map_value(int x, int y, int layer) const;
@@ -88,6 +91,7 @@ class game_data
         int         _direction_moving_ice[4];
         int         _snake_length[4];
         double      _update_timer[4];
+        double      _moves_per_second;
         ft_string   _profile_name;
         ft_map3d     				_map;
         ft_character 				_character;

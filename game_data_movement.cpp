@@ -315,7 +315,7 @@ int game_data::update_game_map(double deltaTime)
         SNAKE_HEAD_PLAYER_2,
         SNAKE_HEAD_PLAYER_3,
         SNAKE_HEAD_PLAYER_4};
-    const double moveInterval = 1.0 / 12.0; // Move 12 times per second
+    const double moveInterval = 1.0 / this->_moves_per_second; // Moves per second is configurable
     int i = 0;
     while (i < 4)
     {
