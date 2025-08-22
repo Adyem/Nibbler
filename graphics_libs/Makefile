@@ -41,8 +41,8 @@ LIBFT = ../libft/Full_Libft.a
 NCURSES_LIBS = $(shell pkg-config --libs ncursesw 2>/dev/null || pkg-config --libs ncurses 2>/dev/null || echo "-lncurses")
 SDL2_CFLAGS = $(shell pkg-config --cflags sdl2 sdl2_ttf 2>/dev/null || echo "")
 SDL2_LIBS = $(shell pkg-config --libs sdl2 sdl2_ttf 2>/dev/null || echo "-lSDL2 -lSDL2_ttf")
-SFML_CFLAGS = $(shell pkg-config --cflags sfml-graphics 2>/dev/null || echo "")
-SFML_LIBS = $(shell pkg-config --libs sfml-graphics sfml-window sfml-system 2>/dev/null || echo "-lsfml-graphics -lsfml-window -lsfml-system")
+SFML_CFLAGS = $(shell PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig pkg-config --cflags sfml-graphics 2>/dev/null || echo "")
+SFML_LIBS = $(shell PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig pkg-config --libs sfml-graphics sfml-window sfml-system 2>/dev/null || echo "-lsfml-graphics -lsfml-window -lsfml-system")
 RAYLIB_CFLAGS = $(shell pkg-config --cflags raylib 2>/dev/null || echo "")
 RAYLIB_LIBS = $(shell pkg-config --libs raylib 2>/dev/null || echo "-lraylib")
 
@@ -84,7 +84,7 @@ $(SDL2_LIB): $(SDL2_SOURCES) $(SDL2_HEADERS) | $(OUT_DIR)
 # SFML graphics library (requires SFML)
 $(SFML_LIB): $(SFML_SOURCES) $(SFML_HEADERS) | $(OUT_DIR)
 	@echo "Building SFML Graphics Library..."
-	@if ! pkg-config --exists sfml-graphics 2>/dev/null && ! [ -f /usr/include/SFML/Graphics.hpp ] && ! [ -f /usr/local/include/SFML/Graphics.hpp ]; then \
+	@if ! PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig pkg-config --exists sfml-graphics 2>/dev/null && ! [ -f /usr/include/SFML/Graphics.hpp ] && ! [ -f /usr/local/include/SFML/Graphics.hpp ]; then \
 		echo "Warning: SFML development headers not found. Skipping SFML library."; \
 		:; \
 	else \
@@ -129,7 +129,7 @@ check-deps:
 	else \
 		echo "SDL2: NOT AVAILABLE - install with 'apt-get install libsdl2-dev libsdl2-ttf-dev' or 'brew install sdl2 sdl2_ttf'"; \
 	fi
-	@if pkg-config --exists sfml-graphics 2>/dev/null || [ -f /usr/include/SFML/Graphics.hpp ] || [ -f /usr/local/include/SFML/Graphics.hpp ]; then \
+	@if PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig pkg-config --exists sfml-graphics 2>/dev/null || [ -f /usr/include/SFML/Graphics.hpp ] || [ -f /usr/local/include/SFML/Graphics.hpp ]; then \
 		echo "SFML: Available"; \
 	else \
 		echo "SFML: NOT AVAILABLE - install with 'apt-get install libsfml-dev' or 'brew install sfml'"; \
