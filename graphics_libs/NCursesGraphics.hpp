@@ -53,7 +53,10 @@ private:
         COLOR_WALL = 4,
         COLOR_ICE = 5,
         COLOR_BORDER = 6,
-        COLOR_INFO = 7
+        COLOR_INFO = 7,
+        COLOR_FIRE_FOOD = 8,
+        COLOR_FROSTY_FOOD = 9,
+        COLOR_FIRE_TILE = 10
     };
 
     // Helper methods

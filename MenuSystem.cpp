@@ -73,10 +73,11 @@ void MenuSystem::selectCurrentItem() {
             else if (_currentSelection == 1) adjustGameSpeed(10);
             else if (_currentSelection == 2) toggleWrapAround();
             // Board size (index 3) is non-selectable - skip
-            else if (_currentSelection == 4) toggleAlternativeColors();
-            else if (_currentSelection == 5) toggleGrid();
-            else if (_currentSelection == 6) toggleFPS();
-            else if (_currentSelection == 8) goBack(); // Back to Main Menu (adjusted index)
+            else if (_currentSelection == 4) toggleAdditionalFoodItems();
+            else if (_currentSelection == 5) toggleAlternativeColors();
+            else if (_currentSelection == 6) toggleGrid();
+            else if (_currentSelection == 7) toggleFPS();
+            else if (_currentSelection == 9) goBack(); // Back to Main Menu (adjusted index)
 
             updateSettingsMenu();
             break;
@@ -190,10 +191,11 @@ void MenuSystem::updateSettingsMenu() {
     _settingsMenuItems.emplace_back("Game Speed: " + std::to_string(_settings.gameSpeed) + " FPS");
     _settingsMenuItems.emplace_back("Wrap Around Edges: " + std::string(_settings.wrapAroundEdges ? "ON" : "OFF"));
     _settingsMenuItems.emplace_back("Board Size: " + std::to_string(_settings.boardWidth) + "x" + std::to_string(_settings.boardHeight) + " (from command line)", false);
+    _settingsMenuItems.emplace_back("Additional Foods: " + std::string(_settings.additionalFoodItems ? "ON" : "OFF"));
     _settingsMenuItems.emplace_back("Alternative Colors: " + std::string(_settings.useAlternativeColors ? "ON" : "OFF"));
     _settingsMenuItems.emplace_back("Show Grid: " + std::string(_settings.showGrid ? "ON" : "OFF"));
     _settingsMenuItems.emplace_back("Show FPS: " + std::string(_settings.showFPS ? "ON" : "OFF"));
-    
+
     _settingsMenuItems.emplace_back("", false); // Spacer
     _settingsMenuItems.emplace_back("Back to Main Menu");
 }
@@ -210,6 +212,10 @@ void MenuSystem::adjustGameSpeed(int delta) {
 
 void MenuSystem::toggleWrapAround() {
     _settings.wrapAroundEdges = !_settings.wrapAroundEdges;
+}
+
+void MenuSystem::toggleAdditionalFoodItems() {
+    _settings.additionalFoodItems = !_settings.additionalFoodItems;
 }
 
 void MenuSystem::adjustBoardSize(int widthDelta, int heightDelta) {

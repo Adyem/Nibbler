@@ -12,6 +12,9 @@ const SDL2Graphics::Color SDL2Graphics::COLOR_BORDER(100, 100, 120);       // Li
 const SDL2Graphics::Color SDL2Graphics::COLOR_SNAKE_HEAD(50, 200, 50);     // Bright green
 const SDL2Graphics::Color SDL2Graphics::COLOR_SNAKE_BODY(30, 150, 30);     // Dark green
 const SDL2Graphics::Color SDL2Graphics::COLOR_FOOD(200, 50, 50);           // Red
+const SDL2Graphics::Color SDL2Graphics::COLOR_FIRE_FOOD(255, 120, 0);      // Orange
+const SDL2Graphics::Color SDL2Graphics::COLOR_FROSTY_FOOD(80, 170, 255);   // Light blue
+const SDL2Graphics::Color SDL2Graphics::COLOR_FIRE_TILE(200, 80, 20);      // Red-orange
 const SDL2Graphics::Color SDL2Graphics::COLOR_TEXT(255, 255, 255);         // White
 
 SDL2Graphics::SDL2Graphics()
@@ -163,6 +166,12 @@ void SDL2Graphics::render(const game_data& game) {
             if (layer2Value == FOOD) {
                 setDrawColor(COLOR_FOOD);
                 drawRect(pixelX + 2, pixelY + 2, cellSize - 4, cellSize - 4);
+            } else if (layer2Value == FIRE_FOOD) {
+                setDrawColor(COLOR_FIRE_FOOD);
+                drawRect(pixelX + 2, pixelY + 2, cellSize - 4, cellSize - 4);
+            } else if (layer2Value == FROSTY_FOOD) {
+                setDrawColor(COLOR_FROSTY_FOOD);
+                drawRect(pixelX + 2, pixelY + 2, cellSize - 4, cellSize - 4);
             } else if (layer2Value == SNAKE_HEAD_PLAYER_1) {
                 setDrawColor(COLOR_SNAKE_HEAD);
                 drawRect(pixelX, pixelY, cellSize, cellSize);
@@ -177,6 +186,9 @@ void SDL2Graphics::render(const game_data& game) {
                     drawRect(pixelX, pixelY, cellSize, cellSize);
                 } else if (layer0Value == GAME_TILE_ICE) {
                     setDrawColor(COLOR_BACKGROUND);
+                    drawRect(pixelX, pixelY, cellSize, cellSize);
+                } else if (layer0Value == GAME_TILE_FIRE) {
+                    setDrawColor(COLOR_FIRE_TILE);
                     drawRect(pixelX, pixelY, cellSize, cellSize);
                 }
                 // Empty space - no drawing needed

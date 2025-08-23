@@ -302,6 +302,9 @@ void NCursesGraphics::initializeColors() {
     init_pair(COLOR_ICE, COLOR_CYAN, COLOR_BLACK);
     init_pair(COLOR_BORDER, COLOR_BLUE, COLOR_BLACK);
     init_pair(COLOR_INFO, COLOR_MAGENTA, COLOR_BLACK);
+    init_pair(COLOR_FIRE_FOOD, COLOR_RED, COLOR_YELLOW);
+    init_pair(COLOR_FROSTY_FOOD, COLOR_CYAN, COLOR_WHITE);
+    init_pair(COLOR_FIRE_TILE, COLOR_RED, COLOR_BLACK);
 }
 
 void NCursesGraphics::drawInfo(const game_data& game) {
@@ -342,6 +345,10 @@ char NCursesGraphics::getCharFromGameTile(int x, int y, const game_data& game) {
     int layer2Value = game.get_map_value(x, y, 2);
     if (layer2Value == FOOD) {
         return '*';  // Food
+    } else if (layer2Value == FIRE_FOOD) {
+        return 'F';  // Fire food
+    } else if (layer2Value == FROSTY_FOOD) {
+        return 'I';  // Frosty food
     } else if (layer2Value == SNAKE_HEAD_PLAYER_1) {
         return '@';  // Snake head
     } else if (layer2Value > SNAKE_HEAD_PLAYER_1) {
@@ -354,6 +361,8 @@ char NCursesGraphics::getCharFromGameTile(int x, int y, const game_data& game) {
         return '#';  // Wall
     } else if (layer0Value == GAME_TILE_ICE) {
         return '~';  // Ice
+    } else if (layer0Value == GAME_TILE_FIRE) {
+        return '^';  // Fire tile
     }
 
     return ' ';  // Empty space
@@ -364,6 +373,10 @@ int NCursesGraphics::getColorFromGameTile(int x, int y, const game_data& game) {
     int layer2Value = game.get_map_value(x, y, 2);
     if (layer2Value == FOOD) {
         return COLOR_FOOD;
+    } else if (layer2Value == FIRE_FOOD) {
+        return COLOR_FIRE_FOOD;
+    } else if (layer2Value == FROSTY_FOOD) {
+        return COLOR_FROSTY_FOOD;
     } else if (layer2Value == SNAKE_HEAD_PLAYER_1) {
         return COLOR_SNAKE_HEAD;
     } else if (layer2Value > SNAKE_HEAD_PLAYER_1) {
@@ -376,6 +389,8 @@ int NCursesGraphics::getColorFromGameTile(int x, int y, const game_data& game) {
         return COLOR_WALL;
     } else if (layer0Value == GAME_TILE_ICE) {
         return COLOR_ICE;
+    } else if (layer0Value == GAME_TILE_FIRE) {
+        return COLOR_FIRE_TILE;
     }
 
     return 0;  // Default color
