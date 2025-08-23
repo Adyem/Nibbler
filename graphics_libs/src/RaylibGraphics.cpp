@@ -36,15 +36,40 @@ int RaylibGraphics::initialize() {
         return 0;
     clearError();
 
-    // Add a small delay to ensure previous graphics context is fully released
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    // Extended delay to ensure previous graphics context (especially SFML) is fully released
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
-    InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Nibbler - Raylib");
-    if (!IsWindowReady()) {
-        setError("Failed to create Raylib window - possible OpenGL context conflict");
+    // Force a complete yield to let the system process any pending graphics cleanup
+    std::this_thread::yield();
+
+    // Additional delay specifically for OpenGL context cleanup
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    // Try to initialize Raylib window with error handling
+    try {
+        InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Nibbler - Raylib");
+
+        // Give Raylib time to fully initialize its OpenGL context
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+        if (!IsWindowReady()) {
+            setError("Failed to create Raylib window - OpenGL context conflict or graphics driver issue");
+            return 1;
+        }
+
+        // Additional setup to ensure clean state
+        SetTargetFPS(_targetFPS);
+
+        // Clear any potential OpenGL errors from context switch
+        ClearBackground({0, 0, 0, 255}); // Use explicit Color struct
+        EndDrawing(); // Force a frame to initialize graphics state
+        BeginDrawing();
+
+    } catch (...) {
+        setError("Exception during Raylib window initialization - likely OpenGL context conflict");
         return 1;
     }
-    SetTargetFPS(_targetFPS);
+
     _initialized = true;
     _shouldContinue = true;
     return 0;

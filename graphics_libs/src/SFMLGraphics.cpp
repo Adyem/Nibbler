@@ -6,6 +6,7 @@
 #include <sstream>
 #include <algorithm>
 #include <cstring>
+#include <thread>
 
 // Static color definitions
 const SFMLGraphics::Color SFMLGraphics::COLOR_BACKGROUND(20, 20, 30);  // Dark blue-gray
@@ -110,6 +111,17 @@ void SFMLGraphics::shutdown() {
         _window = nullptr;
 
         // Additional delay specifically for OpenGL context cleanup
+        sf::sleep(sf::milliseconds(200)); // Increased from 150ms
+
+        // Force complete resource cleanup
+        std::this_thread::yield();
+
+        // Additional delay to ensure OpenGL driver has time to clean up
+        sf::sleep(sf::milliseconds(150)); // Increased from 100ms
+
+        // Extra aggressive cleanup for Raylib compatibility
+        // Force OpenGL state reset with additional delays
+        sf::sleep(sf::milliseconds(100));
         sf::sleep(sf::milliseconds(100));
     }
 
@@ -237,7 +249,7 @@ GameKey SFMLGraphics::getInput() {
                     _menuSystem->goBack();
                     break;
                 default:
-                    // Return other keys (like 1/2/3) for library switching
+                    // Return other keys (like 1/2/3/4) for library switching
                     return key;
                 }
                 // Continue polling events; do not return for handled menu input

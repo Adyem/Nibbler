@@ -13,22 +13,22 @@ OUT_DIR := $(if $(DLLIBS_DIR),$(DLLIBS_DIR),../dllibs)
 # Library targets
 SDL2_LIB = $(OUT_DIR)/lib_sdl2.so
 NCURSES_LIB = $(OUT_DIR)/lib_ncurses.so
-SFML_LIB = $(OUT_DIR)/lib_sfml.so
+OPENGL_LIB = $(OUT_DIR)/lib_opengl.so
 RAYLIB_LIB = $(OUT_DIR)/lib_raylib.so
 
 # All libraries
-ALL_LIBS = $(NCURSES_LIB) $(SDL2_LIB) $(SFML_LIB) $(RAYLIB_LIB)
+ALL_LIBS = $(NCURSES_LIB) $(SDL2_LIB) $(OPENGL_LIB) $(RAYLIB_LIB)
 
 # Sources (moved to src/)
 SDL2_SOURCES = src/SDL2Graphics.cpp
 NCURSES_SOURCES = src/NCursesGraphics.cpp
-SFML_SOURCES = src/SFMLGraphics.cpp
+OPENGL_SOURCES = src/OpenGLGraphics.cpp
 RAYLIB_SOURCES = src/RaylibGraphics.cpp
 
 # Headers (moved to include/)
 SDL2_HEADERS = include/SDL2Graphics.hpp ../IGraphicsLibrary.hpp
 NCURSES_HEADERS = include/NCursesGraphics.hpp ../IGraphicsLibrary.hpp
-SFML_HEADERS = include/SFMLGraphics.hpp ../IGraphicsLibrary.hpp
+OPENGL_HEADERS = include/OpenGLGraphics.hpp ../IGraphicsLibrary.hpp
 RAYLIB_HEADERS = include/RaylibGraphics.hpp ../IGraphicsLibrary.hpp
 
 # Game data dependencies (object files produced by top-level)
@@ -41,8 +41,8 @@ LIBFT = ../libft/Full_Libft.a
 NCURSES_LIBS = $(shell pkg-config --libs ncursesw 2>/dev/null || pkg-config --libs ncurses 2>/dev/null || echo "-lncurses")
 SDL2_CFLAGS = $(shell pkg-config --cflags sdl2 sdl2_ttf 2>/dev/null || echo "")
 SDL2_LIBS = $(shell pkg-config --libs sdl2 sdl2_ttf 2>/dev/null || echo "-lSDL2 -lSDL2_ttf")
-SFML_CFLAGS = $(shell PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig pkg-config --cflags sfml-graphics 2>/dev/null || echo "")
-SFML_LIBS = $(shell PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig pkg-config --libs sfml-graphics sfml-window sfml-system 2>/dev/null || echo "-lsfml-graphics -lsfml-window -lsfml-system")
+OPENGL_CFLAGS = $(shell pkg-config --cflags glfw3 2>/dev/null || echo "")
+OPENGL_LIBS = $(shell pkg-config --libs glfw3 2>/dev/null || echo "-lglfw -lGL")
 RAYLIB_CFLAGS = $(shell pkg-config --cflags raylib 2>/dev/null || echo "")
 RAYLIB_LIBS = $(shell pkg-config --libs raylib 2>/dev/null || echo "-lraylib")
 
@@ -81,14 +81,14 @@ $(SDL2_LIB): $(SDL2_SOURCES) $(SDL2_HEADERS) | $(OUT_DIR)
 		$(CXX) $(CXXFLAGS) $(SDL2_CFLAGS) $(LDFLAGS) -o $@ $(SDL2_SOURCES) $(SDL2_LIBS) && echo "SDL2 Graphics Library built successfully!"; \
 	fi
 
-# SFML graphics library (requires SFML)
-$(SFML_LIB): $(SFML_SOURCES) $(SFML_HEADERS) | $(OUT_DIR)
-	@echo "Building SFML Graphics Library..."
-	@if ! PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig pkg-config --exists sfml-graphics 2>/dev/null && ! [ -f /usr/include/SFML/Graphics.hpp ] && ! [ -f /usr/local/include/SFML/Graphics.hpp ]; then \
-		echo "Warning: SFML development headers not found. Skipping SFML library."; \
+# OpenGL graphics library (requires GLFW and OpenGL)
+$(OPENGL_LIB): $(OPENGL_SOURCES) $(OPENGL_HEADERS) | $(OUT_DIR)
+	@echo "Building OpenGL Graphics Library..."
+	@if ! pkg-config --exists glfw3 2>/dev/null && ! [ -f /usr/include/GLFW/glfw3.h ] && ! [ -f /usr/local/include/GLFW/glfw3.h ]; then \
+		echo "Warning: GLFW development headers not found. Skipping OpenGL library."; \
 		:; \
 	else \
-		$(CXX) $(CXXFLAGS) $(SFML_CFLAGS) $(LDFLAGS) -o $@ $(SFML_SOURCES) $(SFML_LIBS) && echo "SFML Graphics Library built successfully!"; \
+		$(CXX) $(CXXFLAGS) $(OPENGL_CFLAGS) $(LDFLAGS) -o $@ $(OPENGL_SOURCES) $(OPENGL_LIBS) && echo "OpenGL Graphics Library built successfully!"; \
 	fi
 
 # Raylib graphics library (requires raylib)
@@ -108,7 +108,7 @@ ncurses: $(NCURSES_LIB)
 
 sdl2: $(SDL2_LIB)
 
-sfml: $(SFML_LIB)
+opengl: $(OPENGL_LIB)
 
 raylib: $(RAYLIB_LIB)
 
@@ -134,6 +134,11 @@ check-deps:
 	else \
 		echo "SFML: NOT AVAILABLE - install with 'apt-get install libsfml-dev' or 'brew install sfml'"; \
 	fi
+	@if pkg-config --exists glfw3 2>/dev/null || [ -f /usr/include/GLFW/glfw3.h ] || [ -f /usr/local/include/GLFW/glfw3.h ]; then \
+		echo "OpenGL/GLFW: Available"; \
+	else \
+		echo "OpenGL/GLFW: NOT AVAILABLE - install with 'apt-get install libglfw3-dev libgl1-mesa-dev' or 'brew install glfw'"; \
+	fi
 	@if pkg-config --exists raylib 2>/dev/null || [ -f /usr/include/raylib.h ] || [ -f /usr/local/include/raylib.h ] || [ -f /usr/lib/x86_64-linux-gnu/libraylib.so ] || [ -f /usr/local/lib/libraylib.so ]; then \
 		echo "Raylib: Available"; \
 	else \
@@ -144,7 +149,7 @@ check-deps:
 install-deps-macos:
 	@echo "Installing dependencies for macOS..."
 	@if command -v brew >/dev/null 2>&1; then \
-		brew install ncurses sdl2 sdl2_ttf sfml raylib; \
+		brew install ncurses sdl2 sdl2_ttf glfw raylib; \
 	else \
 		echo "Homebrew not found. Please install Homebrew first: https://brew.sh/"; \
 	fi
@@ -153,7 +158,7 @@ install-deps-macos:
 install-deps-ubuntu:
 	@echo "Installing dependencies for Ubuntu/Debian..."
 	sudo apt-get update
-	sudo apt-get install libncurses5-dev libsdl2-dev libsdl2-ttf-dev libsfml-dev libraylib-dev
+	sudo apt-get install libncurses5-dev libsdl2-dev libsdl2-ttf-dev libglfw3-dev libgl1-mesa-dev libraylib-dev
 
 # Clean all libraries
 clean:
@@ -172,7 +177,7 @@ help:
 	@echo "  all              - Build all available graphics libraries"
 	@echo "  ncurses          - Build NCurses graphics library only"
 	@echo "  sdl2             - Build SDL2 graphics library only"
-	@echo "  sfml             - Build SFML graphics library only"
+	@echo "  opengl           - Build OpenGL graphics library only"
 	@echo "  raylib           - Build Raylib graphics library only"
 	@echo "  check-deps       - Check for required dependencies"
 	@echo "  install-deps-macos   - Install dependencies on macOS"
@@ -184,7 +189,7 @@ help:
 	@echo "Libraries:"
 	@echo "  lib_ncurses.so   - Enhanced terminal graphics with colors"
 	@echo "  lib_sdl2.so      - Modern windowed graphics with SDL2"
-	@echo "  lib_sfml.so      - Advanced graphics with SFML"
+	@echo "  lib_opengl.so    - Modern OpenGL graphics with GLFW"
 	@echo "  lib_raylib.so    - Windowed graphics with raylib"
 
-.PHONY: all ncurses sdl2 sfml raylib check-deps install-deps-macos install-deps-ubuntu clean rebuild help
+.PHONY: all ncurses sdl2 opengl raylib check-deps install-deps-macos install-deps-ubuntu clean rebuild help

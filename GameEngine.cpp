@@ -322,9 +322,9 @@ int GameEngine::loadDefaultLibraries() {
         std::cerr << "Warning: Failed to load SDL2 library: " << _libraryManager.getError() << std::endl;
     }
 
-    // Try to load the SFML library (index 2)
-    if (_libraryManager.loadLibrary("./dllibs/lib_sfml.so") != 0) {
-        std::cerr << "Warning: Failed to load SFML library: " << _libraryManager.getError() << std::endl;
+    // Try to load the OpenGL library (index 2)
+    if (_libraryManager.loadLibrary("./dllibs/lib_opengl.so") != 0) {
+        std::cerr << "Warning: Failed to load OpenGL library: " << _libraryManager.getError() << std::endl;
     }
 
     // Try to load the Raylib library (index 3)
@@ -363,23 +363,21 @@ void GameEngine::switchGraphicsLibrary(int libraryIndex) {
         return;
     }
 
+    // Get current and target library names for logging
+    const char* currentLibName = _libraryManager.getLibraryName(_libraryManager.getCurrentLibraryIndex());
+    const char* targetLibName = _libraryManager.getLibraryName(libraryIndex);
+
+    std::cout << "Switching graphics library from "
+              << (currentLibName ? currentLibName : "none")
+              << " to " << (targetLibName ? targetLibName : "unknown") << std::endl;
+
     // Shutdown current library
     if (currentLib) {
-        // Check if we're switching from SFML (which needs extra time for clean shutdown)
-        const char* currentLibName = _libraryManager.getLibraryName(_libraryManager.getCurrentLibraryIndex());
-        bool switchingFromSFML = (currentLibName && std::string(currentLibName).find("SFML") != std::string::npos);
-
         currentLib->shutdown();
 
-        // Much longer delay when switching from SFML to ensure graphics context is properly released
-        if (switchingFromSFML) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(300));
-            // Force a yield to let the system process the shutdown
-            std::this_thread::yield();
-        } else {
-            // Small delay to ensure clean shutdown, especially for SDL2
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        }
+        // Small delay to ensure clean shutdown
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::yield();
     }
 
     // Switch to new library
@@ -404,10 +402,11 @@ void GameEngine::switchGraphicsLibrary(int libraryIndex) {
                     // Additional delay to ensure focus transfer
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-                    // Force NCurses to be ready for input (cast to NCursesGraphics if needed)
+                    // Force NCurses to be ready for input
                     // This will be handled by the forceInputReadiness() method called in initialize()
-                } else if (newLibName && std::string(newLibName).find("Raylib") != std::string::npos) {
-                    // Special handling for Raylib after SFML - ensure OpenGL context is ready
+                } else if (newLibName && (std::string(newLibName).find("Raylib") != std::string::npos ||
+                                        std::string(newLibName).find("OpenGL") != std::string::npos)) {
+                    // Small delay for OpenGL-based libraries to ensure context is ready
                     std::this_thread::sleep_for(std::chrono::milliseconds(50));
                 }
 
@@ -475,4 +474,43 @@ void GameEngine::applyMenuSettings() {
     std::cout << "  Game mode: " << (settings.gameMode == GameMode::SINGLE_PLAYER ? "Single Player" : "Multiplayer") << std::endl;
     std::cout << "  Speed: " << settings.gameSpeed << " FPS" << std::endl;
     std::cout << "  Wrap around: " << (settings.wrapAroundEdges ? "ON" : "OFF") << std::endl;
+}
+
+void GameEngine::performIntermediateSwitch(int intermediateIndex, int finalIndex) {
+    // First switch to the intermediate library (SDL2 to clean OpenGL state)
+    IGraphicsLibrary* currentLib = _libraryManager.getCurrentLibrary();
+
+    if (currentLib) {
+        currentLib->shutdown();
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    }
+
+    // Switch to intermediate library
+    if (_libraryManager.switchToLibrary(intermediateIndex) == 0) {
+        IGraphicsLibrary* intermediateLib = _libraryManager.getCurrentLibrary();
+        if (intermediateLib && intermediateLib->initialize() == 0) {
+            intermediateLib->setFrameRate(60);
+            intermediateLib->setMenuSystem(&_menuSystem);
+
+            // Very brief operation with the intermediate library to clean OpenGL state
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            // Now shutdown the intermediate library
+            intermediateLib->shutdown();
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        }
+    }
+
+    // Now switch to the final library (Raylib)
+    if (_libraryManager.switchToLibrary(finalIndex) == 0) {
+        IGraphicsLibrary* finalLib = _libraryManager.getCurrentLibrary();
+        if (finalLib && finalLib->initialize() == 0) {
+            finalLib->setFrameRate(60);
+            finalLib->setMenuSystem(&_menuSystem);
+
+            const char* finalLibName = _libraryManager.getLibraryName(finalIndex);
+            std::string message = std::string("Switched to: ") + (finalLibName ? finalLibName : "Unknown Library");
+            finalLib->setSwitchMessage(message, 120);
+        }
+    }
 }

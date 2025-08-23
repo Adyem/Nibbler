@@ -30,6 +30,7 @@ class GameEngine {
     void applyMenuSettings();
     int loadDefaultLibraries();
     void switchGraphicsLibrary(int libraryIndex);
+    void performIntermediateSwitch(int intermediateIndex, int finalIndex);
     void setError(const std::string& error);
     void clearError();
 };

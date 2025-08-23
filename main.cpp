@@ -18,6 +18,11 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    // Welcome message
+    std::cout << "\n🐍 Welcome to NIBBLER - Multi-Graphics Snake Game! 🐍" << std::endl;
+    std::cout << "Now featuring modern OpenGL graphics (replacing SFML)" << std::endl;
+    std::cout << "Seamless switching between 4 different graphics libraries!" << std::endl;
+
     // Let user select graphics library
     int selectedLibrary = selectGraphicsLibrary();
     if (selectedLibrary < 0) {
@@ -96,7 +101,7 @@ int selectGraphicsLibrary() {
     std::cout << "Choose your preferred graphics library:" << std::endl;
     std::cout << "  1. NCurses (Terminal-based)" << std::endl;
     std::cout << "  2. SDL2 (Window-based)" << std::endl;
-    std::cout << "  3. SFML (Window-based)" << std::endl;
+    std::cout << "  3. OpenGL (Window-based)" << std::endl;
     std::cout << "  4. Raylib (Window-based)" << std::endl;
     std::cout << "Enter your choice (1-4): ";
 
@@ -111,7 +116,7 @@ int selectGraphicsLibrary() {
     try {
         int choice = std::stoi(input);
         if (choice >= 1 && choice <= 4) {
-            const char* libNames[] = {"NCurses", "SDL2", "SFML", "Raylib"};
+            const char* libNames[] = {"NCurses", "SDL2", "OpenGL", "Raylib"};
             std::cout << "Selected: " << libNames[choice - 1] << std::endl;
             return choice - 1; // Convert to 0-based index
         } else {

@@ -227,7 +227,7 @@ std::vector<std::string> MenuSystem::getCreditsContent() const {
         "LIBRARIES USED:",
         "NCurses - Enhanced terminal graphics with colors",
         "SDL2 - Modern windowed graphics with hardware acceleration",
-        "SFML - Advanced graphics library",
+        "OpenGL - Modern OpenGL graphics with GLFW",
         "Raylib - Simple 2D graphics library",
         "",
         "DESIGN PHILOSOPHY:",
@@ -276,7 +276,7 @@ std::vector<std::string> MenuSystem::getInstructionsContent() const {
         "GRAPHICS LIBRARIES:",
         "Key 1 - NCurses (colored terminal graphics)",
         "Key 2 - SDL2 (modern windowed graphics)",
-        "Key 3 - SFML (advanced graphics)",
+        "Key 3 - OpenGL (modern graphics)",
         "Key 4 - Raylib (simple 2D graphics)",
         ""};
 }
