@@ -23,7 +23,7 @@ static void ensure_save_dir_exists()
 
 game_data::game_data(int width, int height) :
         _error(0), _wrap_around_edges(0), _amount_players_dead(0),
-        _moves_per_second(1.0),
+        _moves_per_second(1.0), _additional_food_items(0),
         _profile_name("default"),
         _map(width, height, 3), _character()
 {
@@ -36,6 +36,8 @@ game_data::game_data(int width, int height) :
         {
                 this->_direction_moving_ice[index] = 0;
                 this->_direction_moving[index] = DIRECTION_NONE;
+                this->_speed_boost_steps[index] = 0;
+                this->_frosty_steps[index] = 0;
                 // Only initialize Player 1 snake, others are inactive (length 0)
                 this->_snake_length[index] = (index == 0) ? 4 : 0;
                 this->_update_timer[index] = 0.0;

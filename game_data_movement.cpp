@@ -30,7 +30,8 @@ int game_data::is_valid_move(int player_head)
     int player_number = this->determine_player_number(player_head);
 
     int direction_moving = this->_direction_moving[player_number];
-    if (this->_map.get(head.x, head.y, 0) == GAME_TILE_ICE)
+    if (this->_frosty_steps[player_number] > 0 ||
+        this->_map.get(head.x, head.y, 0) == GAME_TILE_ICE)
         direction_moving = this->_direction_moving_ice[player_number];
 
     // If no direction is set, the move is valid but the snake won't move
@@ -93,7 +94,7 @@ int game_data::is_valid_move(int player_head)
     }
 
     int target_val = this->_map.get(target_x, target_y, 2);
-    if (target_val != 0 && target_val != FOOD)
+    if (target_val != 0 && target_val != FOOD && target_val != FIRE_FOOD && target_val != FROSTY_FOOD)
         return (1);
     if (this->_map.get(target_x, target_y, 0) == GAME_TILE_WALL)
         return (1);
@@ -189,7 +190,9 @@ int game_data::update_snake_position(int player_head)
     if (this->is_valid_move(player_head) != 0)
         return (1);
     int direction_moving = this->_direction_moving[player_number];
-    if (this->_map.get(current_coords.x, current_coords.y, 0) == GAME_TILE_ICE)
+    bool frosty_active = (this->_frosty_steps[player_number] > 0);
+    if (frosty_active ||
+        this->_map.get(current_coords.x, current_coords.y, 0) == GAME_TILE_ICE)
         direction_moving = this->_direction_moving_ice[player_number];
     int width  = static_cast<int>(this->_map.get_width());
     int height = static_cast<int>(this->_map.get_height());
@@ -247,12 +250,21 @@ int game_data::update_snake_position(int player_head)
     bool on_ice_now = (this->_map.get(current_coords.x, current_coords.y, 0) ==
                 GAME_TILE_ICE);
     bool on_ice_next = (this->_map.get(target_x, target_y, 0) == GAME_TILE_ICE);
+    bool on_fire_next = (this->_map.get(target_x, target_y, 0) == GAME_TILE_FIRE);
     if (!on_ice_now && on_ice_next)
         this->_direction_moving_ice[player_number] = direction_moving;
-    else if (on_ice_now && !on_ice_next)
+    else if (on_ice_now && !on_ice_next && this->_frosty_steps[player_number] == 0)
         this->_direction_moving_ice[player_number] = 0;
+    if (frosty_active)
+    {
+        this->_direction_moving_ice[player_number] = direction_moving;
+        this->_frosty_steps[player_number]--;
+        if (this->_frosty_steps[player_number] == 0 && !on_ice_next)
+            this->_direction_moving_ice[player_number] = 0;
+    }
     int offset = (player_head / 1000000) * 1000000;
-    bool ate_food = (this->_map.get(target_x, target_y, 2) == FOOD);
+    int tile_val = this->_map.get(target_x, target_y, 2);
+    bool ate_food = (tile_val == FOOD || tile_val == FIRE_FOOD || tile_val == FROSTY_FOOD);
 
     // Move all existing segments forward by incrementing their values first
     // We need to do this in reverse order to avoid overwriting
@@ -288,6 +300,13 @@ int game_data::update_snake_position(int player_head)
 
     // Handle food consumption
     if (ate_food) {
+        if (tile_val == FIRE_FOOD)
+            this->_speed_boost_steps[player_number] += 3;
+        else if (tile_val == FROSTY_FOOD)
+        {
+            this->_frosty_steps[player_number] = 3;
+            this->_direction_moving_ice[player_number] = direction_moving;
+        }
         ft_achievement &apple =
             this->_character.get_achievements().at(ACH_APPLES_EATEN);
         int progress = apple.get_progress(ACH_GOAL_PRIMARY);
@@ -304,6 +323,13 @@ int game_data::update_snake_position(int player_head)
             this->spawn_food();
         }
     }
+    if (on_fire_next)
+    {
+        this->_speed_boost_steps[player_number] += 3;
+        this->_map.set(target_x, target_y, 0, GAME_TILE_EMPTY);
+        if (this->_additional_food_items)
+            this->spawn_fire_tile();
+    }
     return (0);
 }
 
@@ -315,18 +341,27 @@ int game_data::update_game_map(double deltaTime)
         SNAKE_HEAD_PLAYER_2,
         SNAKE_HEAD_PLAYER_3,
         SNAKE_HEAD_PLAYER_4};
-    const double moveInterval = 1.0 / this->_moves_per_second; // Moves per second is configurable
+    const double baseInterval = 1.0 / this->_moves_per_second; // Moves per second is configurable
     int i = 0;
     while (i < 4)
     {
         if (this->_snake_length[i] > 0)
         {
             this->_update_timer[i] += deltaTime;
-            while (this->_update_timer[i] >= moveInterval)
+            double interval = baseInterval;
+            if (this->_speed_boost_steps[i] > 0)
+                interval /= 1.5;
+            while (this->_update_timer[i] >= interval)
             {
-                this->_update_timer[i] -= moveInterval;
+                this->_update_timer[i] -= interval;
+                bool boosted = (this->_speed_boost_steps[i] > 0);
                 if (this->update_snake_position(heads[i]))
                     ret = 1;
+                if (boosted && this->_speed_boost_steps[i] > 0)
+                    this->_speed_boost_steps[i]--;
+                interval = baseInterval;
+                if (this->_speed_boost_steps[i] > 0)
+                    interval /= 1.5;
             }
         }
         ++i;

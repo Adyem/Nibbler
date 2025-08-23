@@ -440,6 +440,7 @@ void GameEngine::applyMenuSettings() {
 
     // Apply wrap around setting
     _gameData.set_wrap_around_edges(settings.wrapAroundEdges ? 1 : 0);
+    _gameData.set_additional_food_items(settings.additionalFoodItems ? 1 : 0);
 
     // Apply frame rate to current graphics library
     IGraphicsLibrary* currentLib = _libraryManager.getCurrentLibrary();

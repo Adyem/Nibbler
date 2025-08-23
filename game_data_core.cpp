@@ -27,6 +27,16 @@ double game_data::get_moves_per_second() const
     return (this->_moves_per_second);
 }
 
+void game_data::set_additional_food_items(int value)
+{
+    this->_additional_food_items = value;
+}
+
+int game_data::get_additional_food_items() const
+{
+    return (this->_additional_food_items);
+}
+
 
 void game_data::set_direction_moving(int player, int direction)
 {

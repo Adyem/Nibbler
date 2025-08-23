@@ -121,6 +121,8 @@ void game_data::reset_board()
     {
         this->_direction_moving[i] = DIRECTION_NONE;
         this->_direction_moving_ice[i] = 0;
+        this->_speed_boost_steps[i] = 0;
+        this->_frosty_steps[i] = 0;
         // Only initialize Player 1 snake, others are inactive (length 0)
         this->_snake_length[i] = (i == 0) ? 4 : 0;
         this->_update_timer[i] = 0.0;
@@ -146,6 +148,8 @@ void game_data::reset_board()
     }
 
     this->spawn_food();
+    if (this->_additional_food_items)
+        this->spawn_fire_tile();
     return ;
 }
 
@@ -167,7 +171,27 @@ void game_data::spawn_food()
         return ;
     int idx = ft_dice_roll(1, static_cast<int>(this->_empty_cells.size())) - 1;
     t_coordinates coord = this->_empty_cells[idx];
-    this->_map.set(coord.x, coord.y, 2, FOOD);
+    int item = FOOD;
+    if (this->_additional_food_items)
+    {
+        int roll = ft_dice_roll(1, 3);
+        if (roll == 2)
+            item = FIRE_FOOD;
+        else if (roll == 3)
+            item = FROSTY_FOOD;
+    }
+    this->_map.set(coord.x, coord.y, 2, item);
+    this->remove_empty_cell(coord.x, coord.y);
+    return ;
+}
+
+void game_data::spawn_fire_tile()
+{
+    if (this->_empty_cells.empty())
+        return ;
+    int idx = ft_dice_roll(1, static_cast<int>(this->_empty_cells.size())) - 1;
+    t_coordinates coord = this->_empty_cells[idx];
+    this->_map.set(coord.x, coord.y, 0, GAME_TILE_FIRE);
     this->remove_empty_cell(coord.x, coord.y);
     return ;
 }
