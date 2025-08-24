@@ -1,5 +1,5 @@
 #include "game_data.hpp"
-#include <climits>
+#include <limits>
 
 t_coordinates game_data::get_head_coordinate(int head_to_find) {
     size_t index_y = 0;
@@ -209,8 +209,9 @@ int game_data::update_snake_position(int player_head) {
 
     bool on_ice_now = (this->_map.get(current_coords.x, current_coords.y, 0) ==
                        GAME_TILE_ICE);
-    bool on_ice_next = (this->_map.get(target_x, target_y, 0) == GAME_TILE_ICE);
-    bool on_fire_next = (this->_map.get(target_x, target_y, 0) == GAME_TILE_FIRE);
+    int tile_type = this->_map.get(target_x, target_y, 0);
+    bool on_ice_next = (tile_type == GAME_TILE_ICE);
+    bool on_fire_next = (tile_type == GAME_TILE_FIRE);
     if (!on_ice_now && on_ice_next)
         this->_direction_moving_ice[player_number] = direction_moving;
     else if (on_ice_now && !on_ice_next && this->_frosty_steps[player_number] == 0)
@@ -258,19 +259,53 @@ int game_data::update_snake_position(int player_head) {
         }
     }
 
+    // Update tile stepping achievements
+    {
+        ft_achievement *tile_ach = NULL;
+        if (tile_type == GAME_TILE_FIRE)
+            tile_ach = &this->_character.get_achievements().at(ACH_TILE_FIRE_STEPS);
+        else if (tile_type == GAME_TILE_ICE)
+            tile_ach = &this->_character.get_achievements().at(ACH_TILE_FROSTY_STEPS);
+        else
+            tile_ach = &this->_character.get_achievements().at(ACH_TILE_NORMAL_STEPS);
+        int progress = tile_ach->get_progress(ACH_GOAL_PRIMARY);
+        if (progress < std::numeric_limits<int>::max())
+            tile_ach->set_progress(ACH_GOAL_PRIMARY, progress + 1);
+    }
+
     // Handle food consumption
     if (ate_food) {
         if (tile_val == FIRE_FOOD)
+        {
             this->_speed_boost_steps[player_number] += 3;
+            ft_achievement &fire =
+                this->_character.get_achievements().at(ACH_APPLES_FIRE_EATEN);
+            int progress_fire = fire.get_progress(ACH_GOAL_PRIMARY);
+            if (progress_fire < std::numeric_limits<int>::max())
+                fire.set_progress(ACH_GOAL_PRIMARY, progress_fire + 1);
+        }
         else if (tile_val == FROSTY_FOOD)
         {
             this->_frosty_steps[player_number] = 3;
             this->_direction_moving_ice[player_number] = direction_moving;
+            ft_achievement &frost =
+                this->_character.get_achievements().at(ACH_APPLES_FROSTY_EATEN);
+            int progress_frost = frost.get_progress(ACH_GOAL_PRIMARY);
+            if (progress_frost < std::numeric_limits<int>::max())
+                frost.set_progress(ACH_GOAL_PRIMARY, progress_frost + 1);
+        }
+        else
+        {
+            ft_achievement &normal =
+                this->_character.get_achievements().at(ACH_APPLES_NORMAL_EATEN);
+            int progress_norm = normal.get_progress(ACH_GOAL_PRIMARY);
+            if (progress_norm < std::numeric_limits<int>::max())
+                normal.set_progress(ACH_GOAL_PRIMARY, progress_norm + 1);
         }
         ft_achievement &apple =
             this->_character.get_achievements().at(ACH_APPLES_EATEN);
         int progress = apple.get_progress(ACH_GOAL_PRIMARY);
-        if (progress < INT_MAX)
+        if (progress < std::numeric_limits<int>::max())
             apple.set_progress(ACH_GOAL_PRIMARY, progress + 1);
         if (this->_snake_length[player_number] < MAX_SNAKE_LENGTH) {
             this->_snake_length[player_number]++;

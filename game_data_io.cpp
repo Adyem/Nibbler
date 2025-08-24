@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <string>
 #include <cstring>
-#include <climits>
+#include <limits>
 
 static std::filesystem::path get_save_dir() {
     return (std::filesystem::current_path() / "save_data");
@@ -42,7 +42,7 @@ game_data::game_data(int width, int height) :
         }
         ft_achievement apple;
         apple.set_id(ACH_APPLES_EATEN);
-        apple.set_goal(ACH_GOAL_PRIMARY, INT_MAX);
+        apple.set_goal(ACH_GOAL_PRIMARY, std::numeric_limits<int>::max());
         ft_map<int, ft_achievement> &ach = this->_character.get_achievements();
         ach.insert(ACH_APPLES_EATEN, apple);
         if (ach.get_error())
@@ -51,6 +51,42 @@ game_data::game_data(int width, int height) :
         snake50.set_id(ACH_SNAKE_50);
         snake50.set_goal(ACH_GOAL_PRIMARY, 50);
         ach.insert(ACH_SNAKE_50, snake50);
+        if (ach.get_error())
+                this->_error = ach.get_error();
+        ft_achievement apple_normal;
+        apple_normal.set_id(ACH_APPLES_NORMAL_EATEN);
+        apple_normal.set_goal(ACH_GOAL_PRIMARY, std::numeric_limits<int>::max());
+        ach.insert(ACH_APPLES_NORMAL_EATEN, apple_normal);
+        if (ach.get_error())
+                this->_error = ach.get_error();
+        ft_achievement apple_frosty;
+        apple_frosty.set_id(ACH_APPLES_FROSTY_EATEN);
+        apple_frosty.set_goal(ACH_GOAL_PRIMARY, std::numeric_limits<int>::max());
+        ach.insert(ACH_APPLES_FROSTY_EATEN, apple_frosty);
+        if (ach.get_error())
+                this->_error = ach.get_error();
+        ft_achievement apple_fire;
+        apple_fire.set_id(ACH_APPLES_FIRE_EATEN);
+        apple_fire.set_goal(ACH_GOAL_PRIMARY, std::numeric_limits<int>::max());
+        ach.insert(ACH_APPLES_FIRE_EATEN, apple_fire);
+        if (ach.get_error())
+                this->_error = ach.get_error();
+        ft_achievement tile_normal;
+        tile_normal.set_id(ACH_TILE_NORMAL_STEPS);
+        tile_normal.set_goal(ACH_GOAL_PRIMARY, std::numeric_limits<int>::max());
+        ach.insert(ACH_TILE_NORMAL_STEPS, tile_normal);
+        if (ach.get_error())
+                this->_error = ach.get_error();
+        ft_achievement tile_frosty;
+        tile_frosty.set_id(ACH_TILE_FROSTY_STEPS);
+        tile_frosty.set_goal(ACH_GOAL_PRIMARY, std::numeric_limits<int>::max());
+        ach.insert(ACH_TILE_FROSTY_STEPS, tile_frosty);
+        if (ach.get_error())
+                this->_error = ach.get_error();
+        ft_achievement tile_fire;
+        tile_fire.set_id(ACH_TILE_FIRE_STEPS);
+        tile_fire.set_goal(ACH_GOAL_PRIMARY, std::numeric_limits<int>::max());
+        ach.insert(ACH_TILE_FIRE_STEPS, tile_fire);
         if (ach.get_error())
                 this->_error = ach.get_error();
         ensure_save_dir_exists();
@@ -72,6 +108,24 @@ int game_data::save_game() const {
     const Pair<int, ft_achievement> *apple =
         achievements.find(ACH_APPLES_EATEN);
     int appleCount = apple ? apple->value.get_progress(ACH_GOAL_PRIMARY) : 0;
+    const Pair<int, ft_achievement> *appleNormal =
+        achievements.find(ACH_APPLES_NORMAL_EATEN);
+    int appleNormalCount = appleNormal ? appleNormal->value.get_progress(ACH_GOAL_PRIMARY) : 0;
+    const Pair<int, ft_achievement> *appleFrosty =
+        achievements.find(ACH_APPLES_FROSTY_EATEN);
+    int appleFrostyCount = appleFrosty ? appleFrosty->value.get_progress(ACH_GOAL_PRIMARY) : 0;
+    const Pair<int, ft_achievement> *appleFire =
+        achievements.find(ACH_APPLES_FIRE_EATEN);
+    int appleFireCount = appleFire ? appleFire->value.get_progress(ACH_GOAL_PRIMARY) : 0;
+    const Pair<int, ft_achievement> *tileNormal =
+        achievements.find(ACH_TILE_NORMAL_STEPS);
+    int tileNormalCount = tileNormal ? tileNormal->value.get_progress(ACH_GOAL_PRIMARY) : 0;
+    const Pair<int, ft_achievement> *tileFrosty =
+        achievements.find(ACH_TILE_FROSTY_STEPS);
+    int tileFrostyCount = tileFrosty ? tileFrosty->value.get_progress(ACH_GOAL_PRIMARY) : 0;
+    const Pair<int, ft_achievement> *tileFire =
+        achievements.find(ACH_TILE_FIRE_STEPS);
+    int tileFireCount = tileFire ? tileFire->value.get_progress(ACH_GOAL_PRIMARY) : 0;
     const Pair<int, ft_achievement> *snake =
         achievements.find(ACH_SNAKE_50);
     bool snake50 = snake ?
@@ -80,6 +134,18 @@ int game_data::save_game() const {
                         ("achievement_snake50", snake50));
     json_add_item_to_group(group, json_create_item
                         ("apples_eaten", appleCount));
+    json_add_item_to_group(group, json_create_item
+                        ("apples_normal_eaten", appleNormalCount));
+    json_add_item_to_group(group, json_create_item
+                        ("apples_frosty_eaten", appleFrostyCount));
+    json_add_item_to_group(group, json_create_item
+                        ("apples_fire_eaten", appleFireCount));
+    json_add_item_to_group(group, json_create_item
+                        ("steps_normal", tileNormalCount));
+    json_add_item_to_group(group, json_create_item
+                        ("steps_frosty", tileFrostyCount));
+    json_add_item_to_group(group, json_create_item
+                        ("steps_fire", tileFireCount));
     int ret = json_write_to_file(file.c_str(), group);
     json_free_groups(group);
     return (ret);
@@ -120,8 +186,80 @@ int game_data::load_game() {
             value = 0;
         ft_achievement &a =
             this->_character.get_achievements().at(ACH_APPLES_EATEN);
-        if (value > INT_MAX)
-            value = INT_MAX;
+        if (value > std::numeric_limits<int>::max())
+            value = std::numeric_limits<int>::max();
+        a.set_progress(ACH_GOAL_PRIMARY, value);
+    }
+    json_item *apples_normal = json_find_item(group, "apples_normal_eaten");
+    if (apples_normal)
+    {
+        int value = std::atoi(apples_normal->value);
+        if (value < 0)
+            value = 0;
+        ft_achievement &a =
+            this->_character.get_achievements().at(ACH_APPLES_NORMAL_EATEN);
+        if (value > std::numeric_limits<int>::max())
+            value = std::numeric_limits<int>::max();
+        a.set_progress(ACH_GOAL_PRIMARY, value);
+    }
+    json_item *apples_frosty = json_find_item(group, "apples_frosty_eaten");
+    if (apples_frosty)
+    {
+        int value = std::atoi(apples_frosty->value);
+        if (value < 0)
+            value = 0;
+        ft_achievement &a =
+            this->_character.get_achievements().at(ACH_APPLES_FROSTY_EATEN);
+        if (value > std::numeric_limits<int>::max())
+            value = std::numeric_limits<int>::max();
+        a.set_progress(ACH_GOAL_PRIMARY, value);
+    }
+    json_item *apples_fire = json_find_item(group, "apples_fire_eaten");
+    if (apples_fire)
+    {
+        int value = std::atoi(apples_fire->value);
+        if (value < 0)
+            value = 0;
+        ft_achievement &a =
+            this->_character.get_achievements().at(ACH_APPLES_FIRE_EATEN);
+        if (value > std::numeric_limits<int>::max())
+            value = std::numeric_limits<int>::max();
+        a.set_progress(ACH_GOAL_PRIMARY, value);
+    }
+    json_item *steps_normal = json_find_item(group, "steps_normal");
+    if (steps_normal)
+    {
+        int value = std::atoi(steps_normal->value);
+        if (value < 0)
+            value = 0;
+        ft_achievement &a =
+            this->_character.get_achievements().at(ACH_TILE_NORMAL_STEPS);
+        if (value > std::numeric_limits<int>::max())
+            value = std::numeric_limits<int>::max();
+        a.set_progress(ACH_GOAL_PRIMARY, value);
+    }
+    json_item *steps_frosty = json_find_item(group, "steps_frosty");
+    if (steps_frosty)
+    {
+        int value = std::atoi(steps_frosty->value);
+        if (value < 0)
+            value = 0;
+        ft_achievement &a =
+            this->_character.get_achievements().at(ACH_TILE_FROSTY_STEPS);
+        if (value > std::numeric_limits<int>::max())
+            value = std::numeric_limits<int>::max();
+        a.set_progress(ACH_GOAL_PRIMARY, value);
+    }
+    json_item *steps_fire = json_find_item(group, "steps_fire");
+    if (steps_fire)
+    {
+        int value = std::atoi(steps_fire->value);
+        if (value < 0)
+            value = 0;
+        ft_achievement &a =
+            this->_character.get_achievements().at(ACH_TILE_FIRE_STEPS);
+        if (value > std::numeric_limits<int>::max())
+            value = std::numeric_limits<int>::max();
         a.set_progress(ACH_GOAL_PRIMARY, value);
     }
     json_free_groups(root);

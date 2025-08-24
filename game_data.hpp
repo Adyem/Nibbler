@@ -32,6 +32,12 @@ static const int MAX_SNAKE_LENGTH = 40000;
 
 #define ACH_APPLES_EATEN 0
 #define ACH_SNAKE_50 1
+#define ACH_APPLES_NORMAL_EATEN 2
+#define ACH_APPLES_FROSTY_EATEN 3
+#define ACH_APPLES_FIRE_EATEN 4
+#define ACH_TILE_NORMAL_STEPS 5
+#define ACH_TILE_FROSTY_STEPS 6
+#define ACH_TILE_FIRE_STEPS 7
 #define ACH_GOAL_PRIMARY 0
 
 typedef struct s_coordinates {
@@ -73,6 +79,12 @@ class game_data
         int         get_snake_length(int player) const;
         bool        get_achievement_snake50() const;
         int         get_apples_eaten() const;
+        int         get_apples_normal_eaten() const;
+        int         get_apples_frosty_eaten() const;
+        int         get_apples_fire_eaten() const;
+        int         get_tile_normal_steps() const;
+        int         get_tile_frosty_steps() const;
+        int         get_tile_fire_steps() const;
 
     // Testing method - exposes private is_valid_move for unit tests
     int test_is_valid_move(int player_head);
