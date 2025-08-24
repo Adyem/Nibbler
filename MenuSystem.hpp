@@ -25,6 +25,9 @@ struct GameSettings {
     bool wrapAroundEdges = false;
     int boardWidth = 15;
     int boardHeight = 10;
+    bool additionalFoodItems = false;
+
+    // Graphics settings (can be extended per library)
     bool useAlternativeColors = false;
     bool showGrid = false;
     bool showFPS = true;
@@ -71,6 +74,7 @@ class MenuSystem {
     void toggleGameMode();
     void adjustGameSpeed(int delta);
     void toggleWrapAround();
+    void toggleAdditionalFoodItems();
     void adjustBoardSize(int widthDelta, int heightDelta);
     void toggleAlternativeColors();
     void toggleGrid();

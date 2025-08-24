@@ -13,8 +13,32 @@ int game_data::get_wrap_around_edges() const {
     return (this->_wrap_around_edges);
 }
 
-void game_data::set_direction_moving(int player, int direction) {
-    if (player >= 0 && player < 4) {
+void game_data::set_moves_per_second(double moves)
+{
+    this->_moves_per_second = moves;
+    return ;
+}
+
+double game_data::get_moves_per_second() const
+{
+    return (this->_moves_per_second);
+}
+
+void game_data::set_additional_food_items(int value)
+{
+    this->_additional_food_items = value;
+}
+
+int game_data::get_additional_food_items() const
+{
+    return (this->_additional_food_items);
+}
+
+
+void game_data::set_direction_moving(int player, int direction)
+{
+    if (player >= 0 && player < 4)
+    {
         int idx = player;
 
         // Determine if the requested direction would move into the second
@@ -70,7 +94,9 @@ int game_data::get_direction_moving(int player) const {
 
 void game_data::set_profile_name(const ft_string& name) {
     this->_profile_name = name;
-    return;
+	if (this->_profile_name.get_error())
+		this->_error = this->_profile_name.get_error();
+    return ;
 }
 
 const ft_string& game_data::get_profile_name() const {
@@ -83,6 +109,20 @@ int game_data::get_snake_length(int player) const {
     return (0);
 }
 
-bool game_data::get_achievement_snake50() const {
-    return (this->_achievement_snake50);
+bool game_data::get_achievement_snake50() const
+{
+    const Pair<int, ft_achievement> *ach =
+        this->_character.get_achievements().find(ACH_SNAKE_50);
+    if (!ach)
+        return false;
+    return ach->value.is_goal_complete(ACH_GOAL_PRIMARY);
+}
+
+int game_data::get_apples_eaten() const
+{
+    const Pair<int, ft_achievement> *ach =
+        this->_character.get_achievements().find(ACH_APPLES_EATEN);
+    if (!ach)
+        return 0;
+    return ach->value.get_progress(ACH_GOAL_PRIMARY);
 }

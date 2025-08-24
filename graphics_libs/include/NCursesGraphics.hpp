@@ -48,13 +48,18 @@ class NCursesGraphics : public IGraphicsLibrary {
     // Track active palette for ncurses color pairs
     bool _altColorsActive = false;
 
-    enum ColorPairs { COLOR_SNAKE_HEAD = 1,
-                      COLOR_SNAKE_BODY,
-                      COLOR_FOOD,
-                      COLOR_WALL,
-                      COLOR_ICE,
-                      COLOR_BORDER,
-                      COLOR_INFO };
+       enum ColorPairs {
+        COLOR_SNAKE_HEAD = 1,
+        COLOR_SNAKE_BODY = 2,
+        COLOR_FOOD = 3,
+        COLOR_WALL = 4,
+        COLOR_ICE = 5,
+        COLOR_BORDER = 6,
+        COLOR_INFO = 7,
+        COLOR_FIRE_FOOD = 8,
+        COLOR_FROSTY_FOOD = 9,
+        COLOR_FIRE_TILE = 10
+    };
 
     void initializeColors();
     void drawBorder(const game_data& game);

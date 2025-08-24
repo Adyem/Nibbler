@@ -309,21 +309,36 @@ const char* NCursesGraphics::getError() const {
 void NCursesGraphics::initializeColors() {
     // Reset existing color pairs based on current palette selection
     if (_altColorsActive) {
-        init_pair(COLOR_SNAKE_HEAD, COLOR_CYAN, COLOR_BLACK);
-        init_pair(COLOR_SNAKE_BODY, COLOR_BLUE, COLOR_BLACK);
-        init_pair(COLOR_FOOD, COLOR_YELLOW, COLOR_BLACK);
-        init_pair(COLOR_WALL, COLOR_YELLOW, COLOR_BLACK);
-        init_pair(COLOR_ICE, COLOR_BLACK, COLOR_BLACK);
-        init_pair(COLOR_BORDER, COLOR_YELLOW, COLOR_BLACK);
-        init_pair(COLOR_INFO, COLOR_WHITE, COLOR_BLACK);
+        // init_pair(COLOR_SNAKE_HEAD, COLOR_CYAN, COLOR_BLACK);
+        // init_pair(COLOR_SNAKE_BODY, COLOR_BLUE, COLOR_BLACK);
+        // init_pair(COLOR_FOOD, COLOR_YELLOW, COLOR_BLACK);
+        // init_pair(COLOR_WALL, COLOR_YELLOW, COLOR_BLACK);
+        // init_pair(COLOR_ICE, COLOR_BLACK, COLOR_BLACK);
+        // init_pair(COLOR_BORDER, COLOR_YELLOW, COLOR_BLACK);
+        // init_pair(COLOR_INFO, COLOR_WHITE, COLOR_BLACK);
+
+    //change colors to have another color pair
+         init_pair(COLOR_SNAKE_HEAD, COLOR_GREEN, COLOR_BLACK);
+    init_pair(COLOR_SNAKE_BODY, COLOR_YELLOW, COLOR_BLACK);
+    init_pair(COLOR_FOOD, COLOR_RED, COLOR_BLACK);
+    init_pair(COLOR_WALL, COLOR_WHITE, COLOR_WHITE);
+    init_pair(COLOR_ICE, COLOR_CYAN, COLOR_BLACK);
+    init_pair(COLOR_BORDER, COLOR_BLUE, COLOR_BLACK);
+    init_pair(COLOR_INFO, COLOR_MAGENTA, COLOR_BLACK);
+    init_pair(COLOR_FIRE_FOOD, COLOR_RED, COLOR_YELLOW);
+    init_pair(COLOR_FROSTY_FOOD, COLOR_CYAN, COLOR_WHITE);
+    init_pair(COLOR_FIRE_TILE, COLOR_RED, COLOR_BLACK);
     } else {
         init_pair(COLOR_SNAKE_HEAD, COLOR_GREEN, COLOR_BLACK);
-        init_pair(COLOR_SNAKE_BODY, COLOR_YELLOW, COLOR_BLACK);
-        init_pair(COLOR_FOOD, COLOR_RED, COLOR_BLACK);
-        init_pair(COLOR_WALL, COLOR_WHITE, COLOR_WHITE);
-        init_pair(COLOR_ICE, COLOR_CYAN, COLOR_BLACK);
-        init_pair(COLOR_BORDER, COLOR_BLUE, COLOR_BLACK);
-        init_pair(COLOR_INFO, COLOR_MAGENTA, COLOR_BLACK);
+    init_pair(COLOR_SNAKE_BODY, COLOR_YELLOW, COLOR_BLACK);
+    init_pair(COLOR_FOOD, COLOR_RED, COLOR_BLACK);
+    init_pair(COLOR_WALL, COLOR_WHITE, COLOR_WHITE);
+    init_pair(COLOR_ICE, COLOR_CYAN, COLOR_BLACK);
+    init_pair(COLOR_BORDER, COLOR_BLUE, COLOR_BLACK);
+    init_pair(COLOR_INFO, COLOR_MAGENTA, COLOR_BLACK);
+    init_pair(COLOR_FIRE_FOOD, COLOR_RED, COLOR_YELLOW);
+    init_pair(COLOR_FROSTY_FOOD, COLOR_CYAN, COLOR_WHITE);
+    init_pair(COLOR_FIRE_TILE, COLOR_RED, COLOR_BLACK);
     }
 }
 
@@ -344,7 +359,11 @@ char NCursesGraphics::getCharFromGameTile(int x, int y, const game_data& game) {
     // Check layer 2 first (snake and food)
     int layer2Value = game.get_map_value(x, y, 2);
     if (layer2Value == FOOD) {
-        return '*'; // Food
+        return '*';  // Food
+    } else if (layer2Value == FIRE_FOOD) {
+        return 'F';  // Fire food
+    } else if (layer2Value == FROSTY_FOOD) {
+        return 'I';  // Frosty food
     } else if (layer2Value == SNAKE_HEAD_PLAYER_1) {
         return '@'; // Snake head
     } else if (layer2Value > SNAKE_HEAD_PLAYER_1) {
@@ -356,7 +375,9 @@ char NCursesGraphics::getCharFromGameTile(int x, int y, const game_data& game) {
     if (layer0Value == GAME_TILE_WALL) {
         return '#'; // Wall
     } else if (layer0Value == GAME_TILE_ICE) {
-        return '~'; // Ice
+        return '~';  // Ice
+    } else if (layer0Value == GAME_TILE_FIRE) {
+        return '^';  // Fire tile
     }
 
     return ' '; // Empty space
@@ -367,6 +388,10 @@ int NCursesGraphics::getColorFromGameTile(int x, int y, const game_data& game) {
     int layer2Value = game.get_map_value(x, y, 2);
     if (layer2Value == FOOD) {
         return COLOR_FOOD;
+    } else if (layer2Value == FIRE_FOOD) {
+        return COLOR_FIRE_FOOD;
+    } else if (layer2Value == FROSTY_FOOD) {
+        return COLOR_FROSTY_FOOD;
     } else if (layer2Value == SNAKE_HEAD_PLAYER_1) {
         return COLOR_SNAKE_HEAD;
     } else if (layer2Value > SNAKE_HEAD_PLAYER_1) {
@@ -379,6 +404,8 @@ int NCursesGraphics::getColorFromGameTile(int x, int y, const game_data& game) {
         return COLOR_WALL;
     } else if (layer0Value == GAME_TILE_ICE) {
         return COLOR_ICE;
+    } else if (layer0Value == GAME_TILE_FIRE) {
+        return COLOR_FIRE_TILE;
     }
 
     return 0; // Default color

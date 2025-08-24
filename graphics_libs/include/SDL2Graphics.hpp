@@ -65,6 +65,9 @@ class SDL2Graphics : public IGraphicsLibrary {
     static const Color COLOR_SNAKE_HEAD;
     static const Color COLOR_SNAKE_BODY;
     static const Color COLOR_FOOD;
+    static const Color COLOR_FIRE_FOOD;
+    static const Color COLOR_FROSTY_FOOD;
+    static const Color COLOR_FIRE_TILE;
     static const Color COLOR_TEXT;
     static const Color COLOR_SELECTOR_BG;
     static const Color COLOR_SELECTED_TEXT;
