@@ -41,8 +41,15 @@ LIBFT = ../libft/Full_Libft.a
 NCURSES_LIBS = $(shell pkg-config --libs ncursesw 2>/dev/null || pkg-config --libs ncurses 2>/dev/null || echo "-lncurses")
 SDL2_CFLAGS = $(shell pkg-config --cflags sdl2 sdl2_ttf 2>/dev/null || echo "")
 SDL2_LIBS = $(shell pkg-config --libs sdl2 sdl2_ttf 2>/dev/null || echo "-lSDL2 -lSDL2_ttf")
-OPENGL_CFLAGS = $(shell pkg-config --cflags glfw3 2>/dev/null || echo "")
-OPENGL_LIBS = $(shell pkg-config --libs glfw3 2>/dev/null || echo "-lglfw -lGL")
+OPENGL_CFLAGS = $(shell pkg-config --cflags glfw3 freetype2 2>/dev/null || echo "")
+OPENGL_LIBS = $(shell pkg-config --libs glfw3 freetype2 2>/dev/null || echo "-lglfw -lGL -lfreetype")
+
+# Ensure Homebrew (local) freetype include path is added if pkg-config misses it
+FREETYPE_BREW_PATH := $(HOME)/.brew/opt/freetype/include/freetype2
+ifneq (,$(wildcard $(FREETYPE_BREW_PATH)/ft2build.h))
+OPENGL_CFLAGS += -I$(FREETYPE_BREW_PATH)
+OPENGL_LIBS += -Wl,-rpath,$(HOME)/.brew/opt/freetype/lib
+endif
 RAYLIB_CFLAGS = $(shell pkg-config --cflags raylib 2>/dev/null || echo "")
 RAYLIB_LIBS = $(shell pkg-config --libs raylib 2>/dev/null || echo "-lraylib")
 

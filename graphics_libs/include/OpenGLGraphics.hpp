@@ -5,6 +5,12 @@
 #include <GLFW/glfw3.h>
 #include <string>
 #include <vector>
+#include <map>
+
+// FreeType forward declarations
+// We include these here (instead of only in the .cpp) because we store FT types as members.
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 class OpenGLGraphics : public IGraphicsLibrary {
   public:
@@ -29,32 +35,48 @@ class OpenGLGraphics : public IGraphicsLibrary {
     bool _initialized;
     bool _shouldContinue;
     int _targetFPS;
-    
+
     // Menu system
     MenuSystem* _menuSystem;
-    
+
     // Error handling
     std::string _errorMessage;
-    
+
     // Switch message system
     std::string _switchMessage;
     int _switchMessageTimer;
-    
+
     // Input handling
     GameKey _lastKeyPressed;
     bool _keyConsumed;
-    
+
+  // --- Font / text rendering ---
+  struct Glyph {
+    unsigned int textureId; // OpenGL texture for the glyph bitmap
+    int width;
+    int height;
+    int bearingX; // Left bearing
+    int bearingY; // Top bearing
+    long advance; // Advance (in 1/64 pixels from FreeType)
+  };
+
+  bool _fontInitialized;
+  int _fontPixelSize = 24;
+  FT_Library _ftLibrary = nullptr;
+  FT_Face _ftFace = nullptr;
+  std::map<char, Glyph> _glyphs; // Basic ASCII glyph cache
+
     // Window dimensions
     static const int WINDOW_WIDTH = 1280;
     static const int WINDOW_HEIGHT = 720;
-    
+
     // Colors (as RGB floats 0.0-1.0)
     struct Color {
         float r, g, b, a;
-        Color(float red, float green, float blue, float alpha = 1.0f) 
+        Color(float red, float green, float blue, float alpha = 1.0f)
             : r(red), g(green), b(blue), a(alpha) {}
     };
-    
+
     // Color palette
     static const Color COLOR_BACKGROUND;
     static const Color COLOR_BORDER;
@@ -64,7 +86,7 @@ class OpenGLGraphics : public IGraphicsLibrary {
     static const Color COLOR_TEXT;
     static const Color COLOR_SELECTOR_BG;
     static const Color COLOR_SELECTED_TEXT;
-    
+
     // Private helper methods
     void clearError();
     void setError(const std::string& error);
@@ -72,15 +94,21 @@ class OpenGLGraphics : public IGraphicsLibrary {
     void calculateGameArea(const game_data& game, int& offsetX, int& offsetY, int& cellSize);
     void drawRectangle(int x, int y, int width, int height, const Color& color);
     void drawText(const std::string& text, int x, int y, const Color& color, float scale = 1.0f);
+  void renderChar(char c, float x, float y, float scale, const Color& color);
+
+  // Font helpers
+  bool initializeFonts();
+  void shutdownFonts();
+  bool loadFontFace(const std::string& path);
+  bool buildGlyphCache();
+  void renderText(const std::string& text, float x, float y, float scale, const Color& color);
+
     void renderMainMenu();
     void renderSettingsMenu();
     void renderGameOverScreen();
     void renderCreditsPage();
     void renderInstructionsPage();
-    
-    // Font rendering (simple bitmap font)
-    void renderBitmapChar(char c, int x, int y, const Color& color, float scale);
-    
+
     // GLFW callbacks
     static void errorCallback(int error, const char* description);
     static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
