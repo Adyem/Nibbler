@@ -1,5 +1,5 @@
 #include "NCursesGraphics.hpp"
-#include "../game_data.hpp"
+#include "../../game_data.hpp"
 #include <cstdlib>
 
 NCursesGraphics::NCursesGraphics()
@@ -35,14 +35,14 @@ int NCursesGraphics::initialize() {
 
     // Configure ncurses
     start_color();
-    cbreak();           // Disable line buffering
-    noecho();           // Don't echo pressed keys
-    keypad(stdscr, TRUE); // Enable special keys
+    cbreak();              // Disable line buffering
+    noecho();              // Don't echo pressed keys
+    keypad(stdscr, TRUE);  // Enable special keys
     nodelay(stdscr, TRUE); // Make getch() non-blocking
-    curs_set(0);        // Hide cursor
+    curs_set(0);           // Hide cursor
 
     // Force input focus and flush any pending input
-    flushinp();         // Clear input buffer
+    flushinp(); // Clear input buffer
 
     // Initialize color pairs
     initializeColors();
@@ -55,8 +55,8 @@ int NCursesGraphics::initialize() {
     doupdate();
 
     // Force the terminal to be ready for input
-    flushinp();  // Clear any stale input
-    refresh();   // Final refresh
+    flushinp(); // Clear any stale input
+    refresh();  // Final refresh
 
     _initialized = true;
 
@@ -91,6 +91,13 @@ void NCursesGraphics::render(const game_data& game) {
         return;
     }
 
+    // Detect palette change at runtime
+    bool wantAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    if (wantAlt != _altColorsActive) {
+        _altColorsActive = wantAlt;
+        initializeColors();
+    }
+
     // Clear screen
     clear();
 
@@ -113,8 +120,10 @@ void NCursesGraphics::render(const game_data& game) {
     int startX = (termWidth - static_cast<int>(gameWidth) - 2) / 2;   // -2 for borders
 
     // Ensure we don't go negative
-    if (startY < 0) startY = 0;
-    if (startX < 0) startX = 0;
+    if (startY < 0)
+        startY = 0;
+    if (startX < 0)
+        startX = 0;
 
     // Draw game border
     attron(COLOR_PAIR(COLOR_BORDER));
@@ -178,14 +187,16 @@ GameKey NCursesGraphics::getInput() {
 
     // Handle graphics switching first (works in any state)
     switch (ch) {
-        case '1':
-            return GameKey::KEY_1;
-        case '2':
-            return GameKey::KEY_2;
-        case '3':
-            return GameKey::KEY_3;
-        case ERR:
-            return GameKey::NONE;
+    case '1':
+        return GameKey::KEY_1;
+    case '2':
+        return GameKey::KEY_2;
+    case '3':
+        return GameKey::KEY_3;
+    case '4':
+        return GameKey::KEY_4;
+    case ERR:
+        return GameKey::NONE;
     }
 
     // Handle escape sequences manually if NCurses arrow keys don't work
@@ -198,29 +209,29 @@ GameKey NCursesGraphics::getInput() {
             // Handle menu navigation if in menu mode
             if (_menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME) {
                 switch (next_ch) {
-                    case 'A':  // Up arrow
-                        _menuSystem->navigateUp();
-                        return GameKey::NONE;
-                    case 'B':  // Down arrow
-                        _menuSystem->navigateDown();
-                        return GameKey::NONE;
-                    default:
-                        return GameKey::NONE;
+                case 'A': // Up arrow
+                    _menuSystem->navigateUp();
+                    return GameKey::NONE;
+                case 'B': // Down arrow
+                    _menuSystem->navigateDown();
+                    return GameKey::NONE;
+                default:
+                    return GameKey::NONE;
                 }
             }
 
             // Handle game input
             switch (next_ch) {
-                case 'A':  // Up arrow
-                    return GameKey::UP;
-                case 'B':  // Down arrow
-                    return GameKey::DOWN;
-                case 'C':  // Right arrow
-                    return GameKey::RIGHT;
-                case 'D':  // Left arrow
-                    return GameKey::LEFT;
-                default:
-                    return GameKey::NONE;
+            case 'A': // Up arrow
+                return GameKey::UP;
+            case 'B': // Down arrow
+                return GameKey::DOWN;
+            case 'C': // Right arrow
+                return GameKey::RIGHT;
+            case 'D': // Left arrow
+                return GameKey::LEFT;
+            default:
+                return GameKey::NONE;
             }
         }
     }
@@ -228,49 +239,51 @@ GameKey NCursesGraphics::getInput() {
     // Handle menu navigation if in menu mode
     if (_menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME) {
         switch (ch) {
-            case KEY_UP:
-                _menuSystem->navigateUp();
-                return GameKey::NONE;
-            case KEY_DOWN:
-                _menuSystem->navigateDown();
-                return GameKey::NONE;
-            case 10:    // ENTER key
-            case 13:    // ENTER key (alternative)
-            case ' ':   // SPACE key
-                _menuSystem->selectCurrentItem();
-                return GameKey::NONE;
-            case 27:    // ESC key
-                _menuSystem->goBack();
-                return GameKey::NONE;
-            default:
-                return GameKey::NONE;
+        case KEY_UP:
+            _menuSystem->navigateUp();
+            return GameKey::NONE;
+        case KEY_DOWN:
+            _menuSystem->navigateDown();
+            return GameKey::NONE;
+        case 10:  // ENTER key
+        case 13:  // ENTER key (alternative)
+        case ' ': // SPACE key
+            _menuSystem->selectCurrentItem();
+            return GameKey::NONE;
+        case 27: // ESC key
+            _menuSystem->goBack();
+            return GameKey::NONE;
+        default:
+            return GameKey::NONE;
         }
     }
 
     // Handle game input
     switch (ch) {
-        case ERR:           // No input available
-            return GameKey::NONE;
-        case KEY_UP:
-            return GameKey::UP;
-        case KEY_DOWN:
-            return GameKey::DOWN;
-        case KEY_LEFT:
-            return GameKey::LEFT;
-        case KEY_RIGHT:
-            return GameKey::RIGHT;
-        case '1':
-            return GameKey::KEY_1;
-        case '2':
-            return GameKey::KEY_2;
-        case '3':
-            return GameKey::KEY_3;
-        case 27:            // ESC key
-        case 'q':
-        case 'Q':
-            return GameKey::ESCAPE;
-        default:
-            return GameKey::NONE;
+    case ERR: // No input available
+        return GameKey::NONE;
+    case KEY_UP:
+        return GameKey::UP;
+    case KEY_DOWN:
+        return GameKey::DOWN;
+    case KEY_LEFT:
+        return GameKey::LEFT;
+    case KEY_RIGHT:
+        return GameKey::RIGHT;
+    case '1':
+        return GameKey::KEY_1;
+    case '2':
+        return GameKey::KEY_2;
+    case '3':
+        return GameKey::KEY_3;
+    case '4':
+        return GameKey::KEY_4;
+    case 27: // ESC key
+    case 'q':
+    case 'Q':
+        return GameKey::ESCAPE;
+    default:
+        return GameKey::NONE;
     }
 }
 
@@ -294,14 +307,24 @@ const char* NCursesGraphics::getError() const {
 
 // Private helper methods
 void NCursesGraphics::initializeColors() {
-    // Initialize color pairs
-    init_pair(COLOR_SNAKE_HEAD, COLOR_GREEN, COLOR_BLACK);
-    init_pair(COLOR_SNAKE_BODY, COLOR_YELLOW, COLOR_BLACK);
-    init_pair(COLOR_FOOD, COLOR_RED, COLOR_BLACK);
-    init_pair(COLOR_WALL, COLOR_WHITE, COLOR_WHITE);
-    init_pair(COLOR_ICE, COLOR_CYAN, COLOR_BLACK);
-    init_pair(COLOR_BORDER, COLOR_BLUE, COLOR_BLACK);
-    init_pair(COLOR_INFO, COLOR_MAGENTA, COLOR_BLACK);
+    // Reset existing color pairs based on current palette selection
+    if (_altColorsActive) {
+        init_pair(COLOR_SNAKE_HEAD, COLOR_CYAN, COLOR_BLACK);
+        init_pair(COLOR_SNAKE_BODY, COLOR_BLUE, COLOR_BLACK);
+        init_pair(COLOR_FOOD, COLOR_YELLOW, COLOR_BLACK);
+        init_pair(COLOR_WALL, COLOR_YELLOW, COLOR_BLACK);
+        init_pair(COLOR_ICE, COLOR_BLACK, COLOR_BLACK);
+        init_pair(COLOR_BORDER, COLOR_YELLOW, COLOR_BLACK);
+        init_pair(COLOR_INFO, COLOR_WHITE, COLOR_BLACK);
+    } else {
+        init_pair(COLOR_SNAKE_HEAD, COLOR_GREEN, COLOR_BLACK);
+        init_pair(COLOR_SNAKE_BODY, COLOR_YELLOW, COLOR_BLACK);
+        init_pair(COLOR_FOOD, COLOR_RED, COLOR_BLACK);
+        init_pair(COLOR_WALL, COLOR_WHITE, COLOR_WHITE);
+        init_pair(COLOR_ICE, COLOR_CYAN, COLOR_BLACK);
+        init_pair(COLOR_BORDER, COLOR_BLUE, COLOR_BLACK);
+        init_pair(COLOR_INFO, COLOR_MAGENTA, COLOR_BLACK);
+    }
 }
 
 void NCursesGraphics::drawInfo(const game_data& game) {
@@ -314,26 +337,6 @@ void NCursesGraphics::drawInfo(const game_data& game) {
     // Snake length
     mvprintw(termHeight - 4, 2, "Snake Length: %d", game.get_snake_length(0));
 
-    // Check if game has started (snake is moving)
-    // bool gameStarted = (game.get_direction_moving(0) != 0);
-
-    // if (!gameStarted) {
-    //     // Show start message
-    //     attron(COLOR_PAIR(COLOR_FOOD) | A_BOLD);
-    //     mvprintw(termHeight - 3, 2, ">>> PRESS ANY ARROW KEY TO START THE GAME <<<");
-    //     attroff(COLOR_PAIR(COLOR_FOOD) | A_BOLD);
-    // }
-	// else {
-    //     // Show normal controls
-    //     mvprintw(termHeight - 3, 2, "Controls: Arrow keys=Move, 1/2/3=Switch graphics, ESC/Q=Quit");
-    // }
-
-    // // Library name
-    // mvprintw(termHeight - 2, 2, "Graphics: %s (60 FPS)", getName());
-
-    // // Additional info
-    // mvprintw(termHeight - 1, 2, "Nibbler - Snake Game with Dynamic Libraries");
-
     attroff(COLOR_PAIR(COLOR_INFO));
 }
 
@@ -341,22 +344,22 @@ char NCursesGraphics::getCharFromGameTile(int x, int y, const game_data& game) {
     // Check layer 2 first (snake and food)
     int layer2Value = game.get_map_value(x, y, 2);
     if (layer2Value == FOOD) {
-        return '*';  // Food
+        return '*'; // Food
     } else if (layer2Value == SNAKE_HEAD_PLAYER_1) {
-        return '@';  // Snake head
+        return '@'; // Snake head
     } else if (layer2Value > SNAKE_HEAD_PLAYER_1) {
-        return 'o';  // Snake body
+        return 'o'; // Snake body
     }
 
     // Check layer 0 (terrain)
     int layer0Value = game.get_map_value(x, y, 0);
     if (layer0Value == GAME_TILE_WALL) {
-        return '#';  // Wall
+        return '#'; // Wall
     } else if (layer0Value == GAME_TILE_ICE) {
-        return '~';  // Ice
+        return '~'; // Ice
     }
 
-    return ' ';  // Empty space
+    return ' '; // Empty space
 }
 
 int NCursesGraphics::getColorFromGameTile(int x, int y, const game_data& game) {
@@ -378,7 +381,7 @@ int NCursesGraphics::getColorFromGameTile(int x, int y, const game_data& game) {
         return COLOR_ICE;
     }
 
-    return 0;  // Default color
+    return 0; // Default color
 }
 
 void NCursesGraphics::setError(const std::string& error) {
@@ -401,12 +404,12 @@ void NCursesGraphics::forceInputReadiness() {
 
     // Force multiple refreshes to ensure terminal is ready
     for (int i = 0; i < 3; i++) {
-        flushinp();     // Clear input buffer
-        refresh();      // Refresh display
-        doupdate();     // Force update
+        flushinp(); // Clear input buffer
+        refresh();  // Refresh display
+        doupdate(); // Force update
 
         // Small delay between refreshes
-        napms(10);      // 10ms delay
+        napms(10); // 10ms delay
     }
 
     // Final input buffer clear
@@ -450,11 +453,6 @@ void NCursesGraphics::renderMainMenu() {
     drawCenteredText(termHeight / 4, _menuSystem->getCurrentTitle());
     attroff(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
 
-    // Draw subtitle
-    attron(COLOR_PAIR(COLOR_INFO));
-    drawCenteredText(termHeight / 4 + 2, "Dynamic Graphics Libraries Demo");
-    attroff(COLOR_PAIR(COLOR_INFO));
-
     // Draw menu items
     const auto& items = _menuSystem->getCurrentMenuItems();
     int startY = termHeight / 2 - static_cast<int>(items.size()) / 2;
@@ -463,7 +461,7 @@ void NCursesGraphics::renderMainMenu() {
     // Draw footer
     attron(COLOR_PAIR(COLOR_INFO));
     drawCenteredText(termHeight - 3, "Use Arrow Keys to navigate, ENTER to select");
-    drawCenteredText(termHeight - 2, "Press 1/2/3 to switch graphics libraries");
+    drawCenteredText(termHeight - 2, "Press 1/2/3/4 to switch graphics libraries");
     attroff(COLOR_PAIR(COLOR_INFO));
 }
 
@@ -492,14 +490,18 @@ void NCursesGraphics::drawCenteredText(int y, const std::string& text, int color
     int termHeight, termWidth;
     getmaxyx(stdscr, termHeight, termWidth);
 
-    if (y < 0 || y >= termHeight) return;
+    if (y < 0 || y >= termHeight)
+        return;
 
     int x = (termWidth - static_cast<int>(text.length())) / 2;
-    if (x < 0) x = 0;
+    if (x < 0)
+        x = 0;
 
-    if (colorPair > 0) attron(COLOR_PAIR(colorPair));
+    if (colorPair > 0)
+        attron(COLOR_PAIR(colorPair));
     mvprintw(y, x, "%s", text.c_str());
-    if (colorPair > 0) attroff(COLOR_PAIR(colorPair));
+    if (colorPair > 0)
+        attroff(COLOR_PAIR(colorPair));
 }
 
 void NCursesGraphics::drawMenuItems(const std::vector<MenuItem>& items, int selection, int startY) {
@@ -508,10 +510,12 @@ void NCursesGraphics::drawMenuItems(const std::vector<MenuItem>& items, int sele
 
     for (size_t i = 0; i < items.size(); ++i) {
         int y = startY + static_cast<int>(i);
-        if (y >= termHeight - 1) break;
+        if (y >= termHeight - 1)
+            break;
 
         const MenuItem& item = items[i];
-        if (!item.selectable && item.text.empty()) continue; // Skip spacers
+        if (!item.selectable && item.text.empty())
+            continue; // Skip spacers
 
         std::string displayText = item.text;
         if (static_cast<int>(i) == selection && item.selectable) {
@@ -544,7 +548,8 @@ void NCursesGraphics::renderCreditsPage() {
 
     for (size_t i = 0; i < content.size() && startY + static_cast<int>(i) < termHeight - 2; ++i) {
         const std::string& line = content[i];
-        if (line.empty()) continue;
+        if (line.empty())
+            continue;
 
         int colorPair = COLOR_INFO;
         if (line.find("NIBBLER") != std::string::npos || line.find("LIBRARIES") != std::string::npos ||
@@ -578,7 +583,8 @@ void NCursesGraphics::renderInstructionsPage() {
 
     for (size_t i = 0; i < content.size() && startY + static_cast<int>(i) < termHeight - 2; ++i) {
         const std::string& line = content[i];
-        if (line.empty()) continue;
+        if (line.empty())
+            continue;
 
         int colorPair = COLOR_INFO;
         if (line.find("HOW TO") != std::string::npos || line.find("MENU") != std::string::npos ||
@@ -658,25 +664,25 @@ void NCursesGraphics::renderGameOverScreen() {
     attron(COLOR_PAIR(COLOR_INFO));
     drawCenteredText(termHeight - 4, "Use Arrow Keys to navigate, ENTER to select");
     drawCenteredText(termHeight - 3, "Press ESC to quit the game");
-    drawCenteredText(termHeight - 2, "Press 1/2/3 to switch graphics libraries");
+    drawCenteredText(termHeight - 2, "Press 1/2/3/4 to switch graphics libraries");
     attroff(COLOR_PAIR(COLOR_INFO));
 }
 
 // C interface for dynamic library loading
 extern "C" {
-    IGraphicsLibrary* createGraphicsLibrary() {
-        return new NCursesGraphics();
-    }
+IGraphicsLibrary* createGraphicsLibrary() {
+    return new NCursesGraphics();
+}
 
-    void destroyGraphicsLibrary(IGraphicsLibrary* lib) {
-        delete lib;
-    }
+void destroyGraphicsLibrary(IGraphicsLibrary* lib) {
+    delete lib;
+}
 
-    const char* getLibraryName() {
-        return "NCurses Graphics Library";
-    }
+const char* getLibraryName() {
+    return "NCurses Graphics Library";
+}
 
-    const char* getLibraryVersion() {
-        return "1.0.0";
-    }
+const char* getLibraryVersion() {
+    return "1.0.0";
+}
 }

@@ -1,17 +1,15 @@
-#ifndef NCURSESGRAPHICS_HPP
-#define NCURSESGRAPHICS_HPP
+#pragma once
 
-#include "../IGraphicsLibrary.hpp"
-#include "../MenuSystem.hpp"
+#include "../../IGraphicsLibrary.hpp"
+#include "../../MenuSystem.hpp"
 #include <ncurses.h>
 #include <string>
 
 class NCursesGraphics : public IGraphicsLibrary {
-public:
+  public:
     NCursesGraphics();
     virtual ~NCursesGraphics();
 
-    // IGraphicsLibrary interface implementation
     virtual int initialize() override;
     virtual void shutdown() override;
     virtual void render(const game_data& game) override;
@@ -21,42 +19,43 @@ public:
     virtual void setFrameRate(int fps) override;
     virtual const char* getError() const override;
 
-    // Menu system support (override from IGraphicsLibrary)
-    virtual void setMenuSystem(MenuSystem* menuSystem) override { _menuSystem = menuSystem; }
-    MenuSystem* getMenuSystem() const { return _menuSystem; }
+    virtual void setMenuSystem(MenuSystem* menuSystem) override {
+        _menuSystem = menuSystem;
+    }
+    MenuSystem* getMenuSystem() const {
+        return _menuSystem;
+    }
 
-    // Switch message support (override from IGraphicsLibrary)
     virtual void setSwitchMessage(const std::string& message, int timer) override;
-    bool hasSwitchMessage() const { return _switchMessageTimer > 0; }
+    bool hasSwitchMessage() const {
+        return _switchMessageTimer > 0;
+    }
 
-    // Force input readiness
     void forceInputReadiness();
 
-private:
+  private:
     bool _initialized;
     bool _shouldContinue;
     int _frameRate;
     std::string _errorMessage;
     WINDOW* _gameWindow;
 
-    // Switch message display
     std::string _switchMessage;
     int _switchMessageTimer;
     WINDOW* _infoWindow;
     MenuSystem* _menuSystem;
 
-    // Color pairs
-    enum ColorPairs {
-        COLOR_SNAKE_HEAD = 1,
-        COLOR_SNAKE_BODY = 2,
-        COLOR_FOOD = 3,
-        COLOR_WALL = 4,
-        COLOR_ICE = 5,
-        COLOR_BORDER = 6,
-        COLOR_INFO = 7
-    };
+    // Track active palette for ncurses color pairs
+    bool _altColorsActive = false;
 
-    // Helper methods
+    enum ColorPairs { COLOR_SNAKE_HEAD = 1,
+                      COLOR_SNAKE_BODY,
+                      COLOR_FOOD,
+                      COLOR_WALL,
+                      COLOR_ICE,
+                      COLOR_BORDER,
+                      COLOR_INFO };
+
     void initializeColors();
     void drawBorder(const game_data& game);
     void drawGameArea(const game_data& game);
@@ -77,5 +76,3 @@ private:
     void drawCenteredText(int y, const std::string& text, int colorPair = 0);
     void drawMenuItems(const std::vector<MenuItem>& items, int selection, int startY);
 };
-
-#endif // NCURSESGRAPHICS_HPP

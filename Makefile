@@ -48,6 +48,20 @@ LIBFT_DIR   = ./libft
 
 OBJ_DIR         = ./objs
 OBJ_DIR_DEBUG   = ./objs_debug
+DLLIBS_DIR      = ./dllibs
+
+# Export absolute paths to sub-makes so graphics_libs can use correct paths
+export OBJ_DIR := $(abspath $(OBJ_DIR))
+export OBJ_DIR_DEBUG := $(abspath $(OBJ_DIR_DEBUG))
+export DLLIBS_DIR := $(abspath $(DLLIBS_DIR))
+
+# Objects needed by graphics_libs shared libraries
+SHARED_OBJS = \
+	$(OBJ_DIR)/game_data_core.o \
+	$(OBJ_DIR)/game_data_board.o \
+	$(OBJ_DIR)/game_data_movement.o \
+	$(OBJ_DIR)/game_data_io.o \
+	$(OBJ_DIR)/MenuSystem.o
 
 ENABLE_LTO  ?= 0
 ENABLE_PGO  ?= 0
@@ -74,19 +88,26 @@ endif
 
 export COMPILE_FLAGS
 
+# Re-export absolute paths after OBJ_DIR may have changed due to DEBUG
+export OBJ_DIR := $(abspath $(OBJ_DIR))
+export DLLIBS_DIR := $(abspath $(DLLIBS_DIR))
+
 ifeq ($(OS),Windows_NT)
     LDFLAGS     = $(LIBFT) -ldl
 else
-    LDFLAGS     = $(LIBFT) -lreadline -ldl
+    # Export all symbols from the main executable so dlopened plugins can
+    # resolve references (e.g., MenuSystem, GameEngine) at runtime.
+    LDFLAGS     = $(LIBFT) -lreadline -ldl -rdynamic
 endif
 
 OBJS        = $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 
-all: dirs $(TARGET) graphics_libs
+all: dirs graphics_libs $(TARGET)
 
 dirs:
 	-$(MKDIR) $(OBJ_DIR)
 	-$(MKDIR) $(OBJ_DIR_DEBUG)
+	-$(MKDIR) $(DLLIBS_DIR)
 
 debug:
 	$(MAKE) all DEBUG=1
@@ -100,23 +121,31 @@ $(LIBFT):
 $(OBJ_DIR)/%.o: %.cpp $(HEADER)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-graphics_libs:
+graphics_libs: $(SHARED_OBJS) $(LIBFT)
 	$(MAKE) -C graphics_libs
+
+# Explicitly force a full rebuild of dynamic libs (clean + build)
+graphics_re: dirs $(SHARED_OBJS) $(LIBFT)
+	$(MAKE) -C graphics_libs rebuild
 
 clean:
 	-$(RM) $(OBJ_DIR)/*.o $(OBJ_DIR_DEBUG)/*.o
 	$(MAKE) -C $(LIBFT_DIR) fclean
 	$(MAKE) -C graphics_libs clean
+	-$(RMDIR) $(DLLIBS_DIR)
 
 fclean: clean
 	-$(RM) $(NAME) $(NAME_DEBUG)
 	-$(RMDIR) $(OBJ_DIR) $(OBJ_DIR_DEBUG) data
 	-$(RM) lib_*.so
 
-re: fclean all
+# Ensure dynamic libs are fully rebuilt as part of re (sequentially)
+re:
+	$(MAKE) fclean
+	$(MAKE) all
 
 both: all debug
 
 re_both: re both
 
-.PHONY: all dirs clean fclean re debug both re_both graphics_libs
+.PHONY: all dirs clean fclean re debug both re_both graphics_libs graphics_re

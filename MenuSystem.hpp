@@ -1,5 +1,4 @@
-#ifndef MENUSYSTEM_HPP
-#define MENUSYSTEM_HPP
+#pragma once
 
 #include <string>
 #include <vector>
@@ -17,19 +16,15 @@ enum class MenuState {
     EXIT_REQUESTED
 };
 
-enum class GameMode {
-    SINGLE_PLAYER,
-    MULTIPLAYER
-};
+enum class GameMode { SINGLE_PLAYER,
+                      MULTIPLAYER };
 
 struct GameSettings {
     GameMode gameMode = GameMode::SINGLE_PLAYER;
-    int gameSpeed = 60;  // FPS
+    int gameSpeed = 60;
     bool wrapAroundEdges = false;
     int boardWidth = 15;
     int boardHeight = 10;
-    
-    // Graphics settings (can be extended per library)
     bool useAlternativeColors = false;
     bool showGrid = false;
     bool showFPS = true;
@@ -38,41 +33,41 @@ struct GameSettings {
 struct MenuItem {
     std::string text;
     bool selectable;
-    
     MenuItem(const std::string& t, bool s = true) : text(t), selectable(s) {}
 };
 
 class MenuSystem {
-public:
+  public:
     MenuSystem();
     virtual ~MenuSystem() = default;
 
-    // Menu state management
-    MenuState getCurrentState() const { return _currentState; }
+    MenuState getCurrentState() const {
+        return _currentState;
+    }
     void setState(MenuState state);
-    
-    // Menu navigation
     void navigateUp();
     void navigateDown();
     void selectCurrentItem();
     void goBack();
-    
-    // Settings management
-    const GameSettings& getSettings() const { return _settings; }
-    void updateSettings(const GameSettings& settings) { _settings = settings; }
-    
-    // Menu content getters
+
+    const GameSettings& getSettings() const {
+        return _settings;
+    }
+    void updateSettings(const GameSettings& settings) {
+        _settings = settings;
+    }
+
     const std::vector<MenuItem>& getCurrentMenuItems() const;
-    int getCurrentSelection() const { return _currentSelection; }
+    int getCurrentSelection() const {
+        return _currentSelection;
+    }
     std::string getCurrentTitle() const;
-    
-    // Content getters for pages
+
     std::vector<std::string> getCreditsContent() const;
     std::vector<std::string> getInstructionsContent() const;
     std::vector<std::string> getAchievementsContent(const game_data& game) const;
     std::vector<std::string> getSettingsContent() const;
-    
-    // Settings modification
+
     void toggleGameMode();
     void adjustGameSpeed(int delta);
     void toggleWrapAround();
@@ -81,24 +76,20 @@ public:
     void toggleGrid();
     void toggleFPS();
 
-    // Game over functionality
     void setGameOverScore(int score);
     int getGameOverScore() const;
 
-private:
+  private:
     MenuState _currentState;
     int _currentSelection;
     GameSettings _settings;
     int _gameOverScore;
 
-    // Menu items for different states
     std::vector<MenuItem> _mainMenuItems;
     std::vector<MenuItem> _settingsMenuItems;
     std::vector<MenuItem> _gameOverMenuItems;
-    
+
     void initializeMenus();
     void updateSettingsMenu();
     void clampSelection();
 };
-
-#endif // MENUSYSTEM_HPP
