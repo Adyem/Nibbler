@@ -157,6 +157,9 @@ void OpenGLGraphics::render(const game_data& game) {
         case MenuState::GAME_OVER:
             renderGameOverScreen();
             break;
+        case MenuState::ACHIEVEMENTS_PAGE:
+            //renderAchievementsPage();
+            break;
         case MenuState::EXIT_REQUESTED:
             // Handle exit - could show a "closing..." message
             break;
