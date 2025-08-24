@@ -126,3 +126,57 @@ int game_data::get_apples_eaten() const
         return 0;
     return ach->value.get_progress(ACH_GOAL_PRIMARY);
 }
+
+int game_data::get_apples_normal_eaten() const
+{
+    const Pair<int, ft_achievement> *ach =
+        this->_character.get_achievements().find(ACH_APPLES_NORMAL_EATEN);
+    if (!ach)
+        return 0;
+    return ach->value.get_progress(ACH_GOAL_PRIMARY);
+}
+
+int game_data::get_apples_frosty_eaten() const
+{
+    const Pair<int, ft_achievement> *ach =
+        this->_character.get_achievements().find(ACH_APPLES_FROSTY_EATEN);
+    if (!ach)
+        return 0;
+    return ach->value.get_progress(ACH_GOAL_PRIMARY);
+}
+
+int game_data::get_apples_fire_eaten() const
+{
+    const Pair<int, ft_achievement> *ach =
+        this->_character.get_achievements().find(ACH_APPLES_FIRE_EATEN);
+    if (!ach)
+        return 0;
+    return ach->value.get_progress(ACH_GOAL_PRIMARY);
+}
+
+int game_data::get_tile_normal_steps() const
+{
+    const Pair<int, ft_achievement> *ach =
+        this->_character.get_achievements().find(ACH_TILE_NORMAL_STEPS);
+    if (!ach)
+        return 0;
+    return ach->value.get_progress(ACH_GOAL_PRIMARY);
+}
+
+int game_data::get_tile_frosty_steps() const
+{
+    const Pair<int, ft_achievement> *ach =
+        this->_character.get_achievements().find(ACH_TILE_FROSTY_STEPS);
+    if (!ach)
+        return 0;
+    return ach->value.get_progress(ACH_GOAL_PRIMARY);
+}
+
+int game_data::get_tile_fire_steps() const
+{
+    const Pair<int, ft_achievement> *ach =
+        this->_character.get_achievements().find(ACH_TILE_FIRE_STEPS);
+    if (!ach)
+        return 0;
+    return ach->value.get_progress(ACH_GOAL_PRIMARY);
+}
