@@ -62,8 +62,8 @@ class OpenGLGraphics : public IGraphicsLibrary {
 
   bool _fontInitialized;
   int _fontPixelSize = 24;
-  FT_Library _ftLibrary = nullptr;
-  FT_Face _ftFace = nullptr;
+  FT_Library _ftLibrary = NULL;
+  FT_Face _ftFace = NULL;
   std::map<char, Glyph> _glyphs; // Basic ASCII glyph cache
 
     // Window dimensions

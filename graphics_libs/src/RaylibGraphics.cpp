@@ -25,7 +25,7 @@ const RaylibGraphics::Color RaylibGraphics::ALT_COLOR_FOOD(235, 130, 35, 255);
 const RaylibGraphics::Color RaylibGraphics::ALT_COLOR_TEXT(240, 240, 240, 255);
 
 RaylibGraphics::RaylibGraphics()
-    : _initialized(false), _shouldContinue(true), _targetFPS(60), _menuSystem(nullptr), _switchMessageTimer(0) {}
+    : _initialized(false), _shouldContinue(true), _targetFPS(60), _menuSystem(NULL), _switchMessageTimer(0) {}
 
 RaylibGraphics::~RaylibGraphics() {
     shutdown();
@@ -213,7 +213,7 @@ bool RaylibGraphics::shouldContinue() const {
 }
 
 const char* RaylibGraphics::getError() const {
-    return _errorMessage.empty() ? nullptr : _errorMessage.c_str();
+    return _errorMessage.empty() ? NULL : _errorMessage.c_str();
 }
 
 void RaylibGraphics::setFrameRate(int fps) {

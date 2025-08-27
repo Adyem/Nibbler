@@ -27,8 +27,8 @@ const OpenGLGraphics::Color OpenGLGraphics::COLOR_SELECTOR_BG(0.27f, 0.51f, 0.71
 const OpenGLGraphics::Color OpenGLGraphics::COLOR_SELECTED_TEXT(1.0f, 1.0f, 1.0f);  // White
 
 OpenGLGraphics::OpenGLGraphics()
-        : _window(nullptr), _initialized(false), _shouldContinue(true), _targetFPS(60),
-            _menuSystem(nullptr), _switchMessageTimer(0), _lastKeyPressed(GameKey::NONE), _keyConsumed(true),
+        : _window(NULL), _initialized(false), _shouldContinue(true), _targetFPS(60),
+            _menuSystem(NULL), _switchMessageTimer(0), _lastKeyPressed(GameKey::NONE), _keyConsumed(true),
             _fontInitialized(false) {
 }
 
@@ -58,7 +58,7 @@ int OpenGLGraphics::initialize() {
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     // Create window
-    _window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Nibbler - OpenGL Graphics", nullptr, nullptr);
+    _window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Nibbler - OpenGL Graphics", NULL, NULL);
     if (!_window) {
         setError("Failed to create GLFW window");
         glfwTerminate();
@@ -115,13 +115,13 @@ void OpenGLGraphics::shutdown() {
 
     if (_window) {
         glfwDestroyWindow(_window);
-        _window = nullptr;
+        _window = NULL;
     }
 
     glfwTerminate();
 
     // Reset state
-    _menuSystem = nullptr;
+    _menuSystem = NULL;
     _switchMessage.clear();
     _switchMessageTimer = 0;
     _targetFPS = 60;
@@ -244,7 +244,7 @@ const char* OpenGLGraphics::getName() const {
 }
 
 const char* OpenGLGraphics::getError() const {
-    return _errorMessage.empty() ? nullptr : _errorMessage.c_str();
+    return _errorMessage.empty() ? NULL : _errorMessage.c_str();
 }
 
 void OpenGLGraphics::setFrameRate(int fps) {
@@ -358,7 +358,7 @@ bool OpenGLGraphics::initializeFonts() {
     if (!faceLoaded) {
         std::cerr << "[OpenGLGraphics] No suitable font file found" << std::endl;
         FT_Done_FreeType(_ftLibrary);
-        _ftLibrary = nullptr;
+        _ftLibrary = NULL;
         return false;
     }
 
@@ -378,7 +378,7 @@ bool OpenGLGraphics::loadFontFace(const std::string& path) {
     }
     if (FT_Set_Pixel_Sizes(_ftFace, 0, _fontPixelSize)) {
         FT_Done_Face(_ftFace);
-        _ftFace = nullptr;
+        _ftFace = NULL;
         return false;
     }
     std::cout << "[OpenGLGraphics] Loaded font: " << path << std::endl;
@@ -442,11 +442,11 @@ void OpenGLGraphics::shutdownFonts() {
 
     if (_ftFace) {
         FT_Done_Face(_ftFace);
-        _ftFace = nullptr;
+        _ftFace = NULL;
     }
     if (_ftLibrary) {
         FT_Done_FreeType(_ftLibrary);
-        _ftLibrary = nullptr;
+        _ftLibrary = NULL;
     }
     _fontInitialized = false;
 }

@@ -4,8 +4,8 @@
 
 NCursesGraphics::NCursesGraphics()
     : _initialized(false), _shouldContinue(true), _frameRate(60),
-      _gameWindow(nullptr), _switchMessageTimer(0), _infoWindow(nullptr),
-      _menuSystem(nullptr) {
+      _gameWindow(NULL), _switchMessageTimer(0), _infoWindow(NULL),
+      _menuSystem(NULL) {
     clearError();
 }
 
@@ -74,11 +74,11 @@ void NCursesGraphics::shutdown() {
     // Clean up windows
     if (_gameWindow) {
         delwin(_gameWindow);
-        _gameWindow = nullptr;
+        _gameWindow = NULL;
     }
     if (_infoWindow) {
         delwin(_infoWindow);
-        _infoWindow = nullptr;
+        _infoWindow = NULL;
     }
 
     // Restore terminal
@@ -302,7 +302,7 @@ void NCursesGraphics::setFrameRate(int fps) {
 }
 
 const char* NCursesGraphics::getError() const {
-    return _errorMessage.empty() ? nullptr : _errorMessage.c_str();
+    return _errorMessage.empty() ? NULL : _errorMessage.c_str();
 }
 
 // Private helper methods
@@ -318,7 +318,7 @@ void NCursesGraphics::initializeColors() {
         // init_pair(COLOR_INFO, COLOR_WHITE, COLOR_BLACK);
 
     //change colors to have another color pair
-         init_pair(COLOR_SNAKE_HEAD, COLOR_GREEN, COLOR_BLACK);
+    init_pair(COLOR_SNAKE_HEAD, COLOR_GREEN, COLOR_BLACK);
     init_pair(COLOR_SNAKE_BODY, COLOR_YELLOW, COLOR_BLACK);
     init_pair(COLOR_FOOD, COLOR_RED, COLOR_BLACK);
     init_pair(COLOR_WALL, COLOR_WHITE, COLOR_WHITE);

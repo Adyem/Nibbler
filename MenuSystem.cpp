@@ -21,7 +21,7 @@ void MenuSystem::setState(MenuState state) {
 void MenuSystem::navigateUp() {
     if (_currentSelection > 0) {
         _currentSelection--;
-        
+
         // Skip non-selectable items
         const auto& items = getCurrentMenuItems();
         while (_currentSelection > 0 && !items[_currentSelection].selectable) {
@@ -34,7 +34,7 @@ void MenuSystem::navigateDown() {
     const auto& items = getCurrentMenuItems();
     if (_currentSelection < static_cast<int>(items.size()) - 1) {
         _currentSelection++;
-        
+
         // Skip non-selectable items
         while (_currentSelection < static_cast<int>(items.size()) - 1 && !items[_currentSelection].selectable) {
             _currentSelection++;
@@ -66,7 +66,7 @@ void MenuSystem::selectCurrentItem() {
                     break;
             }
             break;
-            
+
         case MenuState::SETTINGS_MENU:
             // Handle settings selection based on current item
             if (_currentSelection == 0) toggleGameMode();
@@ -81,7 +81,7 @@ void MenuSystem::selectCurrentItem() {
 
             updateSettingsMenu();
             break;
-            
+
         case MenuState::CREDITS_PAGE:
         case MenuState::INSTRUCTIONS_PAGE:
         case MenuState::ACHIEVEMENTS_PAGE:
@@ -183,11 +183,11 @@ void MenuSystem::initializeMenus() {
 
 void MenuSystem::updateSettingsMenu() {
     _settingsMenuItems.clear();
-    
+
     std::string gameModeText = std::string("Game Mode: ") +
         (_settings.gameMode == GameMode::SINGLE_PLAYER ? "Single Player" : "Multiplayer");
     _settingsMenuItems.emplace_back(gameModeText);
-    
+
     _settingsMenuItems.emplace_back("Game Speed: " + std::to_string(_settings.gameSpeed) + " FPS");
     _settingsMenuItems.emplace_back("Wrap Around Edges: " + std::string(_settings.wrapAroundEdges ? "ON" : "OFF"));
     _settingsMenuItems.emplace_back("Board Size: " + std::to_string(_settings.boardWidth) + "x" + std::to_string(_settings.boardHeight) + " (from command line)", false);
@@ -197,12 +197,12 @@ void MenuSystem::updateSettingsMenu() {
     _settingsMenuItems.emplace_back("Show FPS: " + std::string(_settings.showFPS ? "ON" : "OFF"));
 
     _settingsMenuItems.emplace_back("", false); // Spacer
-    _settingsMenuItems.emplace_back("Back to Main Menu");
+    // _settingsMenuItems.emplace_back("Back to Main Menu");
 }
 
 // Settings modification methods
 void MenuSystem::toggleGameMode() {
-    _settings.gameMode = (_settings.gameMode == GameMode::SINGLE_PLAYER) ? 
+    _settings.gameMode = (_settings.gameMode == GameMode::SINGLE_PLAYER) ?
         GameMode::MULTIPLAYER : GameMode::SINGLE_PLAYER;
 }
 
@@ -247,9 +247,10 @@ std::vector<std::string> MenuSystem::getCreditsContent() const {
         "C++ Version: C++17",
         "",
         "LIBRARIES USED:",
-        "• NCurses - Enhanced terminal graphics with colors",
-        "• SDL2 - Modern windowed graphics with hardware acceleration",
-        "• SFML - Advanced graphics library (coming soon)",
+        " NCurses - Enhanced terminal graphics with colors",
+        " SDL2 - Modern windowed graphics with hardware acceleration",
+        " OpenGL - Cross-platform graphics API",
+        " Raylib - Simple and easy-to-use library for 2D games",
         "",
         "DESIGN PHILOSOPHY:",
         "This project demonstrates the power of dynamic library loading",
@@ -258,16 +259,18 @@ std::vector<std::string> MenuSystem::getCreditsContent() const {
         "different graphics libraries at runtime using dlopen/dlsym.",
         "",
         "The architecture follows strict separation of concerns:",
-        "• Game logic in main executable",
-        "• Graphics/input handling in dynamic libraries",
-        "• Clean interfaces for extensibility",
+        "Game logic in main executable",
+        "Graphics/input handling in dynamic libraries",
+        "Clean interfaces for extensibility",
         "",
         "BONUS FEATURES:",
-        "• Comprehensive menu system across all libraries",
-        "• Multiplayer support (two snakes, one food!)",
-        "• Customizable game settings and board sizes",
+        "Comprehensive menu system across all libraries",
+        "Different gamemodes load a map in from the argument",
+        "Customizable game settings",
+        "4th library used",
+        "Achievements tracking",
         "",
-        "Press ESC or ENTER to return to main menu"
+        // "Press ESC or ENTER to return to main menu"
     };
 }
 
@@ -276,34 +279,28 @@ std::vector<std::string> MenuSystem::getInstructionsContent() const {
         "HOW TO PLAY NIBBLER",
         "",
         "MENU NAVIGATION:",
-        "• Arrow Keys (↑↓) - Navigate menu items",
-        "• ENTER/SPACE - Select menu item",
-        "• ESC - Go back to previous menu",
-        "• Keys 1,2,3 - Switch graphics libraries anytime",
+        " Arrow Keys (↑↓) - Navigate menu items",
+        " ENTER/SPACE - Select menu item",
+        " ESC - Go back to previous menu",
+        " Keys 1,2,3 - Switch graphics libraries anytime",
         "",
         "GAME OBJECTIVE:",
-        "Control your snake to eat food and grow longer.",
-        "Avoid hitting walls or your own body!",
+        " Control your snake to eat food and grow longer.",
+        " Avoid hitting walls or your own body!",
+        " In the extra gamemodes use the special tiles for effects",
         "",
         "SINGLE PLAYER MODE:",
-        "• Arrow Keys - Control snake direction",
-        "• Eat the red food (*) to grow longer",
-        "• Game ends when snake hits wall or itself",
-        "",
-        "MULTIPLAYER MODE:",
-        "Two snakes compete for the same food!",
-        "• Player 1: Arrow Keys (↑↓←→)",
-        "• Player 2: WASD Keys (W=up, S=down, A=left, D=right)",
-        "• Both snakes grow when eating food",
-        "• Game ends when any snake collides",
-        "• Winner is the snake with highest score!",
+        " Arrow Keys - Control snake direction",
+        " Eat the red food (*) to grow longer",
+        " Game ends when snake hits wall or itself",
         "",
         "GRAPHICS LIBRARIES:",
-        "• Key 1 - NCurses (colored terminal graphics)",
-        "• Key 2 - SDL2 (modern windowed graphics)",
-        "• Key 3 - SFML (advanced graphics with effects)",
+        "Key 1 - NCurses (colored terminal graphics)",
+        "Key 2 - SDL2 (modern windowed graphics)",
+        "Key 3 - OpenGL (cross-platform graphics API)",
+        "Key 4 - Raylib (simple 2D game library)",
         "",
-        "Press ESC or ENTER to return to main menu"
+        // "Press ESC or ENTER to return to main menu"
     };
 }
 
@@ -313,17 +310,17 @@ std::vector<std::string> MenuSystem::getAchievementsContent(const game_data& gam
         ""
     };
 
-    content.push_back(std::string("• Reach length 50: ") + (game.get_achievement_snake50() ? "Unlocked" : "Locked"));
-    content.push_back(std::string("• Apples eaten: ") + std::to_string(game.get_apples_eaten()));
-    content.push_back(std::string("   • Normal: ") + std::to_string(game.get_apples_normal_eaten()));
-    content.push_back(std::string("   • Frosty: ") + std::to_string(game.get_apples_frosty_eaten()));
-    content.push_back(std::string("   • Fire: ") + std::to_string(game.get_apples_fire_eaten()));
-    content.push_back(std::string("• Tiles stepped on:"));
-    content.push_back(std::string("   • Normal: ") + std::to_string(game.get_tile_normal_steps()));
-    content.push_back(std::string("   • Frosty: ") + std::to_string(game.get_tile_frosty_steps()));
-    content.push_back(std::string("   • Fire: ") + std::to_string(game.get_tile_fire_steps()));
+    content.push_back(std::string("Reach length 50: ") + (game.get_achievement_snake50() ? "Unlocked" : "Locked"));
+    content.push_back(std::string("Apples eaten: ") + std::to_string(game.get_apples_eaten()));
+    content.push_back(std::string("Normal: ") + std::to_string(game.get_apples_normal_eaten()));
+    content.push_back(std::string("Frosty: ") + std::to_string(game.get_apples_frosty_eaten()));
+    content.push_back(std::string("Fire: ") + std::to_string(game.get_apples_fire_eaten()));
+    content.push_back(std::string("Tiles stepped on:"));
+    content.push_back(std::string("Normal: ") + std::to_string(game.get_tile_normal_steps()));
+    content.push_back(std::string("Frosty: ") + std::to_string(game.get_tile_frosty_steps()));
+    content.push_back(std::string("Fire: ") + std::to_string(game.get_tile_fire_steps()));
     content.push_back("");
-    content.push_back("Press ESC or ENTER to return to main menu");
+    // content.push_back("Press ESC or ENTER to return to main menu");
     return content;
 }
 

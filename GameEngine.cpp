@@ -93,7 +93,7 @@ void GameEngine::run() {
 }
 
 const char* GameEngine::getError() const {
-    return _errorMessage.empty() ? nullptr : _errorMessage.c_str();
+    return _errorMessage.empty() ? NULL : _errorMessage.c_str();
 }
 
 bool GameEngine::isInitialized() const {
