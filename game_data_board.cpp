@@ -158,6 +158,16 @@ void game_data::spawn_food() {
             item = FIRE_FOOD;
         else if (roll == 3)
             item = FROSTY_FOOD;
+        if (item == FROSTY_FOOD && this->_wrap_around_edges == 0)
+        {
+            size_t width = this->_map.get_width();
+            size_t height = this->_map.get_height();
+            if ((coord.x == 0 || coord.x == static_cast<int>(width) - 1) &&
+                (coord.y == 0 || coord.y == static_cast<int>(height) - 1))
+            {
+                item = (ft_dice_roll(1, 2) == 1) ? FOOD : FIRE_FOOD;
+            }
+        }
     }
     this->_map.set(coord.x, coord.y, 2, item);
     this->remove_empty_cell(coord.x, coord.y);
