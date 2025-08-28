@@ -159,20 +159,7 @@ void NCursesGraphics::render(const game_data& game) {
     // Draw game info
     drawInfo(game);
 
-    // Display switch message if active
-    if (_switchMessageTimer > 0) {
-        int termHeight, termWidth;
-        getmaxyx(stdscr, termHeight, termWidth);
-
-        // Display message at the bottom of the screen
-        attron(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
-        int messageX = (termWidth - static_cast<int>(_switchMessage.length())) / 2;
-        mvprintw(termHeight - 1, messageX, "%s", _switchMessage.c_str());
-        attroff(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
-
-        // Decrement timer
-        _switchMessageTimer--;
-    }
+    // No switch message displayed
 
     // Refresh screen
     refresh();
