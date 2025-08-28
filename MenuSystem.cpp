@@ -77,7 +77,6 @@ void MenuSystem::selectCurrentItem() {
             else if (_currentSelection == 5) toggleAlternativeColors();
             else if (_currentSelection == 6) toggleGrid();
             else if (_currentSelection == 7) toggleFPS();
-            else if (_currentSelection == 9) goBack(); // Back to Main Menu (adjusted index)
 
             updateSettingsMenu();
             break;
@@ -195,9 +194,7 @@ void MenuSystem::updateSettingsMenu() {
     _settingsMenuItems.emplace_back("Alternative Colors: " + std::string(_settings.useAlternativeColors ? "ON" : "OFF"));
     _settingsMenuItems.emplace_back("Show Grid: " + std::string(_settings.showGrid ? "ON" : "OFF"));
     _settingsMenuItems.emplace_back("Show FPS: " + std::string(_settings.showFPS ? "ON" : "OFF"));
-
-    _settingsMenuItems.emplace_back("", false); // Spacer
-    // _settingsMenuItems.emplace_back("Back to Main Menu");
+    // No ghost/placeholder entries at the end
 }
 
 // Settings modification methods
@@ -262,6 +259,7 @@ std::vector<std::string> MenuSystem::getCreditsContent() const {
         "Game logic in main executable",
         "Graphics/input handling in dynamic libraries",
         "Clean interfaces for extensibility",
+        "Menu system independent from graphics implementation",
         "",
         "BONUS FEATURES:",
         "Comprehensive menu system across all libraries",
@@ -279,7 +277,7 @@ std::vector<std::string> MenuSystem::getInstructionsContent() const {
         "HOW TO PLAY NIBBLER",
         "",
         "MENU NAVIGATION:",
-        " Arrow Keys (↑↓) - Navigate menu items",
+        " Arrow Keys - Navigate menu items",
         " ENTER/SPACE - Select menu item",
         " ESC - Go back to previous menu",
         " Keys 1,2,3 - Switch graphics libraries anytime",

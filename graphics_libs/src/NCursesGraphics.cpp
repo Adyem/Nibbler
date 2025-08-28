@@ -677,7 +677,7 @@ void NCursesGraphics::renderGameOverScreen() {
     // Draw instructions
     attron(COLOR_PAIR(COLOR_INFO));
     drawCenteredText(termHeight - 4, "Use Arrow Keys to navigate, ENTER to select");
-    drawCenteredText(termHeight - 3, "Press ESC to quit the game");
+    drawCenteredText(termHeight - 3, "Press ESC to return to main menu");
     drawCenteredText(termHeight - 2, "Press 1/2/3/4 to switch graphics libraries");
     attroff(COLOR_PAIR(COLOR_INFO));
 }

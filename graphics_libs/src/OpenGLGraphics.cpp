@@ -619,10 +619,13 @@ void OpenGLGraphics::renderGameOverScreen() {
 
 void OpenGLGraphics::renderCreditsPage() {
     if (!_menuSystem) return;
-    drawCenteredText(_menuSystem->getCurrentTitle(), 60, COLOR_TEXT, 2.0f);
+    // Reduce title size further to fit more content
+    drawCenteredText(_menuSystem->getCurrentTitle(), 60, COLOR_TEXT, 1.5f);
     const auto& content = _menuSystem->getCreditsContent();
     int top = 120;
-    int lineH = static_cast<int>(_fontPixelSize * 1.0f + 4);
+    // Smaller content scale and tighter line spacing
+    float contentScale = 0.85f;
+    int lineH = static_cast<int>(_fontPixelSize * contentScale + 3);
     int colX1 = 80;
     int colX2 = WINDOW_WIDTH / 2 + 40;
     int bottomY = WINDOW_HEIGHT - 80;
@@ -632,12 +635,12 @@ void OpenGLGraphics::renderCreditsPage() {
         int y1 = top;
         for (int i = 0; i < bonusIdx && y1 <= bottomY - lineH; ++i) {
             if (content[i].empty()) { y1 += lineH; continue; }
-            drawText(content[i], colX1, y1, COLOR_TEXT, 1.0f); y1 += lineH;
+            drawText(content[i], colX1, y1, COLOR_TEXT, contentScale); y1 += lineH;
         }
         int y2 = top;
         for (size_t i = bonusIdx; i < content.size() && y2 <= bottomY - lineH; ++i) {
             if (content[i].empty()) { y2 += lineH; continue; }
-            drawText(content[i], colX2, y2, COLOR_TEXT, 1.0f); y2 += lineH;
+            drawText(content[i], colX2, y2, COLOR_TEXT, contentScale); y2 += lineH;
         }
     } else {
         int usableH = bottomY - top - 20;
@@ -648,7 +651,7 @@ void OpenGLGraphics::renderCreditsPage() {
             int x = (col % 2 == 0) ? colX1 : colX2;
             int y = top + row * lineH;
             if (y > bottomY) continue;
-            drawText(content[i], x, y, COLOR_TEXT, 1.0f);
+            drawText(content[i], x, y, COLOR_TEXT, contentScale);
         }
     }
     drawCenteredText("Press ESC or ENTER to return to main menu", WINDOW_HEIGHT - 50, COLOR_TEXT, 1.0f);

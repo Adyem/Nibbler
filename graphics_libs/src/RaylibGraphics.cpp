@@ -62,6 +62,8 @@ int RaylibGraphics::initialize() {
 
         // Additional setup to ensure clean state
         SetTargetFPS(_targetFPS);
+        // Disable default ESC-to-exit so ESC behaves as back in menus
+        SetExitKey(KEY_NULL);
 
         // Clear any potential OpenGL errors from context switch
         ClearBackground({0, 0, 0, 255}); // Use explicit Color struct
@@ -384,20 +386,39 @@ void RaylibGraphics::renderInstructionsMenu() {
     const auto& content = _menuSystem->getInstructionsContent();
     int top = 120;
     int lineH = std::max(22, 20);
-    int usableH = WINDOW_HEIGHT - top - 100;
-    int linesPerCol = std::max(1, usableH / lineH);
-
     int colX1 = 80;
     int colX2 = WINDOW_WIDTH / 2 + 40;
+    int bottomY = WINDOW_HEIGHT - 100;
 
+    int graphicsIdx = -1;
     for (size_t i = 0; i < content.size(); ++i) {
-        int col = static_cast<int>(i) / linesPerCol;
-        int row = static_cast<int>(i) % linesPerCol;
-        int x = (col % 2 == 0) ? colX1 : colX2;
-        int y = top + row * lineH;
-        if (y > WINDOW_HEIGHT - 100)
-            continue;
-        drawText(content[i], x, y, text, 20);
+        if (content[i] == "GRAPHICS LIBRARIES:") { graphicsIdx = static_cast<int>(i); break; }
+    }
+
+    if (graphicsIdx >= 0) {
+        int y1 = top;
+        for (int i = 0; i < graphicsIdx && y1 <= bottomY - lineH; ++i) {
+            if (content[i].empty()) { y1 += lineH; continue; }
+            drawText(content[i], colX1, y1, text, 20);
+            y1 += lineH;
+        }
+        int y2 = top;
+        for (size_t i = graphicsIdx; i < content.size() && y2 <= bottomY - lineH; ++i) {
+            if (content[i].empty()) { y2 += lineH; continue; }
+            drawText(content[i], colX2, y2, text, 20);
+            y2 += lineH;
+        }
+    } else {
+        int usableH = bottomY - top - 20;
+        int linesPerCol = std::max(1, usableH / lineH);
+        for (size_t i = 0; i < content.size(); ++i) {
+            int col = static_cast<int>(i) / linesPerCol;
+            int row = static_cast<int>(i) % linesPerCol;
+            int x = (col % 2 == 0) ? colX1 : colX2;
+            int y = top + row * lineH;
+            if (y > bottomY) continue;
+            drawText(content[i], x, y, text, 20);
+        }
     }
 
     drawCenteredText("Press ESC or ENTER to return to main menu", WINDOW_HEIGHT - 60, title, 18);
@@ -439,7 +460,7 @@ void RaylibGraphics::renderGameOverMenu() {
     drawMenuItems(items, _menuSystem->getCurrentSelection(), 240);
     // Footer to match ncurses
     drawCenteredText("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 100, text, 16);
-    drawCenteredText("Press ESC to quit the game", WINDOW_HEIGHT - 80, text, 16);
+    drawCenteredText("Press ESC to return to main menu", WINDOW_HEIGHT - 80, text, 16);
     drawCenteredText("Press 1/2/3/4 to switch graphics libraries", WINDOW_HEIGHT - 60, text, 16);
 }
 

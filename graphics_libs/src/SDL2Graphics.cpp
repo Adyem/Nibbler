@@ -493,13 +493,14 @@ void SDL2Graphics::renderCreditsMenu() {
     const Color& title = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
     const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
 
-    // Draw title
-    drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 40, _fontLarge, title);
+    // Draw title (smaller to fit more content)
+    drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 40, _fontMedium, title);
 
     // Two-column content with "BONUS FEATURES:" forced to second column
     const auto& content = _menuSystem->getCreditsContent();
     int top = 100;
-    int lineH = std::max(22, getTextHeight(_fontMedium) + 4);
+    // Smaller line height to fit more lines
+    int lineH = std::max(18, getTextHeight(_fontSmall) + 2);
     int colX1 = 80;
     int colX2 = WINDOW_WIDTH / 2 + 40;
     int bottomY = WINDOW_HEIGHT - 60;
@@ -519,7 +520,7 @@ void SDL2Graphics::renderCreditsMenu() {
                 y1 += lineH;
                 continue;
             }
-            drawTextWithFont(content[i], colX1, y1, _fontMedium, text);
+            drawTextWithFont(content[i], colX1, y1, _fontSmall, text);
             y1 += lineH;
         }
         int y2 = top;
@@ -528,7 +529,7 @@ void SDL2Graphics::renderCreditsMenu() {
                 y2 += lineH;
                 continue;
             }
-            drawTextWithFont(content[i], colX2, y2, _fontMedium, text);
+            drawTextWithFont(content[i], colX2, y2, _fontSmall, text);
             y2 += lineH;
         }
     } else {
@@ -542,7 +543,7 @@ void SDL2Graphics::renderCreditsMenu() {
             int y = top + row * lineH;
             if (y > bottomY)
                 continue;
-            drawTextWithFont(content[i], x, y, _fontMedium, text);
+            drawTextWithFont(content[i], x, y, _fontSmall, text);
         }
     }
 
@@ -558,24 +559,47 @@ void SDL2Graphics::renderInstructionsMenu() {
     // Draw title
     drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 40, _fontLarge, title);
 
-    // Two-column content
+    // Two-column content with second column starting at "GRAPHICS LIBRARIES:"
     const auto& content = _menuSystem->getInstructionsContent();
     int top = 100;
     int lineH = std::max(22, getTextHeight(_fontMedium) + 4);
-    int usableH = WINDOW_HEIGHT - top - 80;
-    int linesPerCol = std::max(1, usableH / lineH);
-
     int colX1 = 80;
     int colX2 = WINDOW_WIDTH / 2 + 40;
+    int bottomY = WINDOW_HEIGHT - 60;
 
+    int graphicsIdx = -1;
     for (size_t i = 0; i < content.size(); ++i) {
-        int col = static_cast<int>(i) / linesPerCol;
-        int row = static_cast<int>(i) % linesPerCol;
-        int x = (col % 2 == 0) ? colX1 : colX2;
-        int y = top + row * lineH;
-        if (y > WINDOW_HEIGHT - 60)
-            continue;
-        drawTextWithFont(content[i], x, y, _fontMedium, text);
+        if (content[i] == "GRAPHICS LIBRARIES:") {
+            graphicsIdx = static_cast<int>(i);
+            break;
+        }
+    }
+
+    if (graphicsIdx >= 0) {
+        int y1 = top;
+        for (int i = 0; i < graphicsIdx && y1 <= bottomY - lineH; ++i) {
+            if (content[i].empty()) { y1 += lineH; continue; }
+            drawTextWithFont(content[i], colX1, y1, _fontMedium, text);
+            y1 += lineH;
+        }
+        int y2 = top;
+        for (size_t i = graphicsIdx; i < content.size() && y2 <= bottomY - lineH; ++i) {
+            if (content[i].empty()) { y2 += lineH; continue; }
+            drawTextWithFont(content[i], colX2, y2, _fontMedium, text);
+            y2 += lineH;
+        }
+    } else {
+        // Fallback: auto flow
+        int usableH = bottomY - top - 20;
+        int linesPerCol = std::max(1, usableH / lineH);
+        for (size_t i = 0; i < content.size(); ++i) {
+            int col = static_cast<int>(i) / linesPerCol;
+            int row = static_cast<int>(i) % linesPerCol;
+            int x = (col % 2 == 0) ? colX1 : colX2;
+            int y = top + row * lineH;
+            if (y > bottomY) continue;
+            drawTextWithFont(content[i], x, y, _fontMedium, text);
+        }
     }
 
     // Footer
@@ -605,7 +629,7 @@ void SDL2Graphics::renderGameOverMenu() {
 
     // Draw instructions
     drawCenteredTextWithFont("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 100, _fontSmall, text);
-    drawCenteredTextWithFont("Press ESC to quit the game", WINDOW_HEIGHT - 80, _fontSmall, text);
+    drawCenteredTextWithFont("Press ESC to return to main menu", WINDOW_HEIGHT - 80, _fontSmall, text);
     drawCenteredTextWithFont("Press 1/2/3/4 to switch graphics libraries", WINDOW_HEIGHT - 60, _fontSmall, text);
 }
 
