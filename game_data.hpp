@@ -113,6 +113,7 @@ class game_data
         double      _moves_per_second;
         int         _additional_food_items;
         ft_string   _profile_name;
+        char        _map_name[256];
         ft_map3d                                _map;
         ft_character                            _character;
         std::vector<t_coordinates>      _empty_cells;
