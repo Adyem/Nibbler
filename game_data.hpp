@@ -11,14 +11,16 @@
 #define GAME_TILE_ICE 2
 #define GAME_TILE_FIRE 3
 
-#define MAP_TILE_EMPTY       '0'
-#define MAP_TILE_WALL        '1'
-#define MAP_TILE_ICE         '2'
-#define MAP_TILE_FIRE        '3'
-#define MAP_TILE_SNAKE_HEAD  '4'
-#define MAP_TILE_SNAKE_BODY_1 '5'
-#define MAP_TILE_SNAKE_BODY_2 '6'
-#define MAP_TILE_SNAKE_BODY_3 '7'
+enum : char {
+    MAP_TILE_EMPTY       = '0',
+    MAP_TILE_WALL        = '1',
+    MAP_TILE_ICE         = '2',
+    MAP_TILE_FIRE        = '3',
+    MAP_TILE_SNAKE_HEAD  = '4',
+    MAP_TILE_SNAKE_BODY_1 = '5',
+    MAP_TILE_SNAKE_BODY_2 = '6',
+    MAP_TILE_SNAKE_BODY_3 = '7',
+};
 
 #define SNAKE_HEAD_PLAYER_1 1000001
 #define SNAKE_HEAD_PLAYER_2 2000001
@@ -83,6 +85,8 @@ class game_data
 
         void        set_profile_name(const ft_string &name);
         const ft_string &get_profile_name() const;
+        void        set_map_name(const char *name);
+        const char *get_map_name() const;
         int         save_game() const;
         int         load_game();
         int         get_snake_length(int player) const;

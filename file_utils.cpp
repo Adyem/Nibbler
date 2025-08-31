@@ -50,23 +50,18 @@ char **read_file_lines(const char *path) {
     return result;
 }
 
-int read_game_rules(const char *path, game_rules &rules) {
+static void free_file_lines(char **lines) {
+    if (!lines)
+        return;
+    for (size_t i = 0; lines[i]; ++i)
+        delete[] lines[i];
+    delete[] lines;
+}
+
+static int parse_game_rules_lines(const std::vector<std::string> &lines,
+                                  game_rules &rules) {
     rules.error = 0;
     rules.snake_length = 4;
-    int fd = open_file_read(path);
-    if (fd < 0) {
-        rules.error = 1;
-        return -1;
-    }
-    FILE *fp = fdopen(fd, "r");
-    if (!fp) {
-        close(fd);
-        rules.error = 1;
-        return -1;
-    }
-    char *line = nullptr;
-    size_t buf_size = 0;
-    ssize_t line_len;
     int found = 0;
     bool in_map = false;
     size_t map_width = 0;
@@ -79,25 +74,23 @@ int read_game_rules(const char *path, game_rules &rules) {
     int body2_x = -1, body2_y = -1;
     int body3_x = -1, body3_y = -1;
     rules.custom_map.clear();
-    while ((line_len = getline(&line, &buf_size, fp)) != -1) {
-        if (line_len > 0 && line[line_len - 1] == '\n') {
-            line[line_len - 1] = '\0';
-        }
+    for (size_t idx = 0; idx < lines.size(); ++idx) {
+        const std::string &line = lines[idx];
         if (!in_map) {
-            if (std::strncmp(line, "WRAP_AROUND_EDGES=", 19) == 0) {
-                rules.wrap_around_edges = (line[19] == '1');
+            if (line.rfind("WRAP_AROUND_EDGES=", 0) == 0) {
+                rules.wrap_around_edges =
+                    (line.size() > 19 && line[19] == '1');
                 found++;
-            } else if (std::strncmp(line, "ADDITIONAL_FRUITS=", 20) == 0) {
-                rules.additional_fruits = (line[20] == '1');
+            } else if (line.rfind("ADDITIONAL_FRUITS=", 0) == 0) {
+                rules.additional_fruits =
+                    (line.size() > 20 && line[20] == '1');
                 found++;
-            } else if (std::strncmp(line, "CUSTOM_MAP=", 11) == 0) {
+            } else if (line.rfind("CUSTOM_MAP=", 0) == 0) {
                 in_map = true;
             }
         } else {
-            size_t len = std::strlen(line);
+            size_t len = line.size();
             if (len == 0) {
-                free(line);
-                fclose(fp);
                 rules.error = 1;
                 return -1;
             }
@@ -120,7 +113,7 @@ int read_game_rules(const char *path, game_rules &rules) {
                     c != MAP_TILE_SNAKE_BODY_3) {
                     free(line);
                     fclose(fp);
-                    rules.error = 1;
+                  rules.error = 1;
                     return -1;
                 }
                 if (c == MAP_TILE_SNAKE_HEAD) {
@@ -190,6 +183,59 @@ int read_game_rules(const char *path, game_rules &rules) {
     if (found < 2) {
         rules.error = 1;
         return -1;
+    }
+    return 0;
+}
+
+int read_game_rules(game_data &data, game_rules &rules) {
+    char **lines = read_file_lines(data.get_map_name());
+    if (!lines) {
+        rules.error = 1;
+        return -1;
+    }
+    std::vector<std::string> vec;
+    for (size_t i = 0; lines[i]; ++i)
+        vec.emplace_back(lines[i]);
+    free_file_lines(lines);
+    return parse_game_rules_lines(vec, rules);
+}
+
+int load_rules_into_game_data(game_data &data) {
+    game_rules rules;
+    if (read_game_rules(data, rules) < 0)
+        return -1;
+    data.set_wrap_around_edges(rules.wrap_around_edges);
+    data.set_additional_food_items(rules.additional_fruits);
+    if (!rules.custom_map.empty()) {
+        size_t width = rules.custom_map[0].size();
+        size_t height = rules.custom_map.size();
+        data.resize_board(static_cast<int>(width),
+                          static_cast<int>(height));
+        for (size_t y = 0; y < height; ++y) {
+            for (size_t x = 0; x < width; ++x) {
+                char c = rules.custom_map[y][x];
+                int tile = GAME_TILE_EMPTY;
+                if (c == MAP_TILE_WALL)
+                    tile = GAME_TILE_WALL;
+                else if (c == MAP_TILE_ICE)
+                    tile = GAME_TILE_ICE;
+                else if (c == MAP_TILE_FIRE)
+                    tile = GAME_TILE_FIRE;
+                data.set_map_value(static_cast<int>(x), static_cast<int>(y), 0,
+                                    tile);
+                int snake = 0;
+                if (c == MAP_TILE_SNAKE_HEAD)
+                    snake = SNAKE_HEAD_PLAYER_1;
+                else if (c == MAP_TILE_SNAKE_BODY_1)
+                    snake = SNAKE_HEAD_PLAYER_1 + 1;
+                else if (c == MAP_TILE_SNAKE_BODY_2)
+                    snake = SNAKE_HEAD_PLAYER_1 + 2;
+                else if (c == MAP_TILE_SNAKE_BODY_3)
+                    snake = SNAKE_HEAD_PLAYER_1 + 3;
+                data.set_map_value(static_cast<int>(x), static_cast<int>(y), 2,
+                                    snake);
+            }
+        }
     }
     return 0;
 }
