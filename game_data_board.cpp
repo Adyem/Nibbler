@@ -31,6 +31,10 @@ void game_data::add_empty_cell(int x, int y) {
         return;
     if (this->_empty_cell_indices[flat] != -1)
         return;
+    if (this->_map.get(x, y, 2) != 0)
+        return;
+    if (this->_map.get(x, y, 0) != GAME_TILE_EMPTY)
+        return;
     this->_empty_cells.push_back((t_coordinates){x, y});
     this->_empty_cell_indices[flat] = static_cast<int>(this->_empty_cells.size() - 1);
     return;
@@ -66,7 +70,7 @@ void game_data::initialize_empty_cells() {
         size_t x = 0;
         while (x < width) {
             if (this->_map.get(x, y, 2) == 0 &&
-                this->_map.get(x, y, 0) != GAME_TILE_WALL) {
+                this->_map.get(x, y, 0) == GAME_TILE_EMPTY) {
                 this->_empty_cells.push_back((t_coordinates){static_cast<int>(x),
                                                              static_cast<int>(y)});
                 this->_empty_cell_indices[y * width + x] =
@@ -146,32 +150,40 @@ void game_data::resize_board(int width, int height) {
 }
 
 void game_data::spawn_food() {
-    if (this->_empty_cells.empty())
-        return;
-    int idx = ft_dice_roll(1, static_cast<int>(this->_empty_cells.size())) - 1;
-    t_coordinates coord = this->_empty_cells[idx];
-    int item = FOOD;
-    if (this->_additional_food_items)
+    while (!this->_empty_cells.empty())
     {
-        int roll = ft_dice_roll(1, 3);
-        if (roll == 2)
-            item = FIRE_FOOD;
-        else if (roll == 3)
-            item = FROSTY_FOOD;
-        if (item == FROSTY_FOOD && this->_wrap_around_edges == 0)
+        int idx = ft_dice_roll(1, static_cast<int>(this->_empty_cells.size())) - 1;
+        t_coordinates coord = this->_empty_cells[idx];
+        if (this->_map.get(coord.x, coord.y, 2) != 0 ||
+            this->_map.get(coord.x, coord.y, 0) != GAME_TILE_EMPTY)
         {
-            size_t width = this->_map.get_width();
-            size_t height = this->_map.get_height();
-            if ((coord.x == 0 || coord.x == static_cast<int>(width) - 1) &&
-                (coord.y == 0 || coord.y == static_cast<int>(height) - 1))
+            this->remove_empty_cell(coord.x, coord.y);
+            continue;
+        }
+        int item = FOOD;
+        if (this->_additional_food_items)
+        {
+            int roll = ft_dice_roll(1, 3);
+            if (roll == 2)
+                item = FIRE_FOOD;
+            else if (roll == 3)
+                item = FROSTY_FOOD;
+            if (item == FROSTY_FOOD && this->_wrap_around_edges == 0)
             {
-                item = (ft_dice_roll(1, 2) == 1) ? FOOD : FIRE_FOOD;
+                size_t width = this->_map.get_width();
+                size_t height = this->_map.get_height();
+                if ((coord.x == 0 || coord.x == static_cast<int>(width) - 1) &&
+                    (coord.y == 0 || coord.y == static_cast<int>(height) - 1))
+                {
+                    item = (ft_dice_roll(1, 2) == 1) ? FOOD : FIRE_FOOD;
+                }
             }
         }
+        this->_map.set(coord.x, coord.y, 2, item);
+        this->remove_empty_cell(coord.x, coord.y);
+        return;
     }
-    this->_map.set(coord.x, coord.y, 2, item);
-    this->remove_empty_cell(coord.x, coord.y);
-    return ;
+    return;
 }
 
 void game_data::spawn_fire_tile()
