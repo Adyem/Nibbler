@@ -30,7 +30,7 @@ const SFMLGraphics::Color SFMLGraphics::COLOR_SELECTED_TEXT(255, 255, 255); // W
 
 SFMLGraphics::SFMLGraphics()
     : _initialized(false), _shouldContinue(true), _targetFPS(60),
-      _window(nullptr), _menuSystem(nullptr), _switchMessageTimer(0) {
+      _window(NULL), _menuSystem(NULL), _switchMessageTimer(0) {
 }
 
 SFMLGraphics::~SFMLGraphics() {
@@ -57,7 +57,7 @@ int SFMLGraphics::initialize() {
     // Load font
     if (!initializeFont()) {
         delete _window;
-        _window = nullptr;
+        _window = NULL;
         return 1;
     }
 
@@ -108,7 +108,7 @@ void SFMLGraphics::shutdown() {
 
         // Delete the window object
         delete _window;
-        _window = nullptr;
+        _window = NULL;
 
         // Additional delay specifically for OpenGL context cleanup
         sf::sleep(sf::milliseconds(200)); // Increased from 150ms
@@ -130,7 +130,7 @@ void SFMLGraphics::shutdown() {
     _font = sf::Font();
 
     // Reset all other member variables to safe states
-    _menuSystem = nullptr;
+    _menuSystem = NULL;
     _switchMessage.clear();
     _switchMessageTimer = 0;
     _targetFPS = 60;
@@ -272,7 +272,7 @@ bool SFMLGraphics::shouldContinue() const {
 }
 
 const char* SFMLGraphics::getError() const {
-    return _errorMessage.empty() ? nullptr : _errorMessage.c_str();
+    return _errorMessage.empty() ? NULL : _errorMessage.c_str();
 }
 
 void SFMLGraphics::setFrameRate(int fps) {

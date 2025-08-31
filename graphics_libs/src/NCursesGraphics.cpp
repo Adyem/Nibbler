@@ -4,8 +4,8 @@
 
 NCursesGraphics::NCursesGraphics()
     : _initialized(false), _shouldContinue(true), _frameRate(60),
-      _gameWindow(nullptr), _switchMessageTimer(0), _infoWindow(nullptr),
-      _menuSystem(nullptr) {
+      _gameWindow(NULL), _switchMessageTimer(0), _infoWindow(NULL),
+      _menuSystem(NULL) {
     clearError();
 }
 
@@ -74,11 +74,11 @@ void NCursesGraphics::shutdown() {
     // Clean up windows
     if (_gameWindow) {
         delwin(_gameWindow);
-        _gameWindow = nullptr;
+        _gameWindow = NULL;
     }
     if (_infoWindow) {
         delwin(_infoWindow);
-        _infoWindow = nullptr;
+        _infoWindow = NULL;
     }
 
     // Restore terminal
@@ -159,20 +159,7 @@ void NCursesGraphics::render(const game_data& game) {
     // Draw game info
     drawInfo(game);
 
-    // Display switch message if active
-    if (_switchMessageTimer > 0) {
-        int termHeight, termWidth;
-        getmaxyx(stdscr, termHeight, termWidth);
-
-        // Display message at the bottom of the screen
-        attron(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
-        int messageX = (termWidth - static_cast<int>(_switchMessage.length())) / 2;
-        mvprintw(termHeight - 1, messageX, "%s", _switchMessage.c_str());
-        attroff(COLOR_PAIR(COLOR_SNAKE_HEAD) | A_BOLD);
-
-        // Decrement timer
-        _switchMessageTimer--;
-    }
+    // No switch message displayed
 
     // Refresh screen
     refresh();
@@ -302,7 +289,7 @@ void NCursesGraphics::setFrameRate(int fps) {
 }
 
 const char* NCursesGraphics::getError() const {
-    return _errorMessage.empty() ? nullptr : _errorMessage.c_str();
+    return _errorMessage.empty() ? NULL : _errorMessage.c_str();
 }
 
 // Private helper methods
@@ -318,7 +305,7 @@ void NCursesGraphics::initializeColors() {
         // init_pair(COLOR_INFO, COLOR_WHITE, COLOR_BLACK);
 
     //change colors to have another color pair
-         init_pair(COLOR_SNAKE_HEAD, COLOR_GREEN, COLOR_BLACK);
+    init_pair(COLOR_SNAKE_HEAD, COLOR_GREEN, COLOR_BLACK);
     init_pair(COLOR_SNAKE_BODY, COLOR_YELLOW, COLOR_BLACK);
     init_pair(COLOR_FOOD, COLOR_RED, COLOR_BLACK);
     init_pair(COLOR_WALL, COLOR_WHITE, COLOR_WHITE);
@@ -690,7 +677,7 @@ void NCursesGraphics::renderGameOverScreen() {
     // Draw instructions
     attron(COLOR_PAIR(COLOR_INFO));
     drawCenteredText(termHeight - 4, "Use Arrow Keys to navigate, ENTER to select");
-    drawCenteredText(termHeight - 3, "Press ESC to quit the game");
+    drawCenteredText(termHeight - 3, "Press ESC to return to main menu");
     drawCenteredText(termHeight - 2, "Press 1/2/3/4 to switch graphics libraries");
     attroff(COLOR_PAIR(COLOR_INFO));
 }

@@ -27,7 +27,7 @@ int LibraryManager::loadLibrary(const std::string& libraryPath) {
     LibraryInfo libInfo;
     libInfo.handle = handle;
     libInfo.path = libraryPath;
-    libInfo.instance = nullptr;
+    libInfo.instance = NULL;
 
     // Load the required symbols
     if (!loadLibrarySymbols(libInfo)) {
@@ -97,7 +97,7 @@ IGraphicsLibrary* LibraryManager::getCurrentLibrary() const {
     if (_currentLibraryIndex >= 0 && _currentLibraryIndex < static_cast<int>(_libraries.size())) {
         return _libraries[_currentLibraryIndex].instance;
     }
-    return nullptr;
+    return NULL;
 }
 
 int LibraryManager::getCurrentLibraryIndex() const {
@@ -112,7 +112,7 @@ const char* LibraryManager::getLibraryName(int index) const {
     if (index >= 0 && index < static_cast<int>(_libraries.size())) {
         return _libraries[index].name.c_str();
     }
-    return nullptr;
+    return NULL;
 }
 
 const char* LibraryManager::getError() const {
@@ -168,11 +168,11 @@ bool LibraryManager::loadLibrarySymbols(LibraryInfo& libInfo) {
 void LibraryManager::cleanupLibrary(LibraryInfo& libInfo) {
     if (libInfo.instance && libInfo.destroyFunc) {
         libInfo.destroyFunc(libInfo.instance);
-        libInfo.instance = nullptr;
+        libInfo.instance = NULL;
     }
 
     if (libInfo.handle) {
         dlclose(libInfo.handle);
-        libInfo.handle = nullptr;
+        libInfo.handle = NULL;
     }
 }

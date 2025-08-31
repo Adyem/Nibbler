@@ -15,6 +15,9 @@ const RaylibGraphics::Color RaylibGraphics::COLOR_FOOD(200, 50, 50, 255);
 const RaylibGraphics::Color RaylibGraphics::COLOR_TEXT(255, 255, 255, 255);
 const RaylibGraphics::Color RaylibGraphics::COLOR_SELECTOR_BG(70, 130, 180, 255);
 const RaylibGraphics::Color RaylibGraphics::COLOR_SELECTED_TEXT(255, 255, 255, 255);
+const RaylibGraphics::Color RaylibGraphics::COLOR_FIRE_FOOD(235, 80, 35, 255);
+const RaylibGraphics::Color RaylibGraphics::COLOR_FROSTY_FOOD(80, 200, 235, 255);
+const RaylibGraphics::Color RaylibGraphics::COLOR_FIRE_TILE(200, 60, 40, 255);
 
 // Alternative palette
 const RaylibGraphics::Color RaylibGraphics::ALT_COLOR_BACKGROUND(15, 15, 18, 255);
@@ -25,7 +28,7 @@ const RaylibGraphics::Color RaylibGraphics::ALT_COLOR_FOOD(235, 130, 35, 255);
 const RaylibGraphics::Color RaylibGraphics::ALT_COLOR_TEXT(240, 240, 240, 255);
 
 RaylibGraphics::RaylibGraphics()
-    : _initialized(false), _shouldContinue(true), _targetFPS(60), _menuSystem(nullptr), _switchMessageTimer(0) {}
+    : _initialized(false), _shouldContinue(true), _targetFPS(60), _menuSystem(NULL), _switchMessageTimer(0) {}
 
 RaylibGraphics::~RaylibGraphics() {
     shutdown();
@@ -59,6 +62,8 @@ int RaylibGraphics::initialize() {
 
         // Additional setup to ensure clean state
         SetTargetFPS(_targetFPS);
+        // Disable default ESC-to-exit so ESC behaves as back in menus
+        SetExitKey(KEY_NULL);
 
         // Clear any potential OpenGL errors from context switch
         ClearBackground({0, 0, 0, 255}); // Use explicit Color struct
@@ -101,7 +106,7 @@ void RaylibGraphics::render(const game_data& game) {
     ClearBackground({bg.r, bg.g, bg.b, bg.a});
 
     if (_menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME) {
-        renderMenu();
+        renderMenu(game);
         EndDrawing();
         return;
     }
@@ -122,6 +127,10 @@ void RaylibGraphics::render(const game_data& game) {
             int l2 = game.get_map_value((int)x, (int)y, 2);
             if (l2 == FOOD) {
                 DrawRectangle(px, py, cellSize, cellSize, {food.r, food.g, food.b, food.a});
+            } else if (l2 == FIRE_FOOD) {
+                DrawRectangle(px, py, cellSize, cellSize, {COLOR_FIRE_FOOD.r, COLOR_FIRE_FOOD.g, COLOR_FIRE_FOOD.b, COLOR_FIRE_FOOD.a});
+            } else if (l2 == FROSTY_FOOD) {
+                DrawRectangle(px, py, cellSize, cellSize, {COLOR_FROSTY_FOOD.r, COLOR_FROSTY_FOOD.g, COLOR_FROSTY_FOOD.b, COLOR_FROSTY_FOOD.a});
             } else if (l2 >= SNAKE_HEAD_PLAYER_1 && l2 < SNAKE_HEAD_PLAYER_1 + 1000000) {
                 bool headTile = (l2 % 1000000 == 1);
                 auto c = headTile ? head : body;
@@ -132,6 +141,8 @@ void RaylibGraphics::render(const game_data& game) {
                     DrawRectangle(px, py, cellSize, cellSize, {border.r, border.g, border.b, border.a});
                 else if (l0 == GAME_TILE_ICE)
                     DrawRectangle(px, py, cellSize, cellSize, {bg.r, bg.g, bg.b, bg.a});
+                else if (l0 == GAME_TILE_FIRE)
+                    DrawRectangle(px, py, cellSize, cellSize, {COLOR_FIRE_TILE.r, COLOR_FIRE_TILE.g, COLOR_FIRE_TILE.b, COLOR_FIRE_TILE.a});
             }
         }
     }
@@ -139,11 +150,7 @@ void RaylibGraphics::render(const game_data& game) {
     // HUD: score/length top-left
     DrawText(TextFormat("Length: %d", game.get_snake_length(0)), 10, 10, 20, {text.r, text.g, text.b, text.a});
 
-    // Optional switch message
-    if (_switchMessageTimer > 0) {
-        DrawText(_switchMessage.c_str(), 10, 36, 18, {text.r, text.g, text.b, text.a});
-        --_switchMessageTimer;
-    }
+    // Do not display any library switch message per requirements
 
     EndDrawing();
 }
@@ -213,7 +220,7 @@ bool RaylibGraphics::shouldContinue() const {
 }
 
 const char* RaylibGraphics::getError() const {
-    return _errorMessage.empty() ? nullptr : _errorMessage.c_str();
+    return _errorMessage.empty() ? NULL : _errorMessage.c_str();
 }
 
 void RaylibGraphics::setFrameRate(int fps) {
@@ -267,7 +274,7 @@ void RaylibGraphics::drawCenteredText(const std::string& text, int y, const Colo
     DrawText(text.c_str(), (WINDOW_WIDTH - w) / 2, y, size, {color.r, color.g, color.b, color.a});
 }
 
-void RaylibGraphics::renderMenu() {
+void RaylibGraphics::renderMenu(const game_data& game) {
     // Only draw content; frame begin/clear/end handled by render()
     switch (_menuSystem->getCurrentState()) {
     case MenuState::MAIN_MENU:
@@ -278,6 +285,8 @@ void RaylibGraphics::renderMenu() {
         return renderCreditsMenu();
     case MenuState::INSTRUCTIONS_PAGE:
         return renderInstructionsMenu();
+    case MenuState::ACHIEVEMENTS_PAGE:
+        return renderAchievementsMenu(game);
     case MenuState::GAME_OVER:
         return renderGameOverMenu();
     default:
@@ -304,6 +313,9 @@ void RaylibGraphics::renderSettingsMenu() {
     drawCenteredText(_menuSystem->getCurrentTitle(), 60, title, 36);
     const auto& items = _menuSystem->getCurrentMenuItems();
     drawMenuItems(items, _menuSystem->getCurrentSelection(), 120);
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+    drawCenteredText("Use Arrow Keys to navigate, ENTER to toggle/adjust", WINDOW_HEIGHT - 100, text, 16);
+    drawCenteredText("ESC to go back", WINDOW_HEIGHT - 80, text, 16);
 }
 
 void RaylibGraphics::renderCreditsMenu() {
@@ -361,7 +373,7 @@ void RaylibGraphics::renderCreditsMenu() {
         }
     }
 
-    drawCenteredText("Press ESC or ENTER to go back", WINDOW_HEIGHT - 60, title, 18);
+    drawCenteredText("Press ESC or ENTER to return to main menu", WINDOW_HEIGHT - 60, title, 18);
 }
 
 void RaylibGraphics::renderInstructionsMenu() {
@@ -374,20 +386,59 @@ void RaylibGraphics::renderInstructionsMenu() {
     const auto& content = _menuSystem->getInstructionsContent();
     int top = 120;
     int lineH = std::max(22, 20);
-    int usableH = WINDOW_HEIGHT - top - 100;
-    int linesPerCol = std::max(1, usableH / lineH);
-
     int colX1 = 80;
     int colX2 = WINDOW_WIDTH / 2 + 40;
+    int bottomY = WINDOW_HEIGHT - 100;
 
+    int graphicsIdx = -1;
     for (size_t i = 0; i < content.size(); ++i) {
-        int col = static_cast<int>(i) / linesPerCol;
-        int row = static_cast<int>(i) % linesPerCol;
-        int x = (col % 2 == 0) ? colX1 : colX2;
-        int y = top + row * lineH;
-        if (y > WINDOW_HEIGHT - 100)
-            continue;
-        drawText(content[i], x, y, text, 20);
+        if (content[i] == "GRAPHICS LIBRARIES:") { graphicsIdx = static_cast<int>(i); break; }
+    }
+
+    if (graphicsIdx >= 0) {
+        int y1 = top;
+        for (int i = 0; i < graphicsIdx && y1 <= bottomY - lineH; ++i) {
+            if (content[i].empty()) { y1 += lineH; continue; }
+            drawText(content[i], colX1, y1, text, 20);
+            y1 += lineH;
+        }
+        int y2 = top;
+        for (size_t i = graphicsIdx; i < content.size() && y2 <= bottomY - lineH; ++i) {
+            if (content[i].empty()) { y2 += lineH; continue; }
+            drawText(content[i], colX2, y2, text, 20);
+            y2 += lineH;
+        }
+    } else {
+        int usableH = bottomY - top - 20;
+        int linesPerCol = std::max(1, usableH / lineH);
+        for (size_t i = 0; i < content.size(); ++i) {
+            int col = static_cast<int>(i) / linesPerCol;
+            int row = static_cast<int>(i) % linesPerCol;
+            int x = (col % 2 == 0) ? colX1 : colX2;
+            int y = top + row * lineH;
+            if (y > bottomY) continue;
+            drawText(content[i], x, y, text, 20);
+        }
+    }
+
+    drawCenteredText("Press ESC or ENTER to return to main menu", WINDOW_HEIGHT - 60, title, 18);
+}
+
+void RaylibGraphics::renderAchievementsMenu(const game_data& game) {
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& title = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+
+    drawCenteredText(_menuSystem->getCurrentTitle(), 60, title, 36);
+
+    const auto& content = _menuSystem->getAchievementsContent(game);
+    int top = 120;
+    int lineH = std::max(22, 20);
+    int y = top;
+    for (const auto& line : content) {
+        if (y > WINDOW_HEIGHT - 80) break;
+        drawCenteredText(line, y, text, 20);
+        y += lineH;
     }
 
     drawCenteredText("Press ESC or ENTER to go back", WINDOW_HEIGHT - 60, title, 18);
@@ -407,6 +458,10 @@ void RaylibGraphics::renderGameOverMenu() {
     drawCenteredText(score, 180, text, 24);
     const auto& items = _menuSystem->getCurrentMenuItems();
     drawMenuItems(items, _menuSystem->getCurrentSelection(), 240);
+    // Footer to match ncurses
+    drawCenteredText("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 100, text, 16);
+    drawCenteredText("Press ESC to return to main menu", WINDOW_HEIGHT - 80, text, 16);
+    drawCenteredText("Press 1/2/3/4 to switch graphics libraries", WINDOW_HEIGHT - 60, text, 16);
 }
 
 void RaylibGraphics::drawMenuItems(const std::vector<MenuItem>& items, int selectedIndex, int startY) {

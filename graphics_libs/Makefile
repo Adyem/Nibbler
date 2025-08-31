@@ -199,4 +199,47 @@ help:
 	@echo "  lib_opengl.so    - Modern OpenGL graphics with GLFW"
 	@echo "  lib_raylib.so    - Windowed graphics with raylib"
 
+# Per-library dependency installers (auto-detect brew/apt-get)
+install-deps-ncurses:
+	@echo "Installing NCurses development packages..."
+	@if command -v brew >/dev/null 2>&1; then \
+		brew install ncurses; \
+	elif command -v apt-get >/dev/null 2>&1; then \
+		sudo apt-get update && sudo apt-get install -y libncurses5-dev; \
+	else \
+		echo "Please install ncurses (ncurses/ncursesw dev headers) using your package manager."; \
+	fi
+
+install-deps-sdl2:
+	@echo "Installing SDL2 + SDL2_ttf development packages..."
+	@if command -v brew >/dev/null 2>&1; then \
+		brew install sdl2 sdl2_ttf; \
+	elif command -v apt-get >/dev/null 2>&1; then \
+		sudo apt-get update && sudo apt-get install -y libsdl2-dev libsdl2-ttf-dev; \
+	else \
+		echo "Please install SDL2 and SDL2_ttf using your package manager."; \
+	fi
+
+install-deps-opengl:
+	@echo "Installing OpenGL/GLFW + FreeType development packages..."
+	@if command -v brew >/dev/null 2>&1; then \
+		brew install glfw freetype; \
+	elif command -v apt-get >/dev/null 2>&1; then \
+		sudo apt-get update && sudo apt-get install -y libglfw3-dev libgl1-mesa-dev libfreetype6-dev; \
+	else \
+		echo "Please install GLFW, OpenGL (Mesa) and FreeType using your package manager."; \
+	fi
+
+install-deps-raylib:
+	@echo "Installing raylib development packages..."
+	@if command -v brew >/dev/null 2>&1; then \
+		brew install raylib; \
+	elif command -v apt-get >/dev/null 2>&1; then \
+		sudo apt-get update && sudo apt-get install -y libraylib-dev; \
+	else \
+		echo "Please install raylib using your package manager."; \
+	fi
+
+install-deps-all: install-deps-ncurses install-deps-sdl2 install-deps-opengl install-deps-raylib
+
 .PHONY: all ncurses sdl2 opengl raylib check-deps install-deps-macos install-deps-ubuntu clean rebuild help

@@ -13,6 +13,10 @@ const SDL2Graphics::Color SDL2Graphics::COLOR_SNAKE_HEAD(50, 200, 50); // Bright
 const SDL2Graphics::Color SDL2Graphics::COLOR_SNAKE_BODY(30, 150, 30); // Dark green
 const SDL2Graphics::Color SDL2Graphics::COLOR_FOOD(200, 50, 50);       // Red
 const SDL2Graphics::Color SDL2Graphics::COLOR_TEXT(255, 255, 255);     // White
+// Extra tiles/foods
+const SDL2Graphics::Color SDL2Graphics::COLOR_FIRE_FOOD(235, 80, 35);   // Orange-red for fire food
+const SDL2Graphics::Color SDL2Graphics::COLOR_FROSTY_FOOD(80, 200, 235);// Cyan for frosty food
+const SDL2Graphics::Color SDL2Graphics::COLOR_FIRE_TILE(200, 60, 40);    // Red for fire tile
 
 // Alternative palette
 const SDL2Graphics::Color SDL2Graphics::ALT_COLOR_BACKGROUND(15, 15, 18);  // Darker
@@ -28,8 +32,8 @@ const SDL2Graphics::Color SDL2Graphics::COLOR_SELECTED_TEXT(255, 255, 255); // W
 
 SDL2Graphics::SDL2Graphics()
     : _initialized(false), _shouldContinue(true), _targetFPS(60), _frameDelay(1000 / 60),
-      _window(nullptr), _renderer(nullptr), _fontLarge(nullptr), _fontMedium(nullptr),
-      _fontSmall(nullptr), _menuSystem(nullptr), _switchMessageTimer(0) {
+      _window(NULL), _renderer(NULL), _fontLarge(NULL), _fontMedium(NULL),
+      _fontSmall(NULL), _menuSystem(NULL), _switchMessageTimer(0) {
 }
 
 SDL2Graphics::~SDL2Graphics() {
@@ -82,7 +86,7 @@ int SDL2Graphics::initialize() {
         if (!_renderer) {
             setError(std::string("Renderer could not be created: ") + SDL_GetError());
             SDL_DestroyWindow(_window);
-            _window = nullptr;
+            _window = NULL;
             TTF_Quit();
             SDL_Quit();
             return 1;
@@ -92,9 +96,9 @@ int SDL2Graphics::initialize() {
     // Initialize fonts
     if (!initializeFonts()) {
         SDL_DestroyRenderer(_renderer);
-        _renderer = nullptr;
+        _renderer = NULL;
         SDL_DestroyWindow(_window);
-        _window = nullptr;
+        _window = NULL;
         TTF_Quit();
         SDL_Quit();
         return 1;
@@ -132,13 +136,13 @@ void SDL2Graphics::shutdown() {
     // Destroy renderer
     if (_renderer) {
         SDL_DestroyRenderer(_renderer);
-        _renderer = nullptr;
+        _renderer = NULL;
     }
 
     // Destroy window and force it to close immediately
     if (_window) {
         SDL_DestroyWindow(_window);
-        _window = nullptr;
+        _window = NULL;
     }
 
     // Process events one more time after window destruction
@@ -206,6 +210,12 @@ void SDL2Graphics::render(const game_data& game) {
             if (layer2Value == FOOD) {
                 setDrawColor(food);
                 drawRect(pixelX + 2, pixelY + 2, cellSize - 4, cellSize - 4);
+            } else if (layer2Value == FIRE_FOOD) {
+                setDrawColor(COLOR_FIRE_FOOD);
+                drawRect(pixelX + 2, pixelY + 2, cellSize - 4, cellSize - 4);
+            } else if (layer2Value == FROSTY_FOOD) {
+                setDrawColor(COLOR_FROSTY_FOOD);
+                drawRect(pixelX + 2, pixelY + 2, cellSize - 4, cellSize - 4);
             } else if (layer2Value == SNAKE_HEAD_PLAYER_1) {
                 setDrawColor(head);
                 drawRect(pixelX, pixelY, cellSize, cellSize);
@@ -220,6 +230,9 @@ void SDL2Graphics::render(const game_data& game) {
                     drawRect(pixelX, pixelY, cellSize, cellSize);
                 } else if (layer0Value == GAME_TILE_ICE) {
                     setDrawColor(bg);
+                    drawRect(pixelX, pixelY, cellSize, cellSize);
+                } else if (layer0Value == GAME_TILE_FIRE) {
+                    setDrawColor(COLOR_FIRE_TILE);
                     drawRect(pixelX, pixelY, cellSize, cellSize);
                 }
                 // Empty space - no drawing needed
@@ -306,7 +319,7 @@ bool SDL2Graphics::shouldContinue() const {
 }
 
 const char* SDL2Graphics::getError() const {
-    return _errorMessage.empty() ? nullptr : _errorMessage.c_str();
+    return _errorMessage.empty() ? NULL : _errorMessage.c_str();
 }
 
 void SDL2Graphics::setFrameRate(int fps) {
@@ -480,13 +493,14 @@ void SDL2Graphics::renderCreditsMenu() {
     const Color& title = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
     const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
 
-    // Draw title
-    drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 40, _fontLarge, title);
+    // Draw title (smaller to fit more content)
+    drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 40, _fontMedium, title);
 
     // Two-column content with "BONUS FEATURES:" forced to second column
     const auto& content = _menuSystem->getCreditsContent();
     int top = 100;
-    int lineH = std::max(22, getTextHeight(_fontMedium) + 4);
+    // Smaller line height to fit more lines
+    int lineH = std::max(18, getTextHeight(_fontSmall) + 2);
     int colX1 = 80;
     int colX2 = WINDOW_WIDTH / 2 + 40;
     int bottomY = WINDOW_HEIGHT - 60;
@@ -506,7 +520,7 @@ void SDL2Graphics::renderCreditsMenu() {
                 y1 += lineH;
                 continue;
             }
-            drawTextWithFont(content[i], colX1, y1, _fontMedium, text);
+            drawTextWithFont(content[i], colX1, y1, _fontSmall, text);
             y1 += lineH;
         }
         int y2 = top;
@@ -515,7 +529,7 @@ void SDL2Graphics::renderCreditsMenu() {
                 y2 += lineH;
                 continue;
             }
-            drawTextWithFont(content[i], colX2, y2, _fontMedium, text);
+            drawTextWithFont(content[i], colX2, y2, _fontSmall, text);
             y2 += lineH;
         }
     } else {
@@ -529,12 +543,12 @@ void SDL2Graphics::renderCreditsMenu() {
             int y = top + row * lineH;
             if (y > bottomY)
                 continue;
-            drawTextWithFont(content[i], x, y, _fontMedium, text);
+            drawTextWithFont(content[i], x, y, _fontSmall, text);
         }
     }
 
     // Footer
-    drawCenteredTextWithFont("ESC to go back", WINDOW_HEIGHT - 40, _fontSmall, text);
+    drawCenteredTextWithFont("Press ESC or ENTER to return to main menu", WINDOW_HEIGHT - 40, _fontSmall, text);
 }
 
 void SDL2Graphics::renderInstructionsMenu() {
@@ -545,28 +559,51 @@ void SDL2Graphics::renderInstructionsMenu() {
     // Draw title
     drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 40, _fontLarge, title);
 
-    // Two-column content
+    // Two-column content with second column starting at "GRAPHICS LIBRARIES:"
     const auto& content = _menuSystem->getInstructionsContent();
     int top = 100;
     int lineH = std::max(22, getTextHeight(_fontMedium) + 4);
-    int usableH = WINDOW_HEIGHT - top - 80;
-    int linesPerCol = std::max(1, usableH / lineH);
-
     int colX1 = 80;
     int colX2 = WINDOW_WIDTH / 2 + 40;
+    int bottomY = WINDOW_HEIGHT - 60;
 
+    int graphicsIdx = -1;
     for (size_t i = 0; i < content.size(); ++i) {
-        int col = static_cast<int>(i) / linesPerCol;
-        int row = static_cast<int>(i) % linesPerCol;
-        int x = (col % 2 == 0) ? colX1 : colX2;
-        int y = top + row * lineH;
-        if (y > WINDOW_HEIGHT - 60)
-            continue;
-        drawTextWithFont(content[i], x, y, _fontMedium, text);
+        if (content[i] == "GRAPHICS LIBRARIES:") {
+            graphicsIdx = static_cast<int>(i);
+            break;
+        }
+    }
+
+    if (graphicsIdx >= 0) {
+        int y1 = top;
+        for (int i = 0; i < graphicsIdx && y1 <= bottomY - lineH; ++i) {
+            if (content[i].empty()) { y1 += lineH; continue; }
+            drawTextWithFont(content[i], colX1, y1, _fontMedium, text);
+            y1 += lineH;
+        }
+        int y2 = top;
+        for (size_t i = graphicsIdx; i < content.size() && y2 <= bottomY - lineH; ++i) {
+            if (content[i].empty()) { y2 += lineH; continue; }
+            drawTextWithFont(content[i], colX2, y2, _fontMedium, text);
+            y2 += lineH;
+        }
+    } else {
+        // Fallback: auto flow
+        int usableH = bottomY - top - 20;
+        int linesPerCol = std::max(1, usableH / lineH);
+        for (size_t i = 0; i < content.size(); ++i) {
+            int col = static_cast<int>(i) / linesPerCol;
+            int row = static_cast<int>(i) % linesPerCol;
+            int x = (col % 2 == 0) ? colX1 : colX2;
+            int y = top + row * lineH;
+            if (y > bottomY) continue;
+            drawTextWithFont(content[i], x, y, _fontMedium, text);
+        }
     }
 
     // Footer
-    drawCenteredTextWithFont("ESC to go back", WINDOW_HEIGHT - 40, _fontSmall, text);
+    drawCenteredTextWithFont("Press ESC or ENTER to return to main menu", WINDOW_HEIGHT - 40, _fontSmall, text);
 }
 
 void SDL2Graphics::renderGameOverMenu() {
@@ -591,8 +628,32 @@ void SDL2Graphics::renderGameOverMenu() {
     drawMenuItems(items, selection, 200);
 
     // Draw instructions
-    drawCenteredTextWithFont("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 80, _fontSmall, text);
-    drawCenteredTextWithFont("ESC to go back", WINDOW_HEIGHT - 60, _fontSmall, text);
+    drawCenteredTextWithFont("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 100, _fontSmall, text);
+    drawCenteredTextWithFont("Press ESC to return to main menu", WINDOW_HEIGHT - 80, _fontSmall, text);
+    drawCenteredTextWithFont("Press 1/2/3/4 to switch graphics libraries", WINDOW_HEIGHT - 60, _fontSmall, text);
+}
+
+void SDL2Graphics::renderAchievementsMenu(const game_data& game) {
+    bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& title = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
+    const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
+
+    // Title
+    drawCenteredTextWithFont(_menuSystem->getCurrentTitle(), 60, _fontLarge, title);
+
+    // Content lines
+    const auto& content = _menuSystem->getAchievementsContent(game);
+    int top = 120;
+    int lineH = std::max(22, getTextHeight(_fontMedium) + 4);
+    int y = top;
+    for (const auto& line : content) {
+        if (y > WINDOW_HEIGHT - 80) break;
+        drawCenteredTextWithFont(line, y, _fontMedium, text);
+        y += lineH;
+    }
+
+    // Footer
+    drawCenteredTextWithFont("Press ESC or ENTER to return to main menu", WINDOW_HEIGHT - 50, _fontSmall, text);
 }
 
 void SDL2Graphics::drawMenuItems(const std::vector<MenuItem>& items, int selectedIndex, int startY) {
@@ -639,13 +700,13 @@ bool SDL2Graphics::initializeFonts() {
         "/usr/share/fonts/TTF/arial.ttf",
         // Fallback - try to find any reasonable font
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        nullptr};
+        NULL};
 
-    TTF_Font* testFont = nullptr;
-    const char* selectedFontPath = nullptr;
+    TTF_Font* testFont = NULL;
+    const char* selectedFontPath = NULL;
 
     // Find the first available font
-    for (int i = 0; fontPaths[i] != nullptr; ++i) {
+    for (int i = 0; fontPaths[i] != NULL; ++i) {
         testFont = TTF_OpenFont(fontPaths[i], 24);
         if (testFont) {
             selectedFontPath = fontPaths[i];
@@ -676,15 +737,15 @@ bool SDL2Graphics::initializeFonts() {
 void SDL2Graphics::shutdownFonts() {
     if (_fontLarge) {
         TTF_CloseFont(_fontLarge);
-        _fontLarge = nullptr;
+        _fontLarge = NULL;
     }
     if (_fontMedium) {
         TTF_CloseFont(_fontMedium);
-        _fontMedium = nullptr;
+        _fontMedium = NULL;
     }
     if (_fontSmall) {
         TTF_CloseFont(_fontSmall);
-        _fontSmall = nullptr;
+        _fontSmall = NULL;
     }
 }
 
@@ -730,10 +791,10 @@ void SDL2Graphics::drawTextWithFont(const std::string& text, int x, int y, TTF_F
     }
 
     int textWidth, textHeight;
-    SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
+    SDL_QueryTexture(textTexture, NULL, NULL, &textWidth, &textHeight);
 
     SDL_Rect destRect = {x, y, textWidth, textHeight};
-    SDL_RenderCopy(_renderer, textTexture, nullptr, &destRect);
+    SDL_RenderCopy(_renderer, textTexture, NULL, &destRect);
 
     SDL_DestroyTexture(textTexture);
 }

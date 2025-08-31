@@ -58,12 +58,13 @@ class OpenGLGraphics : public IGraphicsLibrary {
     int bearingX; // Left bearing
     int bearingY; // Top bearing
     long advance; // Advance (in 1/64 pixels from FreeType)
+    unsigned int index; // FreeType glyph index (for kerning)
   };
 
   bool _fontInitialized;
   int _fontPixelSize = 24;
-  FT_Library _ftLibrary = nullptr;
-  FT_Face _ftFace = nullptr;
+  FT_Library _ftLibrary = NULL;
+  FT_Face _ftFace = NULL;
   std::map<char, Glyph> _glyphs; // Basic ASCII glyph cache
 
     // Window dimensions
@@ -86,6 +87,18 @@ class OpenGLGraphics : public IGraphicsLibrary {
     static const Color COLOR_TEXT;
     static const Color COLOR_SELECTOR_BG;
     static const Color COLOR_SELECTED_TEXT;
+    // Extra items/tiles
+    static const Color COLOR_FIRE_FOOD;
+    static const Color COLOR_FROSTY_FOOD;
+    static const Color COLOR_FIRE_TILE;
+
+    // Alternative palette
+    static const Color ALT_COLOR_BACKGROUND;
+    static const Color ALT_COLOR_BORDER;
+    static const Color ALT_COLOR_SNAKE_HEAD;
+    static const Color ALT_COLOR_SNAKE_BODY;
+    static const Color ALT_COLOR_FOOD;
+    static const Color ALT_COLOR_TEXT;
 
     // Private helper methods
     void clearError();
@@ -94,6 +107,9 @@ class OpenGLGraphics : public IGraphicsLibrary {
     void calculateGameArea(const game_data& game, int& offsetX, int& offsetY, int& cellSize);
     void drawRectangle(int x, int y, int width, int height, const Color& color);
     void drawText(const std::string& text, int x, int y, const Color& color, float scale = 1.0f);
+    int  measureTextWidth(const std::string& text, float scale = 1.0f) const;
+    void drawCenteredText(const std::string& text, int y, const Color& color, float scale = 1.0f);
+    void drawMenuItems(const std::vector<MenuItem>& items, int selectedIndex, int startY, float scale = 1.0f);
   void renderChar(char c, float x, float y, float scale, const Color& color);
 
   // Font helpers
@@ -108,6 +124,7 @@ class OpenGLGraphics : public IGraphicsLibrary {
     void renderGameOverScreen();
     void renderCreditsPage();
     void renderInstructionsPage();
+    void renderAchievementsPage(const game_data& game);
 
     // GLFW callbacks
     static void errorCallback(int error, const char* description);

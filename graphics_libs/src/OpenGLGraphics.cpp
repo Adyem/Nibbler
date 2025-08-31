@@ -7,6 +7,7 @@
 #include <thread>
 #include <chrono>
 #include <filesystem>
+#include <cmath>
 
 // Helper macro to safely delete OpenGL textures
 static void safeDeleteTexture(unsigned int &tex) {
@@ -23,12 +24,23 @@ const OpenGLGraphics::Color OpenGLGraphics::COLOR_SNAKE_HEAD(0.20f, 0.78f, 0.20f
 const OpenGLGraphics::Color OpenGLGraphics::COLOR_SNAKE_BODY(0.12f, 0.59f, 0.12f);  // Dark green
 const OpenGLGraphics::Color OpenGLGraphics::COLOR_FOOD(0.78f, 0.20f, 0.20f);        // Red
 const OpenGLGraphics::Color OpenGLGraphics::COLOR_TEXT(1.0f, 1.0f, 1.0f);           // White
-const OpenGLGraphics::Color OpenGLGraphics::COLOR_SELECTOR_BG(0.27f, 0.51f, 0.71f); // Steel blue
+const OpenGLGraphics::Color OpenGLGraphics::COLOR_SELECTOR_BG(0.27f, 0.51f, 0.71f, 0.55f); // Semi-transparent steel blue
 const OpenGLGraphics::Color OpenGLGraphics::COLOR_SELECTED_TEXT(1.0f, 1.0f, 1.0f);  // White
+const OpenGLGraphics::Color OpenGLGraphics::COLOR_FIRE_FOOD(0.92f, 0.31f, 0.18f);
+const OpenGLGraphics::Color OpenGLGraphics::COLOR_FROSTY_FOOD(0.31f, 0.78f, 0.92f);
+const OpenGLGraphics::Color OpenGLGraphics::COLOR_FIRE_TILE(0.78f, 0.20f, 0.20f);
+
+// Alternative palette
+const OpenGLGraphics::Color OpenGLGraphics::ALT_COLOR_BACKGROUND(0.06f, 0.06f, 0.07f);
+const OpenGLGraphics::Color OpenGLGraphics::ALT_COLOR_BORDER(0.70f, 0.63f, 0.35f);
+const OpenGLGraphics::Color OpenGLGraphics::ALT_COLOR_SNAKE_HEAD(0.31f, 0.71f, 0.86f);
+const OpenGLGraphics::Color OpenGLGraphics::ALT_COLOR_SNAKE_BODY(0.16f, 0.47f, 0.71f);
+const OpenGLGraphics::Color OpenGLGraphics::ALT_COLOR_FOOD(0.92f, 0.51f, 0.14f);
+const OpenGLGraphics::Color OpenGLGraphics::ALT_COLOR_TEXT(0.94f, 0.94f, 0.94f);
 
 OpenGLGraphics::OpenGLGraphics()
-        : _window(nullptr), _initialized(false), _shouldContinue(true), _targetFPS(60),
-            _menuSystem(nullptr), _switchMessageTimer(0), _lastKeyPressed(GameKey::NONE), _keyConsumed(true),
+        : _window(NULL), _initialized(false), _shouldContinue(true), _targetFPS(60),
+            _menuSystem(NULL), _switchMessageTimer(0), _lastKeyPressed(GameKey::NONE), _keyConsumed(true),
             _fontInitialized(false) {
 }
 
@@ -58,7 +70,7 @@ int OpenGLGraphics::initialize() {
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     // Create window
-    _window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Nibbler - OpenGL Graphics", nullptr, nullptr);
+    _window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Nibbler - OpenGL Graphics", NULL, NULL);
     if (!_window) {
         setError("Failed to create GLFW window");
         glfwTerminate();
@@ -115,13 +127,13 @@ void OpenGLGraphics::shutdown() {
 
     if (_window) {
         glfwDestroyWindow(_window);
-        _window = nullptr;
+        _window = NULL;
     }
 
     glfwTerminate();
 
     // Reset state
-    _menuSystem = nullptr;
+    _menuSystem = NULL;
     _switchMessage.clear();
     _switchMessageTimer = 0;
     _targetFPS = 60;
@@ -135,8 +147,10 @@ void OpenGLGraphics::render(const game_data& game) {
         return;
     }
 
-    // Clear the screen
-    glClearColor(COLOR_BACKGROUND.r, COLOR_BACKGROUND.g, COLOR_BACKGROUND.b, COLOR_BACKGROUND.a);
+    // Clear the screen (respect alt palette if set in settings)
+    bool useAltBg = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& bgc = useAltBg ? ALT_COLOR_BACKGROUND : COLOR_BACKGROUND;
+    glClearColor(bgc.r, bgc.g, bgc.b, bgc.a);
     glClear(GL_COLOR_BUFFER_BIT);
 
     // Handle different menu states
@@ -158,7 +172,7 @@ void OpenGLGraphics::render(const game_data& game) {
             renderGameOverScreen();
             break;
         case MenuState::ACHIEVEMENTS_PAGE:
-            //renderAchievementsPage();
+            renderAchievementsPage(game);
             break;
         case MenuState::EXIT_REQUESTED:
             // Handle exit - could show a "closing..." message
@@ -169,8 +183,15 @@ void OpenGLGraphics::render(const game_data& game) {
                 int offsetX, offsetY, cellSize;
                 calculateGameArea(game, offsetX, offsetY, cellSize);
 
+                // Pick palette
+                bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+                const Color& border = useAlt ? ALT_COLOR_BORDER : COLOR_BORDER;
+                const Color& head   = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
+                const Color& body   = useAlt ? ALT_COLOR_SNAKE_BODY : COLOR_SNAKE_BODY;
+                const Color& food   = useAlt ? ALT_COLOR_FOOD : COLOR_FOOD;
+
                 // Draw game border
-                drawRectangle(offsetX - 2, offsetY - 2, game.get_width() * cellSize + 4, game.get_height() * cellSize + 4, COLOR_BORDER);
+                drawRectangle(offsetX - 2, offsetY - 2, game.get_width() * cellSize + 4, game.get_height() * cellSize + 4, border);
 
                 // Draw game board
                 for (size_t y = 0; y < game.get_height(); ++y) {
@@ -181,16 +202,22 @@ void OpenGLGraphics::render(const game_data& game) {
                         // Check layer 2 first (snake and food)
                         int layer2Value = game.get_map_value(static_cast<int>(x), static_cast<int>(y), 2);
                         if (layer2Value == FOOD) {
-                            drawRectangle(drawX + 2, drawY + 2, cellSize - 4, cellSize - 4, COLOR_FOOD);
+                            drawRectangle(drawX + 2, drawY + 2, cellSize - 4, cellSize - 4, food);
+                        } else if (layer2Value == FIRE_FOOD) {
+                            drawRectangle(drawX + 2, drawY + 2, cellSize - 4, cellSize - 4, COLOR_FIRE_FOOD);
+                        } else if (layer2Value == FROSTY_FOOD) {
+                            drawRectangle(drawX + 2, drawY + 2, cellSize - 4, cellSize - 4, COLOR_FROSTY_FOOD);
                         } else if (layer2Value == SNAKE_HEAD_PLAYER_1) {
-                            drawRectangle(drawX, drawY, cellSize, cellSize, COLOR_SNAKE_HEAD);
+                            drawRectangle(drawX, drawY, cellSize, cellSize, head);
                         } else if (layer2Value > SNAKE_HEAD_PLAYER_1) {
-                            drawRectangle(drawX, drawY, cellSize, cellSize, COLOR_SNAKE_BODY);
+                            drawRectangle(drawX, drawY, cellSize, cellSize, body);
                         } else {
                             // Check layer 0 (terrain)
                             int layer0Value = game.get_map_value(static_cast<int>(x), static_cast<int>(y), 0);
                             if (layer0Value == GAME_TILE_WALL) {
-                                drawRectangle(drawX, drawY, cellSize, cellSize, COLOR_BORDER);
+                                drawRectangle(drawX, drawY, cellSize, cellSize, border);
+                            } else if (layer0Value == GAME_TILE_FIRE) {
+                                drawRectangle(drawX, drawY, cellSize, cellSize, COLOR_FIRE_TILE);
                             }
                             // Empty space and ice - no drawing needed (background already drawn)
                         }
@@ -206,10 +233,7 @@ void OpenGLGraphics::render(const game_data& game) {
     }
 
     // Draw switch message if active
-    if (_switchMessageTimer > 0) {
-        drawText(_switchMessage, WINDOW_WIDTH / 2 - (_switchMessage.length() * 6), 50, COLOR_TEXT, 1.5f);
-        _switchMessageTimer--;
-    }
+    // Do not display any library switch message per requirements
 
     // Swap buffers and poll events
     glfwSwapBuffers(_window);
@@ -244,7 +268,7 @@ const char* OpenGLGraphics::getName() const {
 }
 
 const char* OpenGLGraphics::getError() const {
-    return _errorMessage.empty() ? nullptr : _errorMessage.c_str();
+    return _errorMessage.empty() ? NULL : _errorMessage.c_str();
 }
 
 void OpenGLGraphics::setFrameRate(int fps) {
@@ -327,6 +351,51 @@ void OpenGLGraphics::drawText(const std::string& text, int x, int y, const Color
     renderText(text, static_cast<float>(x), static_cast<float>(y), scale, color);
 }
 
+int OpenGLGraphics::measureTextWidth(const std::string& text, float scale) const {
+    if (!_fontInitialized) return static_cast<int>(text.size() * _fontPixelSize * 0.6f * scale);
+    int width = 0;
+    unsigned int prevIndex = 0;
+    for (char c : text) {
+        auto it = _glyphs.find(c);
+        if (it == _glyphs.end()) {
+            width += static_cast<int>(_fontPixelSize * 0.5f * scale);
+            continue;
+        }
+        if (_ftFace && FT_HAS_KERNING(_ftFace) && prevIndex != 0) {
+            FT_Vector delta;
+            FT_Get_Kerning(_ftFace, prevIndex, it->second.index, FT_KERNING_DEFAULT, &delta);
+            width += static_cast<int>((delta.x >> 6) * scale);
+        }
+        width += static_cast<int>((it->second.advance >> 6) * scale);
+        prevIndex = it->second.index;
+    }
+    return width;
+}
+
+void OpenGLGraphics::drawCenteredText(const std::string& text, int y, const Color& color, float scale) {
+    int w = measureTextWidth(text, scale);
+    drawText(text, (WINDOW_WIDTH - w) / 2, y, color, scale);
+}
+
+void OpenGLGraphics::drawMenuItems(const std::vector<MenuItem>& items, int selectedIndex, int startY, float scale) {
+    int y = startY;
+    for (size_t i = 0; i < items.size(); ++i) {
+        const auto& item = items[i];
+        if (item.text.empty()) { y += static_cast<int>(_fontPixelSize * scale * 0.6f); continue; }
+        int textW = measureTextWidth(item.text, scale);
+        int rectW = textW + 20;
+        int rectH = static_cast<int>(_fontPixelSize * scale * 1.3f);
+        int rx = (WINDOW_WIDTH - rectW) / 2;
+        int ry = y - 5;
+        bool selected = item.selectable && static_cast<int>(i) == selectedIndex;
+        if (selected) {
+            drawRectangle(rx, ry, rectW, rectH, COLOR_SELECTOR_BG);
+        }
+        drawText(item.text, (WINDOW_WIDTH - textW) / 2, y, selected ? COLOR_SELECTED_TEXT : COLOR_TEXT, scale);
+        y += rectH;
+    }
+}
+
 // ----------------- Font Rendering Implementation -----------------
 
 bool OpenGLGraphics::initializeFonts() {
@@ -337,12 +406,12 @@ bool OpenGLGraphics::initializeFonts() {
         return false;
     }
 
-    // Candidate font paths (reuse typical system fonts). Adjust list as needed.
+    // Candidate font paths (prefer neutral sans, avoid DejaVu per request)
     const char* candidates[] = {
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
         "/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf",
         "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+        "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
         "/Library/Fonts/Arial.ttf",
         "/System/Library/Fonts/Supplemental/Arial.ttf" // macOS fallback
     };
@@ -358,7 +427,7 @@ bool OpenGLGraphics::initializeFonts() {
     if (!faceLoaded) {
         std::cerr << "[OpenGLGraphics] No suitable font file found" << std::endl;
         FT_Done_FreeType(_ftLibrary);
-        _ftLibrary = nullptr;
+        _ftLibrary = NULL;
         return false;
     }
 
@@ -376,9 +445,15 @@ bool OpenGLGraphics::loadFontFace(const std::string& path) {
     if (FT_New_Face(_ftLibrary, path.c_str(), 0, &_ftFace)) {
         return false;
     }
+    // Avoid italic/cursive styles if possible
+    if (_ftFace->style_flags & FT_STYLE_FLAG_ITALIC) {
+        FT_Done_Face(_ftFace);
+        _ftFace = NULL;
+        return false; // try next candidate
+    }
     if (FT_Set_Pixel_Sizes(_ftFace, 0, _fontPixelSize)) {
         FT_Done_Face(_ftFace);
-        _ftFace = nullptr;
+        _ftFace = NULL;
         return false;
     }
     std::cout << "[OpenGLGraphics] Loaded font: " << path << std::endl;
@@ -424,6 +499,7 @@ bool OpenGLGraphics::buildGlyphCache() {
         glyph.bearingX = g->bitmap_left;
         glyph.bearingY = g->bitmap_top;
         glyph.advance = g->advance.x; // 1/64 pixels
+        glyph.index = g->glyph_index;
 
         _glyphs[static_cast<char>(c)] = glyph;
     }
@@ -442,11 +518,11 @@ void OpenGLGraphics::shutdownFonts() {
 
     if (_ftFace) {
         FT_Done_Face(_ftFace);
-        _ftFace = nullptr;
+        _ftFace = NULL;
     }
     if (_ftLibrary) {
         FT_Done_FreeType(_ftLibrary);
-        _ftLibrary = nullptr;
+        _ftLibrary = NULL;
     }
     _fontInitialized = false;
 }
@@ -456,8 +532,9 @@ void OpenGLGraphics::renderChar(char c, float x, float y, float scale, const Col
     if (it == _glyphs.end()) return;
     const Glyph &g = it->second;
 
-    float xpos = x + g.bearingX * scale;
-    float ypos = y - (g.height - g.bearingY) * scale;
+    float xpos = std::round(x + g.bearingX * scale);
+    // Place top-left of bitmap at baseline minus bearingY (consistent baseline)
+    float ypos = std::round(y - g.bearingY * scale);
     float w = g.width * scale;
     float h = g.height * scale;
 
@@ -477,13 +554,21 @@ void OpenGLGraphics::renderChar(char c, float x, float y, float scale, const Col
 }
 
 void OpenGLGraphics::renderText(const std::string& text, float x, float y, float scale, const Color& color) {
-    // Baseline y provided at top-left like other libs, adjust so characters render downward
-    float cursorX = x;
-    float baselineY = y + _fontPixelSize * scale; // shift so text appears below input y
+    // Use face ascender/line height for consistent baseline and spacing
+    float cursorX = std::round(x);
+    float ascenderPx = (_ftFace && _ftFace->size) ? std::round(((_ftFace->size->metrics.ascender >> 6) * scale))
+                                                 : std::round(_fontPixelSize * scale * 0.8f);
+    float lineH = (_ftFace && _ftFace->size && _ftFace->size->metrics.height)
+                    ? ((_ftFace->size->metrics.height >> 6) * scale)
+                    : (_fontPixelSize * scale * 1.3f);
+    float baselineY = std::round(y + ascenderPx);
+
+    unsigned int prevIndex = 0;
     for (char c : text) {
         if (c == '\n') {
-            cursorX = x;
-            baselineY += _fontPixelSize * scale * 1.3f; // line spacing
+            cursorX = std::round(x);
+            baselineY = std::round(baselineY + lineH);
+            prevIndex = 0;
             continue;
         }
         auto it = _glyphs.find(c);
@@ -491,68 +576,121 @@ void OpenGLGraphics::renderText(const std::string& text, float x, float y, float
             cursorX += _fontPixelSize * scale * 0.5f; // fallback advance
             continue;
         }
+        if (_ftFace && FT_HAS_KERNING(_ftFace) && prevIndex != 0) {
+            FT_Vector delta;
+            FT_Get_Kerning(_ftFace, prevIndex, it->second.index, FT_KERNING_DEFAULT, &delta);
+            cursorX += (delta.x >> 6) * scale;
+        }
         renderChar(c, cursorX, baselineY, scale, color);
         cursorX += (it->second.advance >> 6) * scale; // convert from 1/64
+        prevIndex = it->second.index;
     }
 }
 
 void OpenGLGraphics::renderMainMenu() {
     if (!_menuSystem) return;
-
-    drawText("NIBBLER", WINDOW_WIDTH / 2 - 42, 100, COLOR_TEXT, 2.0f);
-    drawText("Main Menu", WINDOW_WIDTH / 2 - 54, 200, COLOR_TEXT, 1.5f);
-
-    // Menu items
-    std::vector<std::string> menuItems = {"Start Game", "Settings", "Credits", "Exit"};
-    int selectedIndex = _menuSystem->getCurrentSelection();
-
-    for (size_t i = 0; i < menuItems.size(); ++i) {
-        int itemY = 300 + i * 60;
-        Color textColor = (i == static_cast<size_t>(selectedIndex)) ? COLOR_SELECTED_TEXT : COLOR_TEXT;
-
-        if (i == static_cast<size_t>(selectedIndex)) {
-            drawRectangle(WINDOW_WIDTH / 2 - 100, itemY - 5, 200, 30, COLOR_SELECTOR_BG);
-        }
-
-        drawText(menuItems[i], WINDOW_WIDTH / 2 - (menuItems[i].length() * 6), itemY, textColor);
-    }
+    drawCenteredText(_menuSystem->getCurrentTitle(), 100, COLOR_TEXT, 2.0f);
+    const auto& items = _menuSystem->getCurrentMenuItems();
+    drawMenuItems(items, _menuSystem->getCurrentSelection(), 220, 1.0f);
+    drawCenteredText("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 80, COLOR_TEXT, 1.0f);
+    drawCenteredText("Press 1/2/3/4 to switch graphics libraries", WINDOW_HEIGHT - 60, COLOR_TEXT, 1.0f);
 }
 
 void OpenGLGraphics::renderSettingsMenu() {
     if (!_menuSystem) return;
-
-    drawText("Settings", WINDOW_WIDTH / 2 - 48, 100, COLOR_TEXT, 2.0f);
-
-    // Settings implementation would go here
-    drawText("Settings menu - Under construction", WINDOW_WIDTH / 2 - 150, 300, COLOR_TEXT);
-    drawText("Press ESC to go back", WINDOW_WIDTH / 2 - 100, 400, COLOR_TEXT);
+    drawCenteredText(_menuSystem->getCurrentTitle(), 60, COLOR_TEXT, 2.0f);
+    const auto& items = _menuSystem->getCurrentMenuItems();
+    drawMenuItems(items, _menuSystem->getCurrentSelection(), 140, 1.0f);
+    drawCenteredText("Use Arrow Keys to navigate, ENTER to toggle/adjust", WINDOW_HEIGHT - 100, COLOR_TEXT, 1.0f);
+    drawCenteredText("ESC to go back", WINDOW_HEIGHT - 80, COLOR_TEXT, 1.0f);
 }
 
 void OpenGLGraphics::renderGameOverScreen() {
     if (!_menuSystem) return;
-
-    drawText("GAME OVER", WINDOW_WIDTH / 2 - 54, 200, COLOR_TEXT, 2.0f);
-
+    drawCenteredText(_menuSystem->getCurrentTitle(), 60, COLOR_TEXT, 2.0f);
+    drawCenteredText("Your snake has collided!", 120, COLOR_FOOD, 1.2f);
     std::string scoreText = "Final Score: " + std::to_string(_menuSystem->getGameOverScore());
-    drawText(scoreText, WINDOW_WIDTH / 2 - (scoreText.length() * 6), 300, COLOR_TEXT);
-
-    drawText("Press ESC to return to main menu", WINDOW_WIDTH / 2 - 150, 400, COLOR_TEXT);
+    drawCenteredText(scoreText, 160, COLOR_TEXT, 1.2f);
+    const auto& items = _menuSystem->getCurrentMenuItems();
+    drawMenuItems(items, _menuSystem->getCurrentSelection(), 220, 1.0f);
+    drawCenteredText("Use Arrow Keys to navigate, ENTER to select", WINDOW_HEIGHT - 80, COLOR_TEXT, 1.0f);
+    drawCenteredText("Press 1/2/3/4 to switch graphics libraries", WINDOW_HEIGHT - 60, COLOR_TEXT, 1.0f);
 }
 
 void OpenGLGraphics::renderCreditsPage() {
-    drawText("CREDITS", WINDOW_WIDTH / 2 - 42, 100, COLOR_TEXT, 2.0f);
-    drawText("Nibbler Snake Game", WINDOW_WIDTH / 2 - 90, 200, COLOR_TEXT);
-    drawText("OpenGL + GLFW Graphics Engine", WINDOW_WIDTH / 2 - 150, 250, COLOR_TEXT);
-    drawText("Press ESC to go back", WINDOW_WIDTH / 2 - 100, 400, COLOR_TEXT);
+    if (!_menuSystem) return;
+    // Reduce title size further to fit more content
+    drawCenteredText(_menuSystem->getCurrentTitle(), 60, COLOR_TEXT, 1.5f);
+    const auto& content = _menuSystem->getCreditsContent();
+    int top = 120;
+    // Smaller content scale and tighter line spacing
+    float contentScale = 0.85f;
+    int lineH = static_cast<int>(_fontPixelSize * contentScale + 3);
+    int colX1 = 80;
+    int colX2 = WINDOW_WIDTH / 2 + 40;
+    int bottomY = WINDOW_HEIGHT - 80;
+    int bonusIdx = -1;
+    for (size_t i = 0; i < content.size(); ++i) if (content[i] == "BONUS FEATURES:") { bonusIdx = static_cast<int>(i); break; }
+    if (bonusIdx >= 0) {
+        int y1 = top;
+        for (int i = 0; i < bonusIdx && y1 <= bottomY - lineH; ++i) {
+            if (content[i].empty()) { y1 += lineH; continue; }
+            drawText(content[i], colX1, y1, COLOR_TEXT, contentScale); y1 += lineH;
+        }
+        int y2 = top;
+        for (size_t i = bonusIdx; i < content.size() && y2 <= bottomY - lineH; ++i) {
+            if (content[i].empty()) { y2 += lineH; continue; }
+            drawText(content[i], colX2, y2, COLOR_TEXT, contentScale); y2 += lineH;
+        }
+    } else {
+        int usableH = bottomY - top - 20;
+        int linesPerCol = std::max(1, usableH / lineH);
+        for (size_t i = 0; i < content.size(); ++i) {
+            int col = static_cast<int>(i) / linesPerCol;
+            int row = static_cast<int>(i) % linesPerCol;
+            int x = (col % 2 == 0) ? colX1 : colX2;
+            int y = top + row * lineH;
+            if (y > bottomY) continue;
+            drawText(content[i], x, y, COLOR_TEXT, contentScale);
+        }
+    }
+    drawCenteredText("Press ESC or ENTER to return to main menu", WINDOW_HEIGHT - 50, COLOR_TEXT, 1.0f);
 }
 
 void OpenGLGraphics::renderInstructionsPage() {
-    drawText("INSTRUCTIONS", WINDOW_WIDTH / 2 - 72, 100, COLOR_TEXT, 2.0f);
-    drawText("Use arrow keys to move the snake", WINDOW_WIDTH / 2 - 150, 200, COLOR_TEXT);
-    drawText("Eat food to grow", WINDOW_WIDTH / 2 - 80, 250, COLOR_TEXT);
-    drawText("Don't hit walls or yourself", WINDOW_WIDTH / 2 - 120, 300, COLOR_TEXT);
-    drawText("Press 1,2,3,4 to switch graphics", WINDOW_WIDTH / 2 - 140, 350, COLOR_TEXT);
-    drawText("Press ESC to go back", WINDOW_WIDTH / 2 - 100, 400, COLOR_TEXT);
+    if (!_menuSystem) return;
+    drawCenteredText(_menuSystem->getCurrentTitle(), 60, COLOR_TEXT, 2.0f);
+    const auto& content = _menuSystem->getInstructionsContent();
+    int top = 120;
+    int lineH = static_cast<int>(_fontPixelSize * 1.0f + 4);
+    int usableH = WINDOW_HEIGHT - top - 100;
+    int linesPerCol = std::max(1, usableH / lineH);
+    int colX1 = 80;
+    int colX2 = WINDOW_WIDTH / 2 + 40;
+    for (size_t i = 0; i < content.size(); ++i) {
+        int col = static_cast<int>(i) / linesPerCol;
+        int row = static_cast<int>(i) % linesPerCol;
+        int x = (col % 2 == 0) ? colX1 : colX2;
+        int y = top + row * lineH;
+        if (y > WINDOW_HEIGHT - 80) continue;
+        drawText(content[i], x, y, COLOR_TEXT, 1.0f);
+    }
+    drawCenteredText("Press ESC or ENTER to return to main menu", WINDOW_HEIGHT - 50, COLOR_TEXT, 1.0f);
+}
+
+void OpenGLGraphics::renderAchievementsPage(const game_data& game) {
+    if (!_menuSystem) return;
+    drawCenteredText(_menuSystem->getCurrentTitle(), 60, COLOR_TEXT, 2.0f);
+    const auto& content = _menuSystem->getAchievementsContent(game);
+    int top = 120;
+    int lineH = static_cast<int>(_fontPixelSize * 1.0f + 4);
+    int y = top;
+    for (const auto& line : content) {
+        if (y > WINDOW_HEIGHT - 80) break;
+        drawCenteredText(line, y, COLOR_TEXT, 1.0f);
+        y += lineH;
+    }
+    drawCenteredText("Press ESC or ENTER to return to main menu", WINDOW_HEIGHT - 50, COLOR_TEXT, 1.0f);
 }
 
 // GLFW callbacks
@@ -576,33 +714,45 @@ void OpenGLGraphics::keyCallback(GLFWwindow* window, int key, int scancode, int 
 
     GameKey gameKey = graphics->translateGLFWKey(key);
 
-    // Queue the key for the main game loop
-    if (gameKey != GameKey::NONE) {
-        graphics->_lastKeyPressed = gameKey;
-        graphics->_keyConsumed = false;
-    }
+    bool inMenu = graphics->_menuSystem && graphics->_menuSystem->getCurrentState() != MenuState::IN_GAME;
 
-    // Handle menu navigation when not in game
-    if (graphics->_menuSystem && graphics->_menuSystem->getCurrentState() != MenuState::IN_GAME) {
+    // If in menu, handle navigation locally and do NOT propagate ESC/Enter/Space/Arrows
+    if (inMenu) {
+        // Allow library switching while in menu
+        if (gameKey == GameKey::KEY_1 || gameKey == GameKey::KEY_2 ||
+            gameKey == GameKey::KEY_3 || gameKey == GameKey::KEY_4) {
+            graphics->_lastKeyPressed = gameKey;
+            graphics->_keyConsumed = false;
+            return;
+        }
+
         switch (gameKey) {
         case GameKey::UP:
             graphics->_menuSystem->navigateUp();
-            break;
+            return;
         case GameKey::DOWN:
             graphics->_menuSystem->navigateDown();
-            break;
+            return;
         case GameKey::ESCAPE:
             graphics->_menuSystem->goBack();
-            break;
+            return;
         default:
-            // Other keys (including library switching) are handled by main game loop
             break;
         }
 
-        // Handle Enter/Space for menu selection
         if (key == GLFW_KEY_ENTER || key == GLFW_KEY_SPACE) {
             graphics->_menuSystem->selectCurrentItem();
+            return;
         }
+
+        // Ignore other keys in menu
+        return;
+    }
+
+    // Not in menu: queue the key for main loop
+    if (gameKey != GameKey::NONE) {
+        graphics->_lastKeyPressed = gameKey;
+        graphics->_keyConsumed = false;
     }
 }
 

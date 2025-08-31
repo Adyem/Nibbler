@@ -93,7 +93,7 @@ void GameEngine::run() {
 }
 
 const char* GameEngine::getError() const {
-    return _errorMessage.empty() ? nullptr : _errorMessage.c_str();
+    return _errorMessage.empty() ? NULL : _errorMessage.c_str();
 }
 
 bool GameEngine::isInitialized() const {
@@ -273,12 +273,9 @@ void GameEngine::handleInput(GameKey key, bool& shouldQuit) {
         }
     } else {
         // In menu mode - input is handled by the graphics library
-        // We just need to handle ESC for quitting from main menu and game over screen
-        if (key == GameKey::ESCAPE) {
-            if (_menuSystem.getCurrentState() == MenuState::MAIN_MENU ||
-                _menuSystem.getCurrentState() == MenuState::GAME_OVER) {
-                shouldQuit = true;
-            }
+        // Only exit on ESC from the main menu
+        if (key == GameKey::ESCAPE && _menuSystem.getCurrentState() == MenuState::MAIN_MENU) {
+            shouldQuit = true;
         }
     }
 }

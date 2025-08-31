@@ -42,6 +42,9 @@ class RaylibGraphics : public IGraphicsLibrary {
     static const Color COLOR_TEXT;
     static const Color COLOR_SELECTOR_BG;
     static const Color COLOR_SELECTED_TEXT;
+    static const Color COLOR_FIRE_FOOD;
+    static const Color COLOR_FROSTY_FOOD;
+    static const Color COLOR_FIRE_TILE;
 
     // Alternative palette
     static const Color ALT_COLOR_BACKGROUND;
@@ -71,11 +74,12 @@ class RaylibGraphics : public IGraphicsLibrary {
     void drawCenteredText(const std::string& text, int y, const Color& color, int size);
 
     // Menu renderers
-    void renderMenu();
+    void renderMenu(const game_data& game);
     void renderMainMenu();
     void renderSettingsMenu();
     void renderCreditsMenu();
     void renderInstructionsMenu();
+    void renderAchievementsMenu(const game_data& game);
     void renderGameOverMenu();
     void drawMenuItems(const std::vector<MenuItem>& items, int selectedIndex, int startY);
 };
