@@ -3,6 +3,7 @@
 #include <chrono>
 #include <thread>
 #include <cstdlib>
+#include "file_utils.hpp" // for game_rules & rule loading
 
 GameEngine::GameEngine(int width, int height)
     : _gameData(width, height), _initialized(false), _gameStarted(false) {
@@ -19,6 +20,26 @@ GameEngine::GameEngine(int width, int height)
 
 GameEngine::~GameEngine() {
     // Cleanup is handled by destructors
+}
+
+int GameEngine::loadBonusMap(const char* path) {
+    if (!path || !*path) {
+        setError("Invalid bonus map path");
+        return 1;
+    }
+    _gameData.set_map_name(path);
+    game_rules rules;
+    if (read_game_rules(_gameData, rules) < 0 || rules.error) {
+        setError(std::string("Failed to load bonus map: ") + path);
+        return 1;
+    }
+    // Apply rules to game data
+    if (load_rules_into_game_data(_gameData) < 0) {
+        setError(std::string("Failed to apply bonus map rules: ") + path);
+        return 1;
+    }
+    std::cout << "Loaded bonus map: " << path << std::endl;
+    return 0;
 }
 
 int GameEngine::initialize(int preferredLibraryIndex) {

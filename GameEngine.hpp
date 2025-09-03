@@ -14,6 +14,8 @@ class GameEngine {
     void run();
     const char* getError() const;
     bool isInitialized() const;
+  // Bonus: load a custom game mode / map file (nibbler rules file)
+  int loadBonusMap(const char* path);
 
   private:
     game_data _gameData;

@@ -3,18 +3,18 @@
 #include <string>
 #include <cstdio>
 #include <fstream>
+#include <filesystem>
 
 // Function prototypes
-int parseArguments(int argc, char** argv, int& width, int& height);
+int parseArguments(int argc, char** argv, int& width, int& height, std::string &bonusMap);
 void printUsage(const char* programName);
 int selectGraphicsLibrary();
 
 int main(int argc, char** argv) {
+    int width = 30, height = 20; // defaults
+    std::string bonusMap;
 
-    int width, height;
-
-    // Parse command line arguments
-    if (parseArguments(argc, argv, width, height) != 0) {
+    if (parseArguments(argc, argv, width, height, bonusMap) != 0) {
         return 1;
     }
 
@@ -31,6 +31,12 @@ int main(int argc, char** argv) {
 
     // Create and initialize game engine
     GameEngine engine(width, height);
+    if (!bonusMap.empty()) {
+        if (engine.loadBonusMap(bonusMap.c_str()) != 0) {
+            std::cerr << "Error: " << (engine.getError() ? engine.getError() : "Unknown bonus map error") << std::endl;
+            return 1;
+        }
+    }
 
     int initResult = engine.initialize(selectedLibrary);
     if (initResult != 0) {
@@ -49,44 +55,70 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-int parseArguments(int argc, char** argv, int& width, int& height) {
+static bool validateBonusFile(const std::string &path) {
+    namespace fs = std::filesystem;
+    std::error_code ec;
+    fs::file_status st = fs::status(path, ec);
+    if (ec) {
+        std::cerr << "Error: Cannot access '" << path << "' (" << ec.message() << ")" << std::endl;
+        return false;
+    }
+    if (!fs::exists(st)) {
+        std::cerr << "Error: File '" << path << "' does not exist" << std::endl;
+        return false;
+    }
+    if (!fs::is_regular_file(st)) {
+        std::cerr << "Error: '" << path << "' is not a regular file" << std::endl;
+        return false;
+    }
+    // Extension check (.nib, case-insensitive)
+    auto dot = path.rfind('.');
+    if (dot == std::string::npos) {
+        std::cerr << "Error: Bonus map must have .nib extension" << std::endl;
+        return false;
+    }
+    std::string ext = path.substr(dot);
+    for (char &c : ext) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    if (ext != ".nib") {
+        std::cerr << "Error: Bonus map must use .nib extension" << std::endl;
+        return false;
+    }
+    std::ifstream f(path.c_str());
+    if (!f.good()) {
+        std::cerr << "Error: Cannot open '" << path << "' for reading" << std::endl;
+        return false;
+    }
+    return true;
+}
+
+int parseArguments(int argc, char** argv, int& width, int& height, std::string &bonusMap) {
+    // Modes:
+    // 1) ./nibbler <width> <height>
+    // 2) ./nibbler -b <mapfile.nib>
+    if (argc == 3 && std::string(argv[1]) == "-b") {
+        std::string candidate = argv[2];
+        if (!validateBonusFile(candidate)) {
+            return 1;
+        }
+        bonusMap = candidate;
+        return 0; // width/height defaults; map sets game parameters later
+    }
     if (argc != 3) {
         printUsage(argv[0]);
         return 1;
     }
-
-    // Parse width
-    try {
-        width = std::stoi(argv[1]);
-    } catch (const std::exception&) {
-        std::cerr << "Error: Width must be a valid number" << std::endl;
-        return 1;
-    }
-
-    // Parse height
-    try {
-        height = std::stoi(argv[2]);
-    } catch (const std::exception&) {
-        std::cerr << "Error: Height must be a valid number" << std::endl;
-        return 1;
-    }
-
-    // Validate dimensions
-    if (width < 10 || width > 100) {
-        std::cerr << "Error: Width must be between 10 and 100" << std::endl;
-        return 1;
-    }
-
-    if (height < 10 || height > 100) {
-        std::cerr << "Error: Height must be between 10 and 100" << std::endl;
-        return 1;
-    }
-
+    try { width = std::stoi(argv[1]); } catch (...) { std::cerr << "Error: Width must be a valid number" << std::endl; return 1; }
+    try { height = std::stoi(argv[2]); } catch (...) { std::cerr << "Error: Height must be a valid number" << std::endl; return 1; }
+    if (width < 10 || width > 100) { std::cerr << "Error: Width must be between 10 and 100" << std::endl; return 1; }
+    if (height < 10 || height > 100) { std::cerr << "Error: Height must be between 10 and 100" << std::endl; return 1; }
     return 0;
 }
 
 void printUsage(const char* programName) {
     std::cout << "Usage: " << programName << " <width> <height>" << std::endl;
+    std::cout << "   or:  " << programName << " -b <gamemodefile.nib>" << std::endl;
+    std::cout << "Notes for -b mode:" << std::endl;
+    std::cout << "  * File must exist, be readable, regular, and end with .nib" << std::endl;
     std::cout << "  width:  Game area width (10-100)" << std::endl;
     std::cout << "  height: Game area height (10-100)" << std::endl;
     std::cout << std::endl;
