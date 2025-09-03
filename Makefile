@@ -97,7 +97,9 @@ ifeq ($(OS),Windows_NT)
 else
     # Export all symbols from the main executable so dlopened plugins can
     # resolve references (e.g., MenuSystem, GameEngine) at runtime.
-    LDFLAGS     = $(LIBFT) -lreadline -ldl -rdynamic
+	# Optional GNU Readline linkage. Set READLINE_LIB=-lreadline when available.
+	READLINE_LIB ?=
+	LDFLAGS     = $(LIBFT) $(READLINE_LIB) -ldl -rdynamic
 endif
 
 OBJS        = $(SRC:%.cpp=$(OBJ_DIR)/%.o)

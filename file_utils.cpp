@@ -97,8 +97,6 @@ static int parse_game_rules_lines(const std::vector<std::string> &lines,
             if (map_width == 0)
                 map_width = len;
             else if (len != map_width) {
-                free(line);
-                fclose(fp);
                 rules.error = 1;
                 return -1;
             }
@@ -111,16 +109,12 @@ static int parse_game_rules_lines(const std::vector<std::string> &lines,
                     c != MAP_TILE_SNAKE_BODY_1 &&
                     c != MAP_TILE_SNAKE_BODY_2 &&
                     c != MAP_TILE_SNAKE_BODY_3) {
-                    free(line);
-                    fclose(fp);
                   rules.error = 1;
                     return -1;
                 }
                 if (c == MAP_TILE_SNAKE_HEAD) {
                     head_count++;
                     if (head_count > 1) {
-                        free(line);
-                        fclose(fp);
                         rules.error = 1;
                         return -1;
                     }
@@ -129,8 +123,6 @@ static int parse_game_rules_lines(const std::vector<std::string> &lines,
                 } else if (c == MAP_TILE_SNAKE_BODY_1) {
                     body1_count++;
                     if (body1_count > 1) {
-                        free(line);
-                        fclose(fp);
                         rules.error = 1;
                         return -1;
                     }
@@ -139,8 +131,6 @@ static int parse_game_rules_lines(const std::vector<std::string> &lines,
                 } else if (c == MAP_TILE_SNAKE_BODY_2) {
                     body2_count++;
                     if (body2_count > 1) {
-                        free(line);
-                        fclose(fp);
                         rules.error = 1;
                         return -1;
                     }
@@ -149,8 +139,6 @@ static int parse_game_rules_lines(const std::vector<std::string> &lines,
                 } else if (c == MAP_TILE_SNAKE_BODY_3) {
                     body3_count++;
                     if (body3_count > 1) {
-                        free(line);
-                        fclose(fp);
                         rules.error = 1;
                         return -1;
                     }
@@ -158,11 +146,10 @@ static int parse_game_rules_lines(const std::vector<std::string> &lines,
                     body3_y = static_cast<int>(y);
                 }
             }
-            rules.custom_map.push_back(std::string(line));
+            // store the map line
+            rules.custom_map.push_back(line);
         }
     }
-    free(line);
-    fclose(fp);
     if (in_map) {
         if (map_width < 5 || rules.custom_map.size() < 5 || head_count != 1 ||
             body1_count != 1 || body2_count != 1 || body3_count != 1 ||
