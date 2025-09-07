@@ -78,7 +78,9 @@ int game_data::is_valid_move(int player_head) {
     }
 
     int target_val = this->_map.get(target_x, target_y, 2);
-    if (target_val != 0 && target_val != FOOD && target_val != FIRE_FOOD && target_val != FROSTY_FOOD)
+    int offset = (player_head / 1000000) * 1000000;
+    int tail_value = offset + this->_snake_length[player_number];
+    if (target_val != 0 && target_val != FOOD && target_val != FIRE_FOOD && target_val != FROSTY_FOOD && target_val != tail_value)
         return (1);
     if (this->_map.get(target_x, target_y, 0) == GAME_TILE_WALL)
         return (1);
@@ -226,31 +228,47 @@ int game_data::update_snake_position(int player_head) {
     int offset = (player_head / 1000000) * 1000000;
     int tile_val = this->_map.get(target_x, target_y, 2);
     bool ate_food = (tile_val == FOOD || tile_val == FIRE_FOOD || tile_val == FROSTY_FOOD);
+    bool target_is_tail = (tile_val == offset + this->_snake_length[player_number]);
 
-    // Move all existing segments forward by incrementing their values first
-    // We need to do this in reverse order to avoid overwriting
-    // IMPORTANT: Include the head (offset + 1) in the increment to avoid duplication
-    for (int segment_value = offset + this->_snake_length[player_number]; segment_value >= offset + 1; segment_value--) {
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                if (this->_map.get(x, y, 2) == segment_value) {
+    // When stepping onto the current tail, remove that tail segment first so
+    // the new head can occupy its cell without overwriting data that still
+    // needs to be shifted forward.
+    if (target_is_tail && !ate_food)
+    {
+        this->_map.set(target_x, target_y, 2, 0);
+    }
+
+    // Move existing segments forward by incrementing their values. If the
+    // target is the tail, we can skip that tile since it was cleared above.
+    int start_value = offset + this->_snake_length[player_number] -
+                      (target_is_tail && !ate_food ? 1 : 0);
+    for (int segment_value = start_value; segment_value >= offset + 1; --segment_value)
+    {
+        for (int y = 0; y < height; ++y)
+        {
+            for (int x = 0; x < width; ++x)
+            {
+                if (this->_map.get(x, y, 2) == segment_value)
                     this->_map.set(x, y, 2, segment_value + 1);
-                }
             }
         }
     }
 
-    // Now place new head at target position
-    this->remove_empty_cell(target_x, target_y);
+    // Place new head at target position
+    if (!target_is_tail || ate_food)
+        this->remove_empty_cell(target_x, target_y);
     this->_map.set(target_x, target_y, 2, offset + 1);
 
-    // Remove the tail if no food was eaten
-    if (!ate_food) {
-        // Find and remove the tail segment (now has the highest value)
+    // Remove the tail if no food was eaten and we didn't move into it
+    if (!ate_food && !target_is_tail)
+    {
         int tail_value = offset + this->_snake_length[player_number] + 1;
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                if (this->_map.get(x, y, 2) == tail_value) {
+        for (int y = 0; y < height; ++y)
+        {
+            for (int x = 0; x < width; ++x)
+            {
+                if (this->_map.get(x, y, 2) == tail_value)
+                {
                     this->_map.set(x, y, 2, 0);
                     this->add_empty_cell(x, y);
                     break;
