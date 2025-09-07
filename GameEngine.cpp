@@ -28,6 +28,7 @@ int GameEngine::loadBonusMap(const char* path) {
         return 1;
     }
     _gameData.set_map_name(path);
+    load_rules_into_game_data(this->_gameData);
     game_rules rules;
     if (read_game_rules(_gameData, rules) < 0 || rules.error) {
         setError(std::string("Failed to load bonus map: ") + path);
