@@ -40,6 +40,7 @@ int GameEngine::loadBonusMap(const char* path) {
         setError(std::string("Failed to apply bonus map rules: ") + path);
         return 1;
     }
+    _gameData.spawn_food();
     
     // Sync menu settings to reflect the loaded map so the UI shows correct state
     GameSettings settings = _menuSystem.getSettings();

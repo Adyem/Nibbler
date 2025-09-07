@@ -62,6 +62,7 @@ class game_data
         game_data(int width, int height);
         void reset_board();
         void resize_board(int width, int height);
+        void spawn_food();
 
         int  get_error() const;
         void set_wrap_around_edges(int value);
@@ -111,7 +112,6 @@ class game_data
 
         int         is_valid_move(int player_head);
         int         update_snake_position(int player_head);
-        void        spawn_food();
         void        spawn_fire_tile();
 
         mutable int _error;
