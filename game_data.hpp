@@ -113,6 +113,8 @@ class game_data
         int         is_valid_move(int player_head);
         int         update_snake_position(int player_head);
         void        spawn_fire_tile();
+        bool        can_spawn_frosty_food(int x, int y);
+        bool        is_tile_free(int &x, int &y) const;
 
         mutable int _error;
         int         _wrap_around_edges;

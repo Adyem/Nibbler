@@ -149,6 +149,83 @@ void game_data::resize_board(int width, int height) {
     return;
 }
 
+bool game_data::is_tile_free(int &x, int &y) const {
+    size_t width = this->_map.get_width();
+    size_t height = this->_map.get_height();
+    if (x < 0) {
+        if (this->_wrap_around_edges)
+            x = static_cast<int>(width) - 1;
+        else
+            return false;
+    } else if (x >= static_cast<int>(width)) {
+        if (this->_wrap_around_edges)
+            x = 0;
+        else
+            return false;
+    }
+    if (y < 0) {
+        if (this->_wrap_around_edges)
+            y = static_cast<int>(height) - 1;
+        else
+            return false;
+    } else if (y >= static_cast<int>(height)) {
+        if (this->_wrap_around_edges)
+            y = 0;
+        else
+            return false;
+    }
+    if (this->_map.get(x, y, 0) == GAME_TILE_WALL)
+        return false;
+    if (this->_map.get(x, y, 2) != 0)
+        return false;
+    return true;
+}
+
+bool game_data::can_spawn_frosty_food(int x, int y) {
+    size_t width = this->_map.get_width();
+    size_t height = this->_map.get_height();
+    size_t wall_count = 0;
+    for (size_t j = 0; j < height; ++j)
+        for (size_t i = 0; i < width; ++i)
+            if (this->_map.get(static_cast<int>(i), static_cast<int>(j), 0) == GAME_TILE_WALL)
+                wall_count++;
+    size_t open_tiles = width * height - wall_count;
+    int snake_tiles = 0;
+    for (int i = 0; i < 4; ++i)
+        snake_tiles += this->_snake_length[i];
+    if (snake_tiles >= static_cast<int>(open_tiles * 0.6))
+        return false;
+    const int dirs[4][2] = {{0,-1}, {1,0}, {0,1}, {-1,0}};
+    for (int d = 0; d < 4; ++d) {
+        int ax = x - dirs[d][0];
+        int ay = y - dirs[d][1];
+        if (!this->is_tile_free(ax, ay))
+            continue;
+        int tx = x + dirs[d][0];
+        int ty = y + dirs[d][1];
+        if (!this->is_tile_free(tx, ty))
+            continue;
+        int steps = 1;
+        bool valid = true;
+        while (steps < 2 || this->_map.get(tx, ty, 0) == GAME_TILE_ICE) {
+            tx += dirs[d][0];
+            ty += dirs[d][1];
+            if (!this->is_tile_free(tx, ty)) {
+                valid = false;
+                break;
+            }
+            steps++;
+            if (steps > static_cast<int>(open_tiles)) {
+                valid = false;
+                break;
+            }
+        }
+        if (valid)
+            return true;
+    }
+    return false;
+}
+
 void game_data::spawn_food() {
     while (!this->_empty_cells.empty())
     {
@@ -167,16 +244,20 @@ void game_data::spawn_food() {
             if (roll == 2)
                 item = FIRE_FOOD;
             else if (roll == 3)
-                item = FROSTY_FOOD;
-            if (item == FROSTY_FOOD && this->_wrap_around_edges == 0)
             {
-                size_t width = this->_map.get_width();
-                size_t height = this->_map.get_height();
-                if ((coord.x == 0 || coord.x == static_cast<int>(width) - 1) &&
-                    (coord.y == 0 || coord.y == static_cast<int>(height) - 1))
+                bool can_frost = this->can_spawn_frosty_food(coord.x, coord.y);
+                if (can_frost && this->_wrap_around_edges == 0)
                 {
-                    item = (ft_dice_roll(1, 2) == 1) ? FOOD : FIRE_FOOD;
+                    size_t width = this->_map.get_width();
+                    size_t height = this->_map.get_height();
+                    if ((coord.x == 0 || coord.x == static_cast<int>(width) - 1) &&
+                        (coord.y == 0 || coord.y == static_cast<int>(height) - 1))
+                        can_frost = false;
                 }
+                if (can_frost)
+                    item = FROSTY_FOOD;
+                else if (ft_dice_roll(1, 2) == 1)
+                    item = FIRE_FOOD;
             }
         }
         this->_map.set(coord.x, coord.y, 2, item);
