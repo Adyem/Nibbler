@@ -6,7 +6,7 @@
 #include "file_utils.hpp" // for game_rules & rule loading
 
 GameEngine::GameEngine(int width, int height)
-    : _gameData(width, height), _initialized(false), _gameStarted(false) {
+    : _gameData(width, height), _initialized(false), _gameStarted(false), _usingBonusMap(false) {
     clearError();
 
     // Initialize menu system with the actual board dimensions from command line
@@ -28,17 +28,31 @@ int GameEngine::loadBonusMap(const char* path) {
         return 1;
     }
     _gameData.set_map_name(path);
-    load_rules_into_game_data(this->_gameData);
+    
+    // Read and validate rules from file first
     game_rules rules;
     if (read_game_rules(_gameData, rules) < 0 || rules.error) {
         setError(std::string("Failed to load bonus map: ") + path);
         return 1;
     }
-    // Apply rules to game data
+    // Apply rules to game data (sizes, wrap, additional items, tiles, snake)
     if (load_rules_into_game_data(_gameData) < 0) {
         setError(std::string("Failed to apply bonus map rules: ") + path);
         return 1;
     }
+    
+    // Sync menu settings to reflect the loaded map so the UI shows correct state
+    GameSettings settings = _menuSystem.getSettings();
+    settings.wrapAroundEdges = (rules.wrap_around_edges != 0);
+    settings.additionalFoodItems = (rules.additional_fruits != 0);
+    if (!rules.custom_map.empty()) {
+        settings.boardWidth = static_cast<int>(rules.custom_map[0].size());
+        settings.boardHeight = static_cast<int>(rules.custom_map.size());
+    }
+    _menuSystem.updateSettings(settings);
+
+    // Mark that we are using a bonus map so we don't wipe it on start
+    _usingBonusMap = true;
     std::cout << "Loaded bonus map: " << path << std::endl;
     return 0;
 }
@@ -473,11 +487,24 @@ void GameEngine::clearError() {
 
 void GameEngine::applyMenuSettings() {
     const GameSettings& settings = _menuSystem.getSettings();
+    
+    // If a bonus map is active, preserve its tiles and geometry.
+    if (_usingBonusMap) {
+        // Only apply dynamic settings that don't destroy the map
+        IGraphicsLibrary* currentLib = _libraryManager.getCurrentLibrary();
+        if (currentLib) {
+            currentLib->setFrameRate(settings.gameSpeed);
+        }
+        // Do NOT resize or reset the board; rules have already been applied
+        _gameStarted = false;
+        std::cout << "Using bonus map settings; board preserved." << std::endl;
+        return;
+    }
 
-    // Apply board size
+    // Apply board size for standard mode
     _gameData.resize_board(settings.boardWidth, settings.boardHeight);
 
-    // Apply wrap around setting
+    // Apply wrap around and additional items
     _gameData.set_wrap_around_edges(settings.wrapAroundEdges ? 1 : 0);
     _gameData.set_additional_food_items(settings.additionalFoodItems ? 1 : 0);
 
@@ -487,7 +514,7 @@ void GameEngine::applyMenuSettings() {
         currentLib->setFrameRate(settings.gameSpeed);
     }
 
-    // Reset game state for new game
+    // Reset game state for new game (standard mode only)
     _gameData.reset_board();
     _gameStarted = false;
 

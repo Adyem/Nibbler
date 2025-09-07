@@ -24,6 +24,7 @@ class GameEngine {
     bool _initialized;
     std::string _errorMessage;
     bool _gameStarted;
+    bool _usingBonusMap;
 
     void gameLoop();
     void handleInput(GameKey key, bool& shouldQuit);
