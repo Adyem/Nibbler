@@ -15,7 +15,8 @@ GameEngine::GameEngine(int width, int height)
     settings.boardHeight = height;
     _menuSystem.updateSettings(settings);
 
-    std::cout << "Nibbler initialized with board size: " << width << "x" << height << std::endl;
+    // Final board size may change if a bonus map is loaded via -b
+    std::cout << "Nibbler engine created." << std::endl;
 }
 
 GameEngine::~GameEngine() {
@@ -40,7 +41,6 @@ int GameEngine::loadBonusMap(const char* path) {
         setError(std::string("Failed to apply bonus map rules: ") + path);
         return 1;
     }
-    _gameData.spawn_food();
     
     // Sync menu settings to reflect the loaded map so the UI shows correct state
     GameSettings settings = _menuSystem.getSettings();

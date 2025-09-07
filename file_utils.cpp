@@ -9,6 +9,8 @@
 #include <string>
 #include <algorithm>
 #include <cstring>
+#include <utility>
+#include "libft/RNG/RNG.hpp"
 
 int open_file_read(const char *path) {
     if (!path) {
@@ -221,6 +223,42 @@ int load_rules_into_game_data(game_data &data) {
                     snake = SNAKE_HEAD_PLAYER_1 + 3;
                 data.set_map_value(static_cast<int>(x), static_cast<int>(y), 2,
                                     snake);
+            }
+        }
+
+        // After applying the map, ensure at least one food spawns at a random empty cell
+        std::vector<std::pair<int,int>> empties;
+        for (size_t y = 0; y < height; ++y) {
+            for (size_t x = 0; x < width; ++x) {
+                if (data.get_map_value(static_cast<int>(x), static_cast<int>(y), 2) == 0 &&
+                    data.get_map_value(static_cast<int>(x), static_cast<int>(y), 0) == GAME_TILE_EMPTY) {
+                    empties.emplace_back(static_cast<int>(x), static_cast<int>(y));
+                }
+            }
+        }
+        if (!empties.empty()) {
+            int idx = ft_dice_roll(1, static_cast<int>(empties.size())) - 1;
+            int fx = empties[idx].first;
+            int fy = empties[idx].second;
+            data.set_map_value(fx, fy, 2, FOOD);
+        }
+
+        // If additional fruits are enabled, also spawn one fire tile randomly
+        if (rules.additional_fruits) {
+            std::vector<std::pair<int,int>> empties2;
+            for (size_t y = 0; y < height; ++y) {
+                for (size_t x = 0; x < width; ++x) {
+                    if (data.get_map_value(static_cast<int>(x), static_cast<int>(y), 2) == 0 &&
+                        data.get_map_value(static_cast<int>(x), static_cast<int>(y), 0) == GAME_TILE_EMPTY) {
+                        empties2.emplace_back(static_cast<int>(x), static_cast<int>(y));
+                    }
+                }
+            }
+            if (!empties2.empty()) {
+                int idx2 = ft_dice_roll(1, static_cast<int>(empties2.size())) - 1;
+                int fx2 = empties2[idx2].first;
+                int fy2 = empties2[idx2].second;
+                data.set_map_value(fx2, fy2, 0, GAME_TILE_FIRE);
             }
         }
     }
