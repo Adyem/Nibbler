@@ -1,65 +1,29 @@
 #include "file_utils.hpp"
 #include "game_data.hpp"
 #include "map_validation.hpp"
-#include <fcntl.h>
-#include <unistd.h>
-#include <cstdio>
-#include <cstdlib>
+#include <fstream>
 #include <vector>
 #include <string>
 #include <algorithm>
-#include <cstring>
 #include <utility>
 #include <unordered_map>
 #include <cctype>
 #include "libft/RNG/RNG.hpp"
 
-int open_file_read(const char *path) {
-    if (!path) {
-        return -1;
-    }
-    return open(path, O_RDONLY);
-}
-
-char **read_file_lines(const char *path) {
-    int fd = open_file_read(path);
-    if (fd < 0) {
-        return nullptr;
-    }
-    FILE *fp = fdopen(fd, "r");
-    if (!fp) {
-        close(fd);
-        return nullptr;
-    }
+std::optional<std::vector<std::string>> read_file_lines(const char *path) {
+    if (!path)
+        return std::nullopt;
+    std::ifstream file(path);
+    if (!file.is_open())
+        return std::nullopt;
     std::vector<std::string> lines;
-    char *buffer = nullptr;
-    size_t buf_size = 0;
-    ssize_t line_len;
-    while ((line_len = getline(&buffer, &buf_size, fp)) != -1) {
-        if (line_len > 0 && buffer[line_len - 1] == '\n') {
-            buffer[line_len - 1] = '\0';
-        }
-        lines.emplace_back(buffer);
+    std::string line;
+    while (std::getline(file, line)) {
+        if (!line.empty() && line.back() == '\r')
+            line.pop_back();
+        lines.push_back(line);
     }
-    free(buffer);
-    fclose(fp);
-
-    char **result = new char *[lines.size() + 1];
-    for (size_t i = 0; i < lines.size(); ++i) {
-        result[i] = new char[lines[i].size() + 1];
-        std::copy(lines[i].begin(), lines[i].end(), result[i]);
-        result[i][lines[i].size()] = '\0';
-    }
-    result[lines.size()] = nullptr;
-    return result;
-}
-
-static void free_file_lines(char **lines) {
-    if (!lines)
-        return;
-    for (size_t i = 0; lines[i]; ++i)
-        delete[] lines[i];
-    delete[] lines;
+    return lines;
 }
 
 static std::string trim(const std::string &s) {
@@ -221,16 +185,12 @@ static int parse_game_rules_lines(const std::vector<std::string> &lines,
 }
 
 int read_game_rules(game_data &data, game_rules &rules) {
-    char **lines = read_file_lines(data.get_map_name());
+    auto lines = read_file_lines(data.get_map_name());
     if (!lines) {
         rules.error = 1;
         return -1;
     }
-    std::vector<std::string> vec;
-    for (size_t i = 0; lines[i]; ++i)
-        vec.emplace_back(lines[i]);
-    free_file_lines(lines);
-    return parse_game_rules_lines(vec, rules);
+    return parse_game_rules_lines(*lines, rules);
 }
 
 int load_rules_into_game_data(game_data &data) {
