@@ -32,8 +32,8 @@ const SDL2Graphics::Color SDL2Graphics::COLOR_SELECTED_TEXT(255, 255, 255); // W
 
 SDL2Graphics::SDL2Graphics()
     : _initialized(false), _shouldContinue(true), _targetFPS(60), _frameDelay(1000 / 60),
-      _window(NULL), _renderer(NULL), _fontLarge(NULL), _fontMedium(NULL),
-      _fontSmall(NULL), _menuSystem(NULL), _switchMessageTimer(0) {
+      _window(nullptr), _renderer(nullptr), _fontLarge(nullptr), _fontMedium(nullptr),
+      _fontSmall(nullptr), _menuSystem(nullptr), _switchMessageTimer(0) {
 }
 
 SDL2Graphics::~SDL2Graphics() {
@@ -86,7 +86,7 @@ int SDL2Graphics::initialize() {
         if (!_renderer) {
             setError(std::string("Renderer could not be created: ") + SDL_GetError());
             SDL_DestroyWindow(_window);
-            _window = NULL;
+            _window = nullptr;
             TTF_Quit();
             SDL_Quit();
             return 1;
@@ -96,9 +96,9 @@ int SDL2Graphics::initialize() {
     // Initialize fonts
     if (!initializeFonts()) {
         SDL_DestroyRenderer(_renderer);
-        _renderer = NULL;
+        _renderer = nullptr;
         SDL_DestroyWindow(_window);
-        _window = NULL;
+        _window = nullptr;
         TTF_Quit();
         SDL_Quit();
         return 1;
@@ -136,13 +136,13 @@ void SDL2Graphics::shutdown() {
     // Destroy renderer
     if (_renderer) {
         SDL_DestroyRenderer(_renderer);
-        _renderer = NULL;
+        _renderer = nullptr;
     }
 
     // Destroy window and force it to close immediately
     if (_window) {
         SDL_DestroyWindow(_window);
-        _window = NULL;
+        _window = nullptr;
     }
 
     // Process events one more time after window destruction
@@ -319,7 +319,7 @@ bool SDL2Graphics::shouldContinue() const {
 }
 
 const char* SDL2Graphics::getError() const {
-    return _errorMessage.empty() ? NULL : _errorMessage.c_str();
+    return _errorMessage.empty() ? nullptr : _errorMessage.c_str();
 }
 
 void SDL2Graphics::setFrameRate(int fps) {
@@ -700,13 +700,13 @@ bool SDL2Graphics::initializeFonts() {
         "/usr/share/fonts/TTF/arial.ttf",
         // Fallback - try to find any reasonable font
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        NULL};
+        nullptr};
 
-    TTF_Font* testFont = NULL;
-    const char* selectedFontPath = NULL;
+    TTF_Font* testFont = nullptr;
+    const char* selectedFontPath = nullptr;
 
     // Find the first available font
-    for (int i = 0; fontPaths[i] != NULL; ++i) {
+    for (int i = 0; fontPaths[i] != nullptr; ++i) {
         testFont = TTF_OpenFont(fontPaths[i], 24);
         if (testFont) {
             selectedFontPath = fontPaths[i];
@@ -737,15 +737,15 @@ bool SDL2Graphics::initializeFonts() {
 void SDL2Graphics::shutdownFonts() {
     if (_fontLarge) {
         TTF_CloseFont(_fontLarge);
-        _fontLarge = NULL;
+        _fontLarge = nullptr;
     }
     if (_fontMedium) {
         TTF_CloseFont(_fontMedium);
-        _fontMedium = NULL;
+        _fontMedium = nullptr;
     }
     if (_fontSmall) {
         TTF_CloseFont(_fontSmall);
-        _fontSmall = NULL;
+        _fontSmall = nullptr;
     }
 }
 
@@ -791,10 +791,10 @@ void SDL2Graphics::drawTextWithFont(const std::string& text, int x, int y, TTF_F
     }
 
     int textWidth, textHeight;
-    SDL_QueryTexture(textTexture, NULL, NULL, &textWidth, &textHeight);
+    SDL_QueryTexture(textTexture, nullptr, nullptr, &textWidth, &textHeight);
 
     SDL_Rect destRect = {x, y, textWidth, textHeight};
-    SDL_RenderCopy(_renderer, textTexture, NULL, &destRect);
+    SDL_RenderCopy(_renderer, textTexture, nullptr, &destRect);
 
     SDL_DestroyTexture(textTexture);
 }

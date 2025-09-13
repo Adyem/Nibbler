@@ -39,8 +39,8 @@ const OpenGLGraphics::Color OpenGLGraphics::ALT_COLOR_FOOD(0.92f, 0.51f, 0.14f);
 const OpenGLGraphics::Color OpenGLGraphics::ALT_COLOR_TEXT(0.94f, 0.94f, 0.94f);
 
 OpenGLGraphics::OpenGLGraphics()
-        : _window(NULL), _initialized(false), _shouldContinue(true), _targetFPS(60),
-            _menuSystem(NULL), _switchMessageTimer(0), _lastKeyPressed(GameKey::NONE), _keyConsumed(true),
+        : _window(nullptr), _initialized(false), _shouldContinue(true), _targetFPS(60),
+            _menuSystem(nullptr), _switchMessageTimer(0), _lastKeyPressed(GameKey::NONE), _keyConsumed(true),
             _fontInitialized(false) {
 }
 
@@ -70,7 +70,7 @@ int OpenGLGraphics::initialize() {
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     // Create window
-    _window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Nibbler - OpenGL Graphics", NULL, NULL);
+    _window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Nibbler - OpenGL Graphics", nullptr, nullptr);
     if (!_window) {
         setError("Failed to create GLFW window");
         glfwTerminate();
@@ -127,13 +127,13 @@ void OpenGLGraphics::shutdown() {
 
     if (_window) {
         glfwDestroyWindow(_window);
-        _window = NULL;
+        _window = nullptr;
     }
 
     glfwTerminate();
 
     // Reset state
-    _menuSystem = NULL;
+    _menuSystem = nullptr;
     _switchMessage.clear();
     _switchMessageTimer = 0;
     _targetFPS = 60;
@@ -268,7 +268,7 @@ const char* OpenGLGraphics::getName() const {
 }
 
 const char* OpenGLGraphics::getError() const {
-    return _errorMessage.empty() ? NULL : _errorMessage.c_str();
+    return _errorMessage.empty() ? nullptr : _errorMessage.c_str();
 }
 
 void OpenGLGraphics::setFrameRate(int fps) {
@@ -427,7 +427,7 @@ bool OpenGLGraphics::initializeFonts() {
     if (!faceLoaded) {
         std::cerr << "[OpenGLGraphics] No suitable font file found" << std::endl;
         FT_Done_FreeType(_ftLibrary);
-        _ftLibrary = NULL;
+        _ftLibrary = nullptr;
         return false;
     }
 
@@ -448,12 +448,12 @@ bool OpenGLGraphics::loadFontFace(const std::string& path) {
     // Avoid italic/cursive styles if possible
     if (_ftFace->style_flags & FT_STYLE_FLAG_ITALIC) {
         FT_Done_Face(_ftFace);
-        _ftFace = NULL;
+        _ftFace = nullptr;
         return false; // try next candidate
     }
     if (FT_Set_Pixel_Sizes(_ftFace, 0, _fontPixelSize)) {
         FT_Done_Face(_ftFace);
-        _ftFace = NULL;
+        _ftFace = nullptr;
         return false;
     }
     std::cout << "[OpenGLGraphics] Loaded font: " << path << std::endl;
@@ -518,11 +518,11 @@ void OpenGLGraphics::shutdownFonts() {
 
     if (_ftFace) {
         FT_Done_Face(_ftFace);
-        _ftFace = NULL;
+        _ftFace = nullptr;
     }
     if (_ftLibrary) {
         FT_Done_FreeType(_ftLibrary);
-        _ftLibrary = NULL;
+        _ftLibrary = nullptr;
     }
     _fontInitialized = false;
 }

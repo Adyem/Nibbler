@@ -4,8 +4,8 @@
 
 NCursesGraphics::NCursesGraphics()
     : _initialized(false), _shouldContinue(true), _frameRate(60),
-      _gameWindow(NULL), _switchMessageTimer(0), _infoWindow(NULL),
-      _menuSystem(NULL) {
+      _gameWindow(nullptr), _switchMessageTimer(0), _infoWindow(nullptr),
+      _menuSystem(nullptr) {
     clearError();
 }
 
@@ -74,11 +74,11 @@ void NCursesGraphics::shutdown() {
     // Clean up windows
     if (_gameWindow) {
         delwin(_gameWindow);
-        _gameWindow = NULL;
+        _gameWindow = nullptr;
     }
     if (_infoWindow) {
         delwin(_infoWindow);
-        _infoWindow = NULL;
+        _infoWindow = nullptr;
     }
 
     // Restore terminal
@@ -289,7 +289,7 @@ void NCursesGraphics::setFrameRate(int fps) {
 }
 
 const char* NCursesGraphics::getError() const {
-    return _errorMessage.empty() ? NULL : _errorMessage.c_str();
+    return _errorMessage.empty() ? nullptr : _errorMessage.c_str();
 }
 
 // Private helper methods

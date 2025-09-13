@@ -279,7 +279,7 @@ int game_data::update_snake_position(int player_head) {
 
     // Update tile stepping achievements
     {
-        ft_achievement *tile_ach = NULL;
+        ft_achievement *tile_ach = nullptr;
         if (tile_type == GAME_TILE_FIRE)
             tile_ach = &this->_character.get_achievements().at(ACH_TILE_FIRE_STEPS);
         else if (tile_type == GAME_TILE_ICE)
