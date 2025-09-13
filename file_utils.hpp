@@ -2,11 +2,11 @@
 
 #include <vector>
 #include <string>
+#include <optional>
 
 class game_data;
 
-int open_file_read(const char *path);
-char **read_file_lines(const char *path);
+std::optional<std::vector<std::string>> read_file_lines(const char *path);
 
 struct game_rules {
     int error;
