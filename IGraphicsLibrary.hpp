@@ -32,7 +32,7 @@ class IGraphicsLibrary {
         (void)fps;
     }
     virtual const char* getError() const {
-        return NULL;
+        return nullptr;
     }
     virtual void setMenuSystem(MenuSystem* menuSystem) {
         (void)menuSystem;
