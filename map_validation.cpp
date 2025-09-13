@@ -189,74 +189,108 @@ static bool dfs_return_path(const std::vector<std::string> &map, bool wrap_edges
         std::vector<std::pair<int, int> > path;
         int neigh;
     };
-    std::vector<Move> moves;
-    const int dx[4] = {0, 1, 0, -1};
-    const int dy[4] = {-1, 0, 1, 0};
-    for (int dir = 0; dir < 4; ++dir) {
-        int nx = x;
-        int ny = y;
-        std::vector<std::pair<int, int> > path;
-        while (true) {
-            int tx = nx + dx[dir];
-            int ty = ny + dy[dir];
-            if (wrap_edges) {
-                if (tx < 0)
-                    tx = static_cast<int>(width) - 1;
-                else if (tx >= static_cast<int>(width))
-                    tx = 0;
-                if (ty < 0)
-                    ty = static_cast<int>(height) - 1;
-                else if (ty >= static_cast<int>(height))
-                    ty = 0;
-            } else {
-                if (tx < 0 || ty < 0 || tx >= static_cast<int>(width) ||
-                    ty >= static_cast<int>(height))
+
+    auto collect_moves = [&](int cx, int cy, int count,
+                             std::vector<Move> &moves) -> bool {
+        const int dx[4] = {0, 1, 0, -1};
+        const int dy[4] = {-1, 0, 1, 0};
+        for (int dir = 0; dir < 4; ++dir) {
+            int nx = cx;
+            int ny = cy;
+            std::vector<std::pair<int, int> > path;
+            while (true) {
+                int tx = nx + dx[dir];
+                int ty = ny + dy[dir];
+                if (wrap_edges) {
+                    if (tx < 0)
+                        tx = static_cast<int>(width) - 1;
+                    else if (tx >= static_cast<int>(width))
+                        tx = 0;
+                    if (ty < 0)
+                        ty = static_cast<int>(height) - 1;
+                    else if (ty >= static_cast<int>(height))
+                        ty = 0;
+                } else {
+                    if (tx < 0 || ty < 0 || tx >= static_cast<int>(width) ||
+                        ty >= static_cast<int>(height))
+                        break;
+                }
+                char tile = map[ty][tx];
+                if (tile == MAP_TILE_WALL || visited[ty][tx])
+                    break;
+                path.emplace_back(tx, ty);
+                nx = tx;
+                ny = ty;
+                if (nx == tail_x && ny == tail_y) {
+                    if (count + static_cast<int>(path.size()) == total)
+                        return true;
+                    path.clear();
+                    break;
+                }
+                if (tile != MAP_TILE_ICE)
                     break;
             }
-            char tile = map[ty][tx];
-            if (tile == MAP_TILE_WALL || visited[ty][tx])
-                break;
-            path.emplace_back(tx, ty);
-            nx = tx;
-            ny = ty;
-            if (nx == tail_x && ny == tail_y) {
-                if (visited_count + static_cast<int>(path.size()) == total)
-                    return true;
-                path.clear();
-                break;
-            }
-            if (tile != MAP_TILE_ICE)
-                break;
+            if (path.empty())
+                continue;
+            for (const auto &p : path)
+                visited[p.second][p.first] = true;
+            int neigh = count_free_neighbors(map, wrap_edges,
+                                             static_cast<int>(width),
+                                             static_cast<int>(height), nx, ny,
+                                             visited);
+            for (const auto &p : path)
+                visited[p.second][p.first] = false;
+            if (neigh == 0)
+                continue;
+            moves.push_back({nx, ny, path, neigh});
         }
-        if (path.empty())
+        std::sort(moves.begin(), moves.end(), [](const Move &a, const Move &b) {
+            return a.neigh < b.neigh;
+        });
+        return false;
+    };
+
+    struct State {
+        int x;
+        int y;
+        std::vector<Move> moves;
+        size_t index;
+        std::vector<std::pair<int, int> > path;
+        int count;
+    };
+
+    std::vector<Move> root_moves;
+    if (collect_moves(x, y, visited_count, root_moves))
+        return true;
+    std::vector<State> stack;
+    stack.push_back({x, y, root_moves, 0, {}, visited_count});
+    while (!stack.empty()) {
+        State &st = stack.back();
+        if (st.index >= st.moves.size()) {
+            for (const auto &p : st.path)
+                visited[p.second][p.first] = false;
+            stack.pop_back();
             continue;
-        for (const auto &p : path)
-            visited[p.second][p.first] = true;
-        int neigh = count_free_neighbors(map, wrap_edges, static_cast<int>(width),
-                                         static_cast<int>(height), nx, ny,
-                                         visited);
-        for (const auto &p : path)
-            visited[p.second][p.first] = false;
-        if (neigh == 0)
-            continue;
-        moves.push_back({nx, ny, path, neigh});
-    }
-    std::sort(moves.begin(), moves.end(),
-              [](const Move &a, const Move &b) { return a.neigh < b.neigh; });
-    for (const auto &m : moves) {
+        }
+        Move m = st.moves[st.index++];
         for (const auto &p : m.path)
             visited[p.second][p.first] = true;
-        int new_count = visited_count + static_cast<int>(m.path.size());
+        int new_count = st.count + static_cast<int>(m.path.size());
+        if (m.nx == tail_x && m.ny == tail_y)
+            return new_count == total;
         int remaining = total - new_count;
         bool ok = remaining_connected(map, wrap_edges, static_cast<int>(width),
-                                      static_cast<int>(height), visited,
-                                      tail_x, tail_y, remaining);
-        if (ok &&
-            dfs_return_path(map, wrap_edges, m.nx, m.ny, tail_x, tail_y,
-                            new_count, total, visited))
+                                      static_cast<int>(height), visited, tail_x,
+                                      tail_y, remaining);
+        if (!ok) {
+            for (const auto &p : m.path)
+                visited[p.second][p.first] = false;
+            continue;
+        }
+        std::vector<Move> next_moves;
+        if (collect_moves(m.nx, m.ny, new_count, next_moves))
             return true;
-        for (const auto &p : m.path)
-            visited[p.second][p.first] = false;
+        stack.push_back({m.nx, m.ny, next_moves, 0, m.path, new_count});
     }
     return false;
 }
