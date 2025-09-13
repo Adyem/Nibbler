@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <cstring>
 #include <utility>
+#include <unordered_map>
+#include <cctype>
 #include "libft/RNG/RNG.hpp"
 
 int open_file_read(const char *path) {
@@ -60,6 +62,16 @@ static void free_file_lines(char **lines) {
     delete[] lines;
 }
 
+static std::string trim(const std::string &s) {
+    size_t start = 0;
+    while (start < s.size() && std::isspace(static_cast<unsigned char>(s[start])))
+        ++start;
+    size_t end = s.size();
+    while (end > start && std::isspace(static_cast<unsigned char>(s[end - 1])))
+        --end;
+    return s.substr(start, end - start);
+}
+
 static int parse_game_rules_lines(const std::vector<std::string> &lines,
                                   game_rules &rules) {
     rules.error = 0;
@@ -76,21 +88,53 @@ static int parse_game_rules_lines(const std::vector<std::string> &lines,
     int body2_x = -1, body2_y = -1;
     int body3_x = -1, body3_y = -1;
     rules.custom_map.clear();
+
+    std::unordered_map<std::string, int> key_table = {
+        {"WRAP_AROUND_EDGES", 0}, {"ADDITIONAL_FRUITS", 1}, {"CUSTOM_MAP", 2}};
+
     for (size_t idx = 0; idx < lines.size(); ++idx) {
-        const std::string &line = lines[idx];
+        const std::string &raw_line = lines[idx];
+        std::string trimmed = trim(raw_line);
         if (!in_map) {
-            if (line.rfind("WRAP_AROUND_EDGES=", 0) == 0) {
-                rules.wrap_around_edges =
-                    (line.size() > 19 && line[19] == '1');
-                found++;
-            } else if (line.rfind("ADDITIONAL_FRUITS=", 0) == 0) {
-                rules.additional_fruits =
-                    (line.size() > 20 && line[20] == '1');
-                found++;
-            } else if (line.rfind("CUSTOM_MAP=", 0) == 0) {
+            if (trimmed.empty() || trimmed[0] == '#')
+                continue;
+            size_t pos = trimmed.find('=');
+            if (pos == std::string::npos) {
+                rules.error = 1;
+                return -1;
+            }
+            std::string key = trim(trimmed.substr(0, pos));
+            std::string value = trim(trimmed.substr(pos + 1));
+            auto it = key_table.find(key);
+            if (it == key_table.end()) {
+                rules.error = 1;
+                return -1;
+            }
+            switch (it->second) {
+            case 0:
+                if (value == "0" || value == "1") {
+                    rules.wrap_around_edges = (value == "1");
+                    found++;
+                } else {
+                    rules.error = 1;
+                    return -1;
+                }
+                break;
+            case 1:
+                if (value == "0" || value == "1") {
+                    rules.additional_fruits = (value == "1");
+                    found++;
+                } else {
+                    rules.error = 1;
+                    return -1;
+                }
+                break;
+            case 2:
                 in_map = true;
+                break;
             }
         } else {
+            const std::string &line = raw_line;
             size_t len = line.size();
             if (len == 0) {
                 rules.error = 1;
@@ -111,7 +155,7 @@ static int parse_game_rules_lines(const std::vector<std::string> &lines,
                     c != MAP_TILE_SNAKE_BODY_1 &&
                     c != MAP_TILE_SNAKE_BODY_2 &&
                     c != MAP_TILE_SNAKE_BODY_3) {
-                  rules.error = 1;
+                    rules.error = 1;
                     return -1;
                 }
                 if (c == MAP_TILE_SNAKE_HEAD) {
