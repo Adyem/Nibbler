@@ -1,13 +1,28 @@
 #include "GameEngine.hpp"
+#include "console_utils.hpp"
 #include <iostream>
 #include <chrono>
 #include <thread>
 #include <cstdlib>
 #include "file_utils.hpp" // for game_rules & rule loading
 
+static const char* slotName(int slot) {
+    switch (slot) {
+    case 0: return "NCurses";
+    case 1: return "SDL2";
+    case 2: return "OpenGL";
+    case 3: return "Raylib";
+    default: return "Unknown";
+    }
+}
+
 GameEngine::GameEngine(int width, int height)
     : _gameData(width, height), _initialized(false), _gameStarted(false), _usingBonusMap(false) {
     clearError();
+
+    // Init library key mapping to missing
+    for (int i = 0; i < 4; ++i) { _libKeyMap[i] = -1; _libSlotAvailable[i] = false; }
+    _defaultLibIndex = -1;
 
     // Initialize menu system with the actual board dimensions from command line
     GameSettings settings = _menuSystem.getSettings();
@@ -75,11 +90,20 @@ int GameEngine::initialize(int preferredLibraryIndex) {
         return 1;
     }
 
-    // Try to switch to the preferred library
-    if (preferredLibraryIndex >= 0 && preferredLibraryIndex < static_cast<int>(_libraryManager.getLibraryCount())) {
-        if (_libraryManager.switchToLibrary(preferredLibraryIndex) != 0) {
-            std::cerr << "Warning: Could not switch to preferred library, using default" << std::endl;
-        }
+    // Switch to preferred slot via mapping (0..3). Fallback to default if missing.
+    int targetSlot = preferredLibraryIndex;
+    if (targetSlot < 0 || targetSlot > 3) targetSlot = 0;
+    int actualIndex = (targetSlot >= 0 && targetSlot <= 3) ? _libKeyMap[targetSlot] : -1;
+    if (actualIndex < 0) actualIndex = _defaultLibIndex;
+
+    if (_libraryManager.switchToLibrary(actualIndex) != 0) {
+        print_warning("Could not switch to preferred library, using default");
+    } else if (!_libSlotAvailable[targetSlot]) {
+        // Warn user that selected slot was unavailable and remapped
+        const char* fallbackName = _libraryManager.getLibraryName(actualIndex);
+        std::string msg = std::string("Requested ") + slotName(targetSlot) +
+                          " not available; using " + (fallbackName ? fallbackName : "Unknown") + "";
+        print_warning(msg);
     }
 
     // Initialize the current graphics library
@@ -104,7 +128,7 @@ int GameEngine::initialize(int preferredLibraryIndex) {
 
 void GameEngine::run() {
     if (!_initialized) {
-        std::cerr << "Error: Game engine not initialized" << std::endl;
+        print_error("Error: Game engine not initialized");
         return;
     }
 
@@ -158,7 +182,7 @@ void GameEngine::gameLoop() {
         try {
             key = currentLib->getInput();
         } catch (...) {
-            std::cerr << "Error: Graphics library crashed during input handling" << std::endl;
+            print_error("Error: Graphics library crashed during input handling");
             shouldQuit = true;
             break;
         }
@@ -212,7 +236,7 @@ void GameEngine::gameLoop() {
             try {
                 renderGame();
             } catch (...) {
-                std::cerr << "Error: Graphics library crashed during rendering" << std::endl;
+                print_error("Error: Graphics library crashed during rendering");
                 shouldQuit = true;
                 break;
             }
@@ -234,7 +258,7 @@ void GameEngine::gameLoop() {
         // Check for graphics library errors
         const char* error = currentLib->getError();
         if (error) {
-            std::cerr << "Graphics library error: " << error << std::endl;
+            print_error(std::string("Graphics library error: ") + error);
             shouldQuit = true;
         }
 
@@ -348,24 +372,30 @@ void GameEngine::renderGame() {
 }
 
 int GameEngine::loadDefaultLibraries() {
-    // Try to load the NCurses library first (index 0)
-    if (_libraryManager.loadLibrary("./dllibs/lib_ncurses.so") != 0) {
-        std::cerr << "Warning: Failed to load NCurses library: " << _libraryManager.getError() << std::endl;
-    }
+    // Table of intended slots and their library paths
+    struct Entry { int slot; const char* path; } entries[] = {
+        {0, "./dllibs/lib_ncurses.so"},
+        {1, "./dllibs/lib_sdl2.so"},
+        {2, "./dllibs/lib_opengl.so"},
+        {3, "./dllibs/lib_raylib.so"}
+    };
 
-    // Try to load the SDL2 library (index 1)
-    if (_libraryManager.loadLibrary("./dllibs/lib_sdl2.so") != 0) {
-        std::cerr << "Warning: Failed to load SDL2 library: " << _libraryManager.getError() << std::endl;
-    }
-
-    // Try to load the OpenGL library (index 2)
-    if (_libraryManager.loadLibrary("./dllibs/lib_opengl.so") != 0) {
-        std::cerr << "Warning: Failed to load OpenGL library: " << _libraryManager.getError() << std::endl;
-    }
-
-    // Try to load the Raylib library (index 3)
-    if (_libraryManager.loadLibrary("./dllibs/lib_raylib.so") != 0) {
-        std::cerr << "Warning: Failed to load Raylib library: " << _libraryManager.getError() << std::endl;
+    for (const auto& e : entries) {
+        if (_libraryManager.loadLibrary(e.path) != 0) {
+            // Mark missing and report error for this specific library
+            _libKeyMap[e.slot] = -1;
+            std::string err = std::string("Failed to load ") + slotName(e.slot) + ": " + _libraryManager.getError();
+            print_error(err);
+        } else {
+            // New library appended at the end
+            size_t countAfter = _libraryManager.getLibraryCount();
+            int newIndex = static_cast<int>(countAfter - 1);
+            _libKeyMap[e.slot] = newIndex;
+            _libSlotAvailable[e.slot] = true;
+            if (_defaultLibIndex < 0) {
+                _defaultLibIndex = newIndex;
+            }
+        }
     }
 
     if (_libraryManager.getLibraryCount() == 0) {
@@ -373,25 +403,32 @@ int GameEngine::loadDefaultLibraries() {
         return 1;
     }
 
+    // For each missing slot, map to default and warn user
+    for (int slot = 0; slot < 4; ++slot) {
+        if (_libKeyMap[slot] < 0) {
+            _libKeyMap[slot] = _defaultLibIndex;
+            const char* fallbackName = _libraryManager.getLibraryName(_defaultLibIndex);
+            std::string warn = std::string("Library '") + slotName(slot) +
+                               "' unavailable; mapping key " + std::to_string(slot + 1) +
+                               " to '" + (fallbackName ? fallbackName : "Unknown") + "'";
+            print_warning(warn);
+        }
+    }
+
     return 0;
 }
 
-void GameEngine::switchGraphicsLibrary(int libraryIndex) {
+void GameEngine::switchGraphicsLibrary(int librarySlot) {
     IGraphicsLibrary* currentLib = _libraryManager.getCurrentLibrary();
 
-    // Check if the library index is valid
-    if (libraryIndex < 0 || libraryIndex >= static_cast<int>(_libraryManager.getLibraryCount())) {
-        // Display message in the current graphics library
-        std::string message = "Graphics library " + std::to_string(libraryIndex + 1) + " is not available";
-        if (currentLib) {
-            currentLib->setSwitchMessage(message, 120); // Show for 2 seconds at 60 FPS
-        }
-        return;
-    }
+    // Translate desired slot (0..3) to actual loaded library index
+    int actualIndex = (librarySlot >= 0 && librarySlot < 4) ? _libKeyMap[librarySlot] : -1;
+    if (actualIndex < 0) actualIndex = _defaultLibIndex;
+    bool remapped = (librarySlot < 0 || librarySlot >= 4) ? false : !_libSlotAvailable[librarySlot];
 
     // Don't switch if we're already using this library
-    if (libraryIndex == _libraryManager.getCurrentLibraryIndex()) {
-        const char* currentLibName = _libraryManager.getLibraryName(libraryIndex);
+    if (actualIndex == _libraryManager.getCurrentLibraryIndex()) {
+        const char* currentLibName = _libraryManager.getLibraryName(actualIndex);
         std::string message = std::string("Already using ") + (currentLibName ? currentLibName : "Unknown Library");
         if (currentLib) {
             currentLib->setSwitchMessage(message, 120); // Show for 2 seconds at 60 FPS
@@ -401,11 +438,16 @@ void GameEngine::switchGraphicsLibrary(int libraryIndex) {
 
     // Get current and target library names for logging
     const char* currentLibName = _libraryManager.getLibraryName(_libraryManager.getCurrentLibraryIndex());
-    const char* targetLibName = _libraryManager.getLibraryName(libraryIndex);
+    const char* targetLibName = _libraryManager.getLibraryName(actualIndex);
 
     std::cout << "Switching graphics library from "
               << (currentLibName ? currentLibName : "none")
               << " to " << (targetLibName ? targetLibName : "unknown") << std::endl;
+    if (remapped && currentLib) {
+        std::string message = std::string("Requested ") + slotName(librarySlot) +
+                              " not available; using " + (targetLibName ? targetLibName : "Unknown") + "";
+        currentLib->setSwitchMessage(message, 180);
+    }
 
     // Shutdown current library
     if (currentLib) {
@@ -417,7 +459,7 @@ void GameEngine::switchGraphicsLibrary(int libraryIndex) {
     }
 
     // Switch to new library
-    if (_libraryManager.switchToLibrary(libraryIndex) == 0) {
+    if (_libraryManager.switchToLibrary(actualIndex) == 0) {
         IGraphicsLibrary* newLib = _libraryManager.getCurrentLibrary();
         if (newLib) {
             // Try to initialize the new library
@@ -430,7 +472,7 @@ void GameEngine::switchGraphicsLibrary(int libraryIndex) {
                 newLib->setMenuSystem(&_menuSystem);
 
                 // Special handling for different libraries
-                const char* newLibName = _libraryManager.getLibraryName(libraryIndex);
+                const char* newLibName = _libraryManager.getLibraryName(actualIndex);
                 if (newLibName && std::string(newLibName) == "NCurses") {
                     // Try to bring terminal to front on macOS
                     std::system("osascript -e 'tell application \"Terminal\" to activate' 2>/dev/null || true");

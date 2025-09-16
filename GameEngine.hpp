@@ -25,6 +25,9 @@ class GameEngine {
     std::string _errorMessage;
     bool _gameStarted;
     bool _usingBonusMap;
+    int _libKeyMap[4];
+    int _defaultLibIndex;
+    bool _libSlotAvailable[4];
 
     void gameLoop();
     void handleInput(GameKey key, bool& shouldQuit);
