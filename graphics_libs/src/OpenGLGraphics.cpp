@@ -26,7 +26,7 @@ const OpenGLGraphics::Color OpenGLGraphics::COLOR_FOOD(0.78f, 0.20f, 0.20f);    
 const OpenGLGraphics::Color OpenGLGraphics::COLOR_TEXT(1.0f, 1.0f, 1.0f);           // White
 const OpenGLGraphics::Color OpenGLGraphics::COLOR_SELECTOR_BG(0.27f, 0.51f, 0.71f, 0.55f); // Semi-transparent steel blue
 const OpenGLGraphics::Color OpenGLGraphics::COLOR_SELECTED_TEXT(1.0f, 1.0f, 1.0f);  // White
-const OpenGLGraphics::Color OpenGLGraphics::COLOR_FIRE_FOOD(0.92f, 0.31f, 0.18f);
+const OpenGLGraphics::Color OpenGLGraphics::COLOR_FIRE_FOOD(0.98f, 0.55f, 0.05f);
 const OpenGLGraphics::Color OpenGLGraphics::COLOR_FROSTY_FOOD(0.31f, 0.78f, 0.92f);
 const OpenGLGraphics::Color OpenGLGraphics::COLOR_FIRE_TILE(0.78f, 0.20f, 0.20f);
 
@@ -192,9 +192,12 @@ void OpenGLGraphics::render(const game_data& game) {
 
                 // Draw game border (toggleable)
                 bool showBorders = _menuSystem && _menuSystem->getSettings().showBorders;
+                int boardWidthPx = static_cast<int>(game.get_width() * cellSize);
+                int boardHeightPx = static_cast<int>(game.get_height() * cellSize);
                 if (showBorders) {
-                    drawRectangle(offsetX - 2, offsetY - 2, game.get_width() * cellSize + 4, game.get_height() * cellSize + 4, border);
+                    drawRectangle(offsetX - 2, offsetY - 2, boardWidthPx + 4, boardHeightPx + 4, border);
                 }
+                drawRectangle(offsetX, offsetY, boardWidthPx, boardHeightPx, bgc);
 
                 // Draw game board
                 for (size_t y = 0; y < game.get_height(); ++y) {

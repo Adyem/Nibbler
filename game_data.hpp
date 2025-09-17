@@ -123,6 +123,7 @@ class game_data
         int         _direction_moving[4];
         int         _direction_moving_ice[4];
         int         _speed_boost_steps[4];
+        bool        _fire_boost_active[4];
         int         _frosty_steps[4];
         int         _snake_length[4];
         double      _update_timer[4];

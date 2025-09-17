@@ -108,6 +108,7 @@ void game_data::reset_board() {
         this->_direction_moving[i] = DIRECTION_NONE;
         this->_direction_moving_ice[i] = 0;
         this->_speed_boost_steps[i] = 0;
+        this->_fire_boost_active[i] = false;
         this->_frosty_steps[i] = 0;
         // Only initialize Player 1 snake, others are inactive (length 0)
         this->_snake_length[i] = (i == 0) ? 4 : 0;

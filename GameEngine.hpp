@@ -35,7 +35,7 @@ class GameEngine {
     void updateGame(bool& shouldQuit, double deltaTime);
     void renderGame();
     void applyMenuSettings();
-    void syncWrapAroundSetting();
+    void syncBonusSettings();
     int loadDefaultLibraries();
     void switchGraphicsLibrary(int libraryIndex);
     void performIntermediateSwitch(int intermediateIndex, int finalIndex);

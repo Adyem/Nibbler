@@ -34,6 +34,7 @@ game_data::game_data(int width, int height) :
                 this->_direction_moving_ice[index] = 0;
                 this->_direction_moving[index] = DIRECTION_NONE;
                 this->_speed_boost_steps[index] = 0;
+                this->_fire_boost_active[index] = false;
                 this->_frosty_steps[index] = 0;
                 // Only initialize Player 1 snake, others are inactive (length 0)
                 this->_snake_length[index] = (index == 0) ? 4 : 0;

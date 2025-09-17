@@ -1,5 +1,6 @@
 #include "NCursesGraphics.hpp"
 #include "../../game_data.hpp"
+#include <algorithm>
 #include <cstdlib>
 
 NCursesGraphics::NCursesGraphics()
@@ -303,6 +304,15 @@ const char* NCursesGraphics::getError() const {
 
 // Private helper methods
 void NCursesGraphics::initializeColors() {
+    short fireColor = COLOR_YELLOW;
+    if (can_change_color() && COLORS > 8) {
+        short candidate = static_cast<short>(std::min(COLORS - 1, 200));
+        if (candidate >= 0 && candidate < COLORS) {
+            init_color(candidate, 1000, 600, 0); // warm orange tone
+            fireColor = candidate;
+        }
+    }
+
     // Reset existing color pairs based on current palette selection
     if (_altColorsActive) {
         // init_pair(COLOR_SNAKE_HEAD, COLOR_CYAN, COLOR_BLACK);
@@ -321,7 +331,7 @@ void NCursesGraphics::initializeColors() {
     init_pair(COLOR_ICE, COLOR_CYAN, COLOR_BLACK);
     init_pair(COLOR_BORDER, COLOR_BLUE, COLOR_BLACK);
     init_pair(COLOR_INFO, COLOR_MAGENTA, COLOR_BLACK);
-    init_pair(COLOR_FIRE_FOOD, COLOR_RED, COLOR_YELLOW);
+    init_pair(COLOR_FIRE_FOOD, fireColor, COLOR_BLACK);
     init_pair(COLOR_FROSTY_FOOD, COLOR_CYAN, COLOR_WHITE);
     init_pair(COLOR_FIRE_TILE, COLOR_RED, COLOR_BLACK);
     } else {
@@ -332,7 +342,7 @@ void NCursesGraphics::initializeColors() {
     init_pair(COLOR_ICE, COLOR_CYAN, COLOR_BLACK);
     init_pair(COLOR_BORDER, COLOR_BLUE, COLOR_BLACK);
     init_pair(COLOR_INFO, COLOR_MAGENTA, COLOR_BLACK);
-    init_pair(COLOR_FIRE_FOOD, COLOR_RED, COLOR_YELLOW);
+    init_pair(COLOR_FIRE_FOOD, fireColor, COLOR_BLACK);
     init_pair(COLOR_FROSTY_FOOD, COLOR_CYAN, COLOR_WHITE);
     init_pair(COLOR_FIRE_TILE, COLOR_RED, COLOR_BLACK);
     }

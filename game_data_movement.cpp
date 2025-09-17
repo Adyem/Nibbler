@@ -372,7 +372,8 @@ int game_data::update_snake_position(int player_head) {
     if (ate_food) {
         if (tile_val == FIRE_FOOD)
         {
-            this->_speed_boost_steps[player_number] += 3;
+            this->_fire_boost_active[player_number] = true;
+            this->_speed_boost_steps[player_number] = 0;
             ft_achievement &fire =
                 this->_character.get_achievements().at(ACH_APPLES_FIRE_EATEN);
             int progress_fire = fire.get_progress(ACH_GOAL_PRIMARY);
@@ -415,7 +416,8 @@ int game_data::update_snake_position(int player_head) {
     }
     if (on_fire_next)
     {
-        this->_speed_boost_steps[player_number] += 3;
+        this->_fire_boost_active[player_number] = true;
+        this->_speed_boost_steps[player_number] = 0;
         this->_map.set(target_x, target_y, 0, GAME_TILE_EMPTY);
         if (this->_additional_food_items)
             this->spawn_fire_tile();
@@ -439,18 +441,18 @@ int game_data::update_game_map(double deltaTime)
         {
             this->_update_timer[i] += deltaTime;
             double interval = baseInterval;
-            if (this->_speed_boost_steps[i] > 0)
+            if (this->_fire_boost_active[i] || this->_speed_boost_steps[i] > 0)
                 interval /= 1.5;
             while (this->_update_timer[i] >= interval)
             {
                 this->_update_timer[i] -= interval;
-                bool boosted = (this->_speed_boost_steps[i] > 0);
+                bool boosted = (this->_fire_boost_active[i] || this->_speed_boost_steps[i] > 0);
                 if (this->update_snake_position(heads[i]))
                     ret = 1;
-                if (boosted && this->_speed_boost_steps[i] > 0)
+                if (boosted && this->_speed_boost_steps[i] > 0 && !this->_fire_boost_active[i])
                     this->_speed_boost_steps[i]--;
                 interval = baseInterval;
-                if (this->_speed_boost_steps[i] > 0)
+                if (this->_fire_boost_active[i] || this->_speed_boost_steps[i] > 0)
                     interval /= 1.5;
             }
         }

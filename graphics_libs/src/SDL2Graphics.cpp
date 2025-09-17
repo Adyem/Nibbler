@@ -14,7 +14,7 @@ const SDL2Graphics::Color SDL2Graphics::COLOR_SNAKE_BODY(30, 150, 30); // Dark g
 const SDL2Graphics::Color SDL2Graphics::COLOR_FOOD(200, 50, 50);       // Red
 const SDL2Graphics::Color SDL2Graphics::COLOR_TEXT(255, 255, 255);     // White
 // Extra tiles/foods
-const SDL2Graphics::Color SDL2Graphics::COLOR_FIRE_FOOD(235, 80, 35);   // Orange-red for fire food
+const SDL2Graphics::Color SDL2Graphics::COLOR_FIRE_FOOD(255, 140, 0);   // Bright orange for fire food
 const SDL2Graphics::Color SDL2Graphics::COLOR_FROSTY_FOOD(80, 200, 235);// Cyan for frosty food
 const SDL2Graphics::Color SDL2Graphics::COLOR_FIRE_TILE(200, 60, 40);    // Red for fire tile
 

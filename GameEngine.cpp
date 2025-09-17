@@ -49,12 +49,13 @@ int GameEngine::loadBonusMap(const char* path) {
     // Read and validate rules from file first
     game_rules rules;
     if (read_game_rules(_gameData, rules) < 0 || rules.error) {
-        setError(std::string("Failed to load bonus map: ") + path);
+        std::string reason = rules.error_message.empty() ? "unknown parse error" : rules.error_message;
+        setError(std::string("Failed to load bonus map '") + path + "': " + reason);
         return 1;
     }
     // Apply rules to game data (sizes, wrap, additional items, tiles, snake)
-    if (load_rules_into_game_data(_gameData) < 0) {
-        setError(std::string("Failed to apply bonus map rules: ") + path);
+    if (load_rules_into_game_data(_gameData, rules) < 0) {
+        setError(std::string("Failed to apply bonus map rules for '") + path + "'");
         return 1;
     }
     
@@ -216,8 +217,8 @@ void GameEngine::gameLoop() {
         }
         lastState = _menuSystem.getCurrentState();
 
-        // Ensure bonus wrap setting toggles take effect without restarting the game
-        syncWrapAroundSetting();
+        // Ensure bonus settings like wrap and extra fruits toggle immediately
+        syncBonusSettings();
 
         // Update game logic only if we're in game mode
         bool gameUpdated = false;
@@ -537,16 +538,23 @@ void GameEngine::clearError() {
     _errorMessage.clear();
 }
 
-void GameEngine::syncWrapAroundSetting() {
+void GameEngine::syncBonusSettings() {
     if (!_menuSystem.isBonusFeaturesAvailable() && !_usingBonusMap) {
         return;
     }
 
     const GameSettings& settings = _menuSystem.getSettings();
+
     bool desiredWrap = settings.wrapAroundEdges;
     bool currentWrap = (_gameData.get_wrap_around_edges() != 0);
     if (desiredWrap != currentWrap) {
         _gameData.set_wrap_around_edges(desiredWrap ? 1 : 0);
+    }
+
+    bool desiredAdditional = settings.additionalFoodItems;
+    bool currentAdditional = (_gameData.get_additional_food_items() != 0);
+    if (desiredAdditional != currentAdditional) {
+        _gameData.set_additional_food_items(desiredAdditional ? 1 : 0);
     }
 }
 

@@ -12,6 +12,7 @@ int parseArguments(int argc, char** argv, int& width, int& height, std::string &
 void printUsage(const char* programName);
 int selectGraphicsLibrary();
 
+#ifndef NIBBLER_NO_MAIN
 int main(int argc, char** argv) {
     int width = 30, height = 30; // defaults
     std::string bonusMap;
@@ -54,6 +55,7 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+#endif // NIBBLER_NO_MAIN
 
 static bool validateBonusFile(const std::string &path) {
     namespace fs = std::filesystem;

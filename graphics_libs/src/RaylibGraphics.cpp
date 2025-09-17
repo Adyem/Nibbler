@@ -15,7 +15,7 @@ const RaylibGraphics::Color RaylibGraphics::COLOR_FOOD(200, 50, 50, 255);
 const RaylibGraphics::Color RaylibGraphics::COLOR_TEXT(255, 255, 255, 255);
 const RaylibGraphics::Color RaylibGraphics::COLOR_SELECTOR_BG(70, 130, 180, 255);
 const RaylibGraphics::Color RaylibGraphics::COLOR_SELECTED_TEXT(255, 255, 255, 255);
-const RaylibGraphics::Color RaylibGraphics::COLOR_FIRE_FOOD(235, 80, 35, 255);
+const RaylibGraphics::Color RaylibGraphics::COLOR_FIRE_FOOD(255, 140, 0, 255);
 const RaylibGraphics::Color RaylibGraphics::COLOR_FROSTY_FOOD(80, 200, 235, 255);
 const RaylibGraphics::Color RaylibGraphics::COLOR_FIRE_TILE(200, 60, 40, 255);
 

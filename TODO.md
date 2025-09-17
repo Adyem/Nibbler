@@ -15,8 +15,8 @@
 
 ### **Input/Output Requirements** rodolfo
 - [ ] **Test**: Width/height command line parameters
-- [ ] **Test**: Usage message for wrong arguments
-- [ ] **Test**: Error handling for invalid dimensions
+- [x] **Test**: Usage message for wrong arguments
+- [x] **Test**: Error handling for invalid dimensions
 - [ ] **Test**: Error handling for missing/incompatible libraries
 - [ ] **Test**: Library switching with keys 1, 2, 3
 - [ ] **Test**: ESC key to quit game
