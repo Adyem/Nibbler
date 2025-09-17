@@ -169,8 +169,11 @@ void SFMLGraphics::render(const game_data& game) {
         size_t width = game.get_width();
         size_t height = game.get_height();
 
-        // Draw border
-        drawRect(offsetX - 2, offsetY - 2, static_cast<int>(width) * cellSize + 4, static_cast<int>(height) * cellSize + 4, border, false);
+        // Draw border (toggleable)
+        bool showBorders = _menuSystem && _menuSystem->getSettings().showBorders;
+        if (showBorders) {
+            drawRect(offsetX - 2, offsetY - 2, static_cast<int>(width) * cellSize + 4, static_cast<int>(height) * cellSize + 4, border, false);
+        }
 
         // Draw game board
         for (size_t y = 0; y < height; y++) {
@@ -202,9 +205,12 @@ void SFMLGraphics::render(const game_data& game) {
             }
         }
 
-        // Draw score
+        // Draw score and optional FPS
         std::string scoreText = "Length: " + std::to_string(game.get_snake_length(0));
         drawText(scoreText, 10, 10, text, 20);
+        if (_menuSystem && _menuSystem->getSettings().showFPS) {
+            drawText(std::string("FPS: ") + std::to_string(_targetFPS), 10, 34, text, 16);
+        }
     }
 
     // Present the back buffer

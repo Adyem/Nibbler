@@ -195,9 +195,12 @@ void SDL2Graphics::render(const game_data& game) {
     size_t width = game.get_width();
     size_t height = game.get_height();
 
-    // Draw border
-    setDrawColor(border);
-    drawRect(offsetX - 2, offsetY - 2, width * cellSize + 4, height * cellSize + 4, false);
+    // Draw border (toggleable)
+    bool showBorders = _menuSystem && _menuSystem->getSettings().showBorders;
+    if (showBorders) {
+        setDrawColor(border);
+        drawRect(offsetX - 2, offsetY - 2, width * cellSize + 4, height * cellSize + 4, false);
+    }
 
     // Draw game tiles
     for (size_t y = 0; y < height; ++y) {
@@ -240,10 +243,13 @@ void SDL2Graphics::render(const game_data& game) {
         }
     }
 
-    // HUD: show snake length in top-left
+    // HUD: show snake length and optional FPS in top-left
     {
         std::string scoreText = "Length: " + std::to_string(game.get_snake_length(0));
         drawTextWithFont(scoreText, 10, 10, _fontMedium, text);
+        if (_menuSystem && _menuSystem->getSettings().showFPS) {
+            drawTextWithFont(std::string("FPS: ") + std::to_string(_targetFPS), 10, 35, _fontSmall, text);
+        }
     }
 
     // Remove green switch bar; only decrement timer silently

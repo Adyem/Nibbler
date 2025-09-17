@@ -29,7 +29,7 @@ struct GameSettings {
 
     // Graphics settings (can be extended per library)
     bool useAlternativeColors = false;
-    bool showGrid = false;
+    bool showBorders = true;
     bool showFPS = true;
 };
 
@@ -83,11 +83,16 @@ class MenuSystem {
     void setGameOverScore(int score);
     int getGameOverScore() const;
 
+    // Feature availability toggles (from engine)
+    void setBonusFeaturesAvailable(bool enabled) { _bonusFeaturesAvailable = enabled; }
+    bool isBonusFeaturesAvailable() const { return _bonusFeaturesAvailable; }
+
   private:
     MenuState _currentState;
     int _currentSelection;
     GameSettings _settings;
     int _gameOverScore;
+    bool _bonusFeaturesAvailable = false;
 
     std::vector<MenuItem> _mainMenuItems;
     std::vector<MenuItem> _settingsMenuItems;

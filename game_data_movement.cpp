@@ -20,6 +20,35 @@ int game_data::determine_player_number(int player_head) {
     return ((player_head % 1000000) - 1);
 }
 
+bool game_data::advance_wrap_target(int direction, int &target_x, int &target_y) const {
+    int width = static_cast<int>(this->_map.get_width());
+    int height = static_cast<int>(this->_map.get_height());
+    int limit = (direction == DIRECTION_UP || direction == DIRECTION_DOWN) ? height : width;
+
+    for (int step = 0; step < limit; ++step) {
+        if (this->_map.get(target_x, target_y, 0) != GAME_TILE_WALL)
+            return true;
+
+        switch (direction) {
+        case DIRECTION_UP:
+            target_y = (target_y - 1 + height) % height;
+            break;
+        case DIRECTION_DOWN:
+            target_y = (target_y + 1) % height;
+            break;
+        case DIRECTION_LEFT:
+            target_x = (target_x - 1 + width) % width;
+            break;
+        case DIRECTION_RIGHT:
+            target_x = (target_x + 1) % width;
+            break;
+        default:
+            return false;
+        }
+    }
+    return false;
+}
+
 int game_data::is_valid_move(int player_head) {
     t_coordinates head = this->get_head_coordinate(player_head);
     int player_number = this->determine_player_number(player_head);
@@ -46,33 +75,57 @@ int game_data::is_valid_move(int player_head) {
     if (direction_moving == DIRECTION_UP) {
         target_y = head.y - 1; // UP decreases Y coordinate
         if (target_y < 0) {
-            if (this->_wrap_around_edges)
-                target_y = height - 1;
-            else
+            if (!this->_wrap_around_edges)
+                return (1);
+            target_y = height - 1;
+            if (!this->advance_wrap_target(direction_moving, target_x, target_y))
+                return (1);
+        } else if (this->_wrap_around_edges && target_y == 0 &&
+                   this->_map.get(target_x, target_y, 0) == GAME_TILE_WALL) {
+            target_y = height - 1;
+            if (!this->advance_wrap_target(direction_moving, target_x, target_y))
                 return (1);
         }
     } else if (direction_moving == DIRECTION_RIGHT) {
         target_x = head.x + 1;
         if (target_x >= width) {
-            if (this->_wrap_around_edges)
-                target_x = 0;
-            else
+            if (!this->_wrap_around_edges)
+                return (1);
+            target_x = 0;
+            if (!this->advance_wrap_target(direction_moving, target_x, target_y))
+                return (1);
+        } else if (this->_wrap_around_edges && target_x == width - 1 &&
+                   this->_map.get(target_x, target_y, 0) == GAME_TILE_WALL) {
+            target_x = 0;
+            if (!this->advance_wrap_target(direction_moving, target_x, target_y))
                 return (1);
         }
     } else if (direction_moving == DIRECTION_DOWN) {
         target_y = head.y + 1; // DOWN increases Y coordinate
         if (target_y >= height) {
-            if (this->_wrap_around_edges)
-                target_y = 0;
-            else
+            if (!this->_wrap_around_edges)
+                return (1);
+            target_y = 0;
+            if (!this->advance_wrap_target(direction_moving, target_x, target_y))
+                return (1);
+        } else if (this->_wrap_around_edges && target_y == height - 1 &&
+                   this->_map.get(target_x, target_y, 0) == GAME_TILE_WALL) {
+            target_y = 0;
+            if (!this->advance_wrap_target(direction_moving, target_x, target_y))
                 return (1);
         }
     } else if (direction_moving == DIRECTION_LEFT) {
         target_x = head.x - 1;
         if (target_x < 0) {
-            if (this->_wrap_around_edges)
-                target_x = width - 1;
-            else
+            if (!this->_wrap_around_edges)
+                return (1);
+            target_x = width - 1;
+            if (!this->advance_wrap_target(direction_moving, target_x, target_y))
+                return (1);
+        } else if (this->_wrap_around_edges && target_x == 0 &&
+                   this->_map.get(target_x, target_y, 0) == GAME_TILE_WALL) {
+            target_x = width - 1;
+            if (!this->advance_wrap_target(direction_moving, target_x, target_y))
                 return (1);
         }
     }
@@ -174,34 +227,58 @@ int game_data::update_snake_position(int player_head) {
     if (direction_moving == DIRECTION_UP) {
         target_y = current_coords.y - 1; // UP decreases Y coordinate
         if (target_y < 0) {
-            if (this->_wrap_around_edges)
-                target_y = height - 1;
-            else
+            if (!this->_wrap_around_edges)
                 return (1); // Game over - hit boundary
+            target_y = height - 1;
+            if (!this->advance_wrap_target(direction_moving, target_x, target_y))
+                return (1);
+        } else if (this->_wrap_around_edges && target_y == 0 &&
+                   this->_map.get(target_x, target_y, 0) == GAME_TILE_WALL) {
+            target_y = height - 1;
+            if (!this->advance_wrap_target(direction_moving, target_x, target_y))
+                return (1);
         }
     } else if (direction_moving == DIRECTION_RIGHT) {
         target_x = current_coords.x + 1;
         if (target_x >= width) {
-            if (this->_wrap_around_edges)
-                target_x = 0;
-            else
+            if (!this->_wrap_around_edges)
                 return (1); // Game over - hit boundary
+            target_x = 0;
+            if (!this->advance_wrap_target(direction_moving, target_x, target_y))
+                return (1);
+        } else if (this->_wrap_around_edges && target_x == width - 1 &&
+                   this->_map.get(target_x, target_y, 0) == GAME_TILE_WALL) {
+            target_x = 0;
+            if (!this->advance_wrap_target(direction_moving, target_x, target_y))
+                return (1);
         }
     } else if (direction_moving == DIRECTION_DOWN) {
         target_y = current_coords.y + 1; // DOWN increases Y coordinate
         if (target_y >= height) {
-            if (this->_wrap_around_edges)
-                target_y = 0;
-            else
+            if (!this->_wrap_around_edges)
                 return (1); // Game over - hit boundary
+            target_y = 0;
+            if (!this->advance_wrap_target(direction_moving, target_x, target_y))
+                return (1);
+        } else if (this->_wrap_around_edges && target_y == height - 1 &&
+                   this->_map.get(target_x, target_y, 0) == GAME_TILE_WALL) {
+            target_y = 0;
+            if (!this->advance_wrap_target(direction_moving, target_x, target_y))
+                return (1);
         }
     } else if (direction_moving == DIRECTION_LEFT) {
         target_x = current_coords.x - 1;
         if (target_x < 0) {
-            if (this->_wrap_around_edges)
-                target_x = width - 1;
-            else
+            if (!this->_wrap_around_edges)
                 return (1); // Game over - hit boundary
+            target_x = width - 1;
+            if (!this->advance_wrap_target(direction_moving, target_x, target_y))
+                return (1);
+        } else if (this->_wrap_around_edges && target_x == 0 &&
+                   this->_map.get(target_x, target_y, 0) == GAME_TILE_WALL) {
+            target_x = width - 1;
+            if (!this->advance_wrap_target(direction_moving, target_x, target_y))
+                return (1);
         }
     }
 

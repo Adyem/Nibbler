@@ -67,19 +67,22 @@ void MenuSystem::selectCurrentItem() {
             }
             break;
 
-        case MenuState::SETTINGS_MENU:
-            // Handle settings selection based on current item
-            if (_currentSelection == 0) toggleGameMode();
-            else if (_currentSelection == 1) adjustGameSpeed(10);
-            else if (_currentSelection == 2) toggleWrapAround();
-            // Board size (index 3) is non-selectable - skip
-            else if (_currentSelection == 4) toggleAdditionalFoodItems();
-            else if (_currentSelection == 5) toggleAlternativeColors();
-            else if (_currentSelection == 6) toggleGrid();
-            else if (_currentSelection == 7) toggleFPS();
+        case MenuState::SETTINGS_MENU: {
+            // Only react when the current item is selectable
+            const auto& items = getCurrentMenuItems();
+            if (_currentSelection < (int)items.size() && items[_currentSelection].selectable) {
+                // Handle settings selection based on current item
+                if (_currentSelection == 0) adjustGameSpeed(10);
+                else if (_currentSelection == 1) toggleWrapAround();
+                // Board size (index 2) is non-selectable - skip
+                else if (_currentSelection == 3) toggleAdditionalFoodItems();
+                else if (_currentSelection == 4) toggleAlternativeColors();
+                else if (_currentSelection == 5) toggleGrid();
+                else if (_currentSelection == 6) toggleFPS();
+            }
 
             updateSettingsMenu();
-            break;
+            break; }
 
         case MenuState::CREDITS_PAGE:
         case MenuState::INSTRUCTIONS_PAGE:
@@ -182,45 +185,54 @@ void MenuSystem::initializeMenus() {
 
 void MenuSystem::updateSettingsMenu() {
     _settingsMenuItems.clear();
-
-    std::string gameModeText = std::string("Game Mode: ") +
-        (_settings.gameMode == GameMode::SINGLE_PLAYER ? "Single Player" : "Multiplayer");
-    _settingsMenuItems.emplace_back(gameModeText);
-
+    // Game speed
     _settingsMenuItems.emplace_back("Game Speed: " + std::to_string(_settings.gameSpeed) + " FPS");
-    _settingsMenuItems.emplace_back("Wrap Around Edges: " + std::string(_settings.wrapAroundEdges ? "ON" : "OFF"));
-    _settingsMenuItems.emplace_back("Board Size: " + std::to_string(_settings.boardWidth) + "x" + std::to_string(_settings.boardHeight) + " (from command line)", false);
-    _settingsMenuItems.emplace_back("Additional Foods: " + std::string(_settings.additionalFoodItems ? "ON" : "OFF"));
+
+    // Wrap-around edges only in bonus mode
+    std::string wrapText = std::string("Wrap Around Edges: ") + (_settings.wrapAroundEdges ? "ON" : "OFF");
+    if (!_bonusFeaturesAvailable) wrapText += " (bonus only)";
+    _settingsMenuItems.emplace_back(wrapText, _bonusFeaturesAvailable);
+
+    _settingsMenuItems.emplace_back("Board Size: " + std::to_string(_settings.boardWidth) + "x" + std::to_string(_settings.boardHeight) + " (from command line or bonus file)", false);
+    std::string foodsText = std::string("Additional Foods: ") + (_settings.additionalFoodItems ? "ON" : "OFF");
+    if (!_bonusFeaturesAvailable) foodsText += " (bonus only)";
+    _settingsMenuItems.emplace_back(foodsText, _bonusFeaturesAvailable);
     _settingsMenuItems.emplace_back("Alternative Colors: " + std::string(_settings.useAlternativeColors ? "ON" : "OFF"));
-    _settingsMenuItems.emplace_back("Show Grid: " + std::string(_settings.showGrid ? "ON" : "OFF"));
+    _settingsMenuItems.emplace_back("Show Borders: " + std::string(_settings.showBorders ? "ON" : "OFF"));
     _settingsMenuItems.emplace_back("Show FPS: " + std::string(_settings.showFPS ? "ON" : "OFF"));
-    // No ghost/placeholder entries at the end
 }
 
 // Settings modification methods
 void MenuSystem::toggleGameMode() {
-    _settings.gameMode = (_settings.gameMode == GameMode::SINGLE_PLAYER) ?
-        GameMode::MULTIPLAYER : GameMode::SINGLE_PLAYER;
+    // Not implemented: keep single player
 }
 
 void MenuSystem::adjustGameSpeed(int delta) {
-    _settings.gameSpeed = std::max(10, std::min(120, _settings.gameSpeed + delta));
+    // Wrap within [10, 120]
+    const int minFps = 10;
+    const int maxFps = 120;
+    const int range = (maxFps - minFps + 1);
+    int next = _settings.gameSpeed + delta;
+    int wrapped = minFps + ((next - minFps) % range + range) % range;
+    _settings.gameSpeed = wrapped;
 }
 
 void MenuSystem::toggleWrapAround() {
-    _settings.wrapAroundEdges = !_settings.wrapAroundEdges;
+    if (_bonusFeaturesAvailable)
+        _settings.wrapAroundEdges = !_settings.wrapAroundEdges;
 }
 
 void MenuSystem::toggleAdditionalFoodItems() {
-    _settings.additionalFoodItems = !_settings.additionalFoodItems;
+    if (_bonusFeaturesAvailable)
+        _settings.additionalFoodItems = !_settings.additionalFoodItems;
 }
 
 void MenuSystem::adjustBoardSize(int widthDelta, int heightDelta) {
     if (widthDelta != 0) {
-        _settings.boardWidth = std::max(10, std::min(100, _settings.boardWidth + widthDelta));
+        _settings.boardWidth = std::max(10, std::min(30, _settings.boardWidth + widthDelta));
     }
     if (heightDelta != 0) {
-        _settings.boardHeight = std::max(10, std::min(100, _settings.boardHeight + heightDelta));
+        _settings.boardHeight = std::max(10, std::min(30, _settings.boardHeight + heightDelta));
     }
 }
 
@@ -229,7 +241,7 @@ void MenuSystem::toggleAlternativeColors() {
 }
 
 void MenuSystem::toggleGrid() {
-    _settings.showGrid = !_settings.showGrid;
+    _settings.showBorders = !_settings.showBorders;
 }
 
 void MenuSystem::toggleFPS() {

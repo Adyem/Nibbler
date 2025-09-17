@@ -23,6 +23,7 @@ GameEngine::GameEngine(int width, int height)
     // Init library key mapping to missing
     for (int i = 0; i < 4; ++i) { _libKeyMap[i] = -1; _libSlotAvailable[i] = false; }
     _defaultLibIndex = -1;
+    _lastAppliedFPS = 60;
 
     // Initialize menu system with the actual board dimensions from command line
     GameSettings settings = _menuSystem.getSettings();
@@ -69,6 +70,7 @@ int GameEngine::loadBonusMap(const char* path) {
 
     // Mark that we are using a bonus map so we don't wipe it on start
     _usingBonusMap = true;
+    _menuSystem.setBonusFeaturesAvailable(true);
     std::cout << "Loaded bonus map: " << path << std::endl;
     return 0;
 }
@@ -163,8 +165,9 @@ bool GameEngine::isInitialized() const {
 
 void GameEngine::gameLoop() {
     bool shouldQuit = false;
-    const int targetFPS = 60;
-    const auto frameDuration = std::chrono::microseconds(1000000 / targetFPS);
+    // Fixed render FPS for smoothness
+    int currentFPS = 60;
+    auto frameDuration = std::chrono::microseconds(1000000 / currentFPS);
     auto lastFrameTime = std::chrono::steady_clock::now();
     while (!shouldQuit) {
         auto frameStart = std::chrono::steady_clock::now();
@@ -212,6 +215,9 @@ void GameEngine::gameLoop() {
             applyMenuSettings();
         }
         lastState = _menuSystem.getCurrentState();
+
+        // Ensure bonus wrap setting toggles take effect without restarting the game
+        syncWrapAroundSetting();
 
         // Update game logic only if we're in game mode
         bool gameUpdated = false;
@@ -262,7 +268,7 @@ void GameEngine::gameLoop() {
             shouldQuit = true;
         }
 
-        // Frame rate limiting for smooth 60 FPS
+        // Frame rate limiting
         auto frameEnd = std::chrono::steady_clock::now();
         auto elapsed = frameEnd - frameStart;
         if (elapsed < frameDuration) {
@@ -348,7 +354,10 @@ void GameEngine::updateGame(bool& /* shouldQuit */, double deltaTime) {
     }
 
     // Update game logic based on elapsed time
-    int updateResult = _gameData.update_game_map(deltaTime);
+    // Scale movement speed based on settings (default baseline: 60)
+    int speed = std::max(10, std::min(120, _menuSystem.getSettings().gameSpeed));
+    double scaledDelta = deltaTime * (static_cast<double>(speed) / 60.0);
+    int updateResult = _gameData.update_game_map(scaledDelta);
     if (updateResult != 0) {
         int finalScore = _gameData.get_snake_length(0);
         std::cout << "Game Over! Snake collided. Final length: " << finalScore << std::endl;
@@ -528,6 +537,19 @@ void GameEngine::clearError() {
     _errorMessage.clear();
 }
 
+void GameEngine::syncWrapAroundSetting() {
+    if (!_menuSystem.isBonusFeaturesAvailable() && !_usingBonusMap) {
+        return;
+    }
+
+    const GameSettings& settings = _menuSystem.getSettings();
+    bool desiredWrap = settings.wrapAroundEdges;
+    bool currentWrap = (_gameData.get_wrap_around_edges() != 0);
+    if (desiredWrap != currentWrap) {
+        _gameData.set_wrap_around_edges(desiredWrap ? 1 : 0);
+    }
+}
+
 void GameEngine::applyMenuSettings() {
     const GameSettings& settings = _menuSystem.getSettings();
     
@@ -536,11 +558,16 @@ void GameEngine::applyMenuSettings() {
         // Only apply dynamic settings that don't destroy the map
         IGraphicsLibrary* currentLib = _libraryManager.getCurrentLibrary();
         if (currentLib) {
-            currentLib->setFrameRate(settings.gameSpeed);
+            currentLib->setFrameRate(60);
         }
+        // Apply toggles that are safe in-place (no board reset)
+        _gameData.set_wrap_around_edges(settings.wrapAroundEdges ? 1 : 0);
+        _gameData.set_additional_food_items(settings.additionalFoodItems ? 1 : 0);
+
         // Do NOT resize or reset the board; rules have already been applied
         _gameStarted = false;
         std::cout << "Using bonus map settings; board preserved." << std::endl;
+        _menuSystem.setBonusFeaturesAvailable(true);
         return;
     }
 
@@ -554,12 +581,13 @@ void GameEngine::applyMenuSettings() {
     // Apply frame rate to current graphics library
     IGraphicsLibrary* currentLib = _libraryManager.getCurrentLibrary();
     if (currentLib) {
-        currentLib->setFrameRate(settings.gameSpeed);
+        currentLib->setFrameRate(60);
     }
 
     // Reset game state for new game (standard mode only)
     _gameData.reset_board();
     _gameStarted = false;
+    _menuSystem.setBonusFeaturesAvailable(false);
 
     std::cout << "Game settings applied:" << std::endl;
     std::cout << "  Board size: " << settings.boardWidth << "x" << settings.boardHeight << std::endl;

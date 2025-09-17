@@ -190,8 +190,11 @@ void OpenGLGraphics::render(const game_data& game) {
                 const Color& body   = useAlt ? ALT_COLOR_SNAKE_BODY : COLOR_SNAKE_BODY;
                 const Color& food   = useAlt ? ALT_COLOR_FOOD : COLOR_FOOD;
 
-                // Draw game border
-                drawRectangle(offsetX - 2, offsetY - 2, game.get_width() * cellSize + 4, game.get_height() * cellSize + 4, border);
+                // Draw game border (toggleable)
+                bool showBorders = _menuSystem && _menuSystem->getSettings().showBorders;
+                if (showBorders) {
+                    drawRectangle(offsetX - 2, offsetY - 2, game.get_width() * cellSize + 4, game.get_height() * cellSize + 4, border);
+                }
 
                 // Draw game board
                 for (size_t y = 0; y < game.get_height(); ++y) {
@@ -224,9 +227,12 @@ void OpenGLGraphics::render(const game_data& game) {
                     }
                 }
 
-                // Draw score
+                // Draw score and optional FPS
                 std::string scoreText = "Length: " + std::to_string(game.get_snake_length(0));
                 drawText(scoreText, 20, 20, COLOR_TEXT);
+                if (_menuSystem && _menuSystem->getSettings().showFPS) {
+                    drawText(std::string("FPS: ") + std::to_string(_targetFPS), 20, 44, COLOR_TEXT, 0.8f);
+                }
             }
             break;
         }

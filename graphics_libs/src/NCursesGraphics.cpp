@@ -125,18 +125,25 @@ void NCursesGraphics::render(const game_data& game) {
     if (startX < 0)
         startX = 0;
 
-    // Draw game border
-    attron(COLOR_PAIR(COLOR_BORDER));
+    bool showBorders = _menuSystem && _menuSystem->getSettings().showBorders;
+    int tileOffsetX = startX + (showBorders ? 1 : 0);
+    int tileOffsetY = startY + (showBorders ? 1 : 0);
 
-    // Top border
-    mvhline(startY, startX, ACS_HLINE, static_cast<int>(gameWidth) + 2);
-    mvaddch(startY, startX, ACS_ULCORNER);
-    mvaddch(startY, startX + static_cast<int>(gameWidth) + 1, ACS_URCORNER);
+    // Draw game border (optional)
+    if (showBorders) {
+        attron(COLOR_PAIR(COLOR_BORDER));
+        // Top border
+        mvhline(startY, startX, ACS_HLINE, static_cast<int>(gameWidth) + 2);
+        mvaddch(startY, startX, ACS_ULCORNER);
+        mvaddch(startY, startX + static_cast<int>(gameWidth) + 1, ACS_URCORNER);
+    }
 
     // Side borders and game area
     for (size_t y = 0; y < gameHeight; ++y) {
-        mvaddch(startY + 1 + static_cast<int>(y), startX, ACS_VLINE);
-        mvaddch(startY + 1 + static_cast<int>(y), startX + static_cast<int>(gameWidth) + 1, ACS_VLINE);
+        if (showBorders) {
+            mvaddch(startY + 1 + static_cast<int>(y), startX, ACS_VLINE);
+            mvaddch(startY + 1 + static_cast<int>(y), startX + static_cast<int>(gameWidth) + 1, ACS_VLINE);
+        }
 
         // Draw game tiles
         for (size_t x = 0; x < gameWidth; ++x) {
@@ -144,17 +151,19 @@ void NCursesGraphics::render(const game_data& game) {
             int colorPair = getColorFromGameTile(static_cast<int>(x), static_cast<int>(y), game);
 
             attron(COLOR_PAIR(colorPair));
-            mvaddch(startY + 1 + static_cast<int>(y), startX + 1 + static_cast<int>(x), ch);
+            mvaddch(tileOffsetY + static_cast<int>(y), tileOffsetX + static_cast<int>(x), ch);
             attroff(COLOR_PAIR(colorPair));
         }
     }
 
     // Bottom border
-    attron(COLOR_PAIR(COLOR_BORDER));
-    mvhline(startY + static_cast<int>(gameHeight) + 1, startX, ACS_HLINE, static_cast<int>(gameWidth) + 2);
-    mvaddch(startY + static_cast<int>(gameHeight) + 1, startX, ACS_LLCORNER);
-    mvaddch(startY + static_cast<int>(gameHeight) + 1, startX + static_cast<int>(gameWidth) + 1, ACS_LRCORNER);
-    attroff(COLOR_PAIR(COLOR_BORDER));
+    if (showBorders) {
+        attron(COLOR_PAIR(COLOR_BORDER));
+        mvhline(startY + static_cast<int>(gameHeight) + 1, startX, ACS_HLINE, static_cast<int>(gameWidth) + 2);
+        mvaddch(startY + static_cast<int>(gameHeight) + 1, startX, ACS_LLCORNER);
+        mvaddch(startY + static_cast<int>(gameHeight) + 1, startX + static_cast<int>(gameWidth) + 1, ACS_LRCORNER);
+        attroff(COLOR_PAIR(COLOR_BORDER));
+    }
 
     // Draw game info
     drawInfo(game);
@@ -338,6 +347,11 @@ void NCursesGraphics::drawInfo(const game_data& game) {
 
     // Snake length
     mvprintw(termHeight - 4, 2, "Snake Length: %d", game.get_snake_length(0));
+
+    // FPS display (toggleable)
+    if (_menuSystem && _menuSystem->getSettings().showFPS) {
+        mvprintw(termHeight - 4, 28, "| FPS: %d", _frameRate);
+    }
 
     attroff(COLOR_PAIR(COLOR_INFO));
 }

@@ -111,6 +111,7 @@ class game_data
         void        initialize_empty_cells();
 
         int         is_valid_move(int player_head);
+        bool        advance_wrap_target(int direction, int &target_x, int &target_y) const;
         int         update_snake_position(int player_head);
         void        spawn_fire_tile();
         bool        can_spawn_frosty_food(int x, int y);

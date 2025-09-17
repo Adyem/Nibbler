@@ -28,12 +28,14 @@ class GameEngine {
     int _libKeyMap[4];
     int _defaultLibIndex;
     bool _libSlotAvailable[4];
+    int _lastAppliedFPS;
 
     void gameLoop();
     void handleInput(GameKey key, bool& shouldQuit);
     void updateGame(bool& shouldQuit, double deltaTime);
     void renderGame();
     void applyMenuSettings();
+    void syncWrapAroundSetting();
     int loadDefaultLibraries();
     void switchGraphicsLibrary(int libraryIndex);
     void performIntermediateSwitch(int intermediateIndex, int finalIndex);

@@ -117,8 +117,11 @@ void RaylibGraphics::render(const game_data& game) {
     size_t width = game.get_width();
     size_t height = game.get_height();
 
-    // Border
-    DrawRectangleLinesEx({(float)offsetX - 2, (float)offsetY - 2, (float)width * cellSize + 4, (float)height * cellSize + 4}, 2, {border.r, border.g, border.b, border.a});
+    // Border (toggleable)
+    bool showBorders = _menuSystem && _menuSystem->getSettings().showBorders;
+    if (showBorders) {
+        DrawRectangleLinesEx({(float)offsetX - 2, (float)offsetY - 2, (float)width * cellSize + 4, (float)height * cellSize + 4}, 2, {border.r, border.g, border.b, border.a});
+    }
 
     for (size_t y = 0; y < height; ++y) {
         for (size_t x = 0; x < width; ++x) {
@@ -147,8 +150,11 @@ void RaylibGraphics::render(const game_data& game) {
         }
     }
 
-    // HUD: score/length top-left
+    // HUD: score/length top-left and optional FPS
     DrawText(TextFormat("Length: %d", game.get_snake_length(0)), 10, 10, 20, {text.r, text.g, text.b, text.a});
+    if (_menuSystem && _menuSystem->getSettings().showFPS) {
+        DrawText(TextFormat("FPS: %d", _targetFPS), 10, 34, 16, {text.r, text.g, text.b, text.a});
+    }
 
     // Do not display any library switch message per requirements
 
