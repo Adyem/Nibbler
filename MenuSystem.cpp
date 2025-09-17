@@ -1,8 +1,24 @@
 #include "MenuSystem.hpp"
 #include "game_data.hpp"
 #include <algorithm>
+#include <array>
+
+namespace {
+struct SpeedOption {
+    const char* label;
+    double multiplier;
+};
+
+constexpr std::array<SpeedOption, 4> kSpeedOptions{{
+    {"Chill", 0.5},
+    {"Normal", 1.0},
+    {"Swift", 1.5},
+    {"Turbo", 2.0},
+}};
+}
 
 MenuSystem::MenuSystem() : _currentState(MenuState::MAIN_MENU), _currentSelection(0), _gameOverScore(0) {
+    applySpeedOption(_settings.gameSpeedIndex);
     initializeMenus();
 }
 
@@ -186,7 +202,7 @@ void MenuSystem::initializeMenus() {
 void MenuSystem::updateSettingsMenu() {
     _settingsMenuItems.clear();
     // Game speed
-    _settingsMenuItems.emplace_back("Game Speed: " + std::to_string(_settings.gameSpeed) + " FPS");
+    _settingsMenuItems.emplace_back(std::string("Game Speed: ") + _settings.gameSpeedLabel);
 
     // Wrap-around edges only in bonus mode
     std::string wrapText = std::string("Wrap Around Edges: ") + (_settings.wrapAroundEdges ? "ON" : "OFF");
@@ -208,13 +224,25 @@ void MenuSystem::toggleGameMode() {
 }
 
 void MenuSystem::adjustGameSpeed(int delta) {
-    // Wrap within [10, 120]
-    const int minFps = 10;
-    const int maxFps = 120;
-    const int range = (maxFps - minFps + 1);
-    int next = _settings.gameSpeed + delta;
-    int wrapped = minFps + ((next - minFps) % range + range) % range;
-    _settings.gameSpeed = wrapped;
+    if (kSpeedOptions.empty())
+        return;
+
+    int step = (delta >= 0) ? 1 : -1;
+    int optionCount = static_cast<int>(kSpeedOptions.size());
+    int nextIndex = (_settings.gameSpeedIndex + step + optionCount) % optionCount;
+    applySpeedOption(nextIndex);
+}
+
+void MenuSystem::applySpeedOption(int index) {
+    if (kSpeedOptions.empty())
+        return;
+
+    int optionCount = static_cast<int>(kSpeedOptions.size());
+    int normalized = ((index % optionCount) + optionCount) % optionCount;
+    const SpeedOption& option = kSpeedOptions[normalized];
+    _settings.gameSpeedIndex = normalized;
+    _settings.speedMultiplier = option.multiplier;
+    _settings.gameSpeedLabel = option.label;
 }
 
 void MenuSystem::toggleWrapAround() {

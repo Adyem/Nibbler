@@ -354,9 +354,9 @@ void GameEngine::updateGame(bool& /* shouldQuit */, double deltaTime) {
     }
 
     // Update game logic based on elapsed time
-    // Scale movement speed based on settings (default baseline: 60)
-    int speed = std::max(10, std::min(120, _menuSystem.getSettings().gameSpeed));
-    double scaledDelta = deltaTime * (static_cast<double>(speed) / 60.0);
+    // Scale movement speed based on settings (baseline multiplier: 1.0)
+    double speedMultiplier = std::max(0.1, _menuSystem.getSettings().speedMultiplier);
+    double scaledDelta = deltaTime * speedMultiplier;
     int updateResult = _gameData.update_game_map(scaledDelta);
     if (updateResult != 0) {
         int finalScore = _gameData.get_snake_length(0);
@@ -592,7 +592,7 @@ void GameEngine::applyMenuSettings() {
     std::cout << "Game settings applied:" << std::endl;
     std::cout << "  Board size: " << settings.boardWidth << "x" << settings.boardHeight << std::endl;
     std::cout << "  Game mode: " << (settings.gameMode == GameMode::SINGLE_PLAYER ? "Single Player" : "Multiplayer") << std::endl;
-    std::cout << "  Speed: " << settings.gameSpeed << " FPS" << std::endl;
+    std::cout << "  Speed: " << settings.gameSpeedLabel << std::endl;
     std::cout << "  Wrap around: " << (settings.wrapAroundEdges ? "ON" : "OFF") << std::endl;
 }
 

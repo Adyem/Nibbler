@@ -21,7 +21,9 @@ enum class GameMode { SINGLE_PLAYER,
 
 struct GameSettings {
     GameMode gameMode = GameMode::SINGLE_PLAYER;
-    int gameSpeed = 60;
+    int gameSpeedIndex = 1; // 0-based index into predefined speed options
+    double speedMultiplier = 1.0;
+    std::string gameSpeedLabel = "Normal";
     bool wrapAroundEdges = false;
     int boardWidth = 15;
     int boardHeight = 10;
@@ -58,6 +60,7 @@ class MenuSystem {
     }
     void updateSettings(const GameSettings& settings) {
         _settings = settings;
+        applySpeedOption(_settings.gameSpeedIndex);
     }
 
     const std::vector<MenuItem>& getCurrentMenuItems() const;
@@ -101,4 +104,5 @@ class MenuSystem {
     void initializeMenus();
     void updateSettingsMenu();
     void clampSelection();
+    void applySpeedOption(int index);
 };
