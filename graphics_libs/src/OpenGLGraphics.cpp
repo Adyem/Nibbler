@@ -8,6 +8,11 @@
 #include <chrono>
 #include <filesystem>
 #include <cmath>
+#include <vector>
+#include <unordered_set>
+#include <algorithm>
+#include <cstdlib>
+#include <cctype>
 
 // Helper macro to safely delete OpenGL textures
 static void safeDeleteTexture(unsigned int &tex) {
@@ -16,6 +21,126 @@ static void safeDeleteTexture(unsigned int &tex) {
         tex = 0;
     }
 }
+
+namespace {
+namespace fs = std::filesystem;
+
+bool isUsableFontFile(const fs::path& path) {
+    std::error_code ec;
+    return fs::exists(path, ec) && fs::is_regular_file(path, ec);
+}
+
+std::vector<std::string> collectFontCandidates() {
+    static const std::vector<std::string> priorityFonts = {
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSansNarrow-Regular.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+        "/usr/share/fonts/truetype/noto/NotoSansUI-Regular.ttf",
+        "/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+        "/usr/share/fonts/truetype/cantarell/Cantarell-Regular.ttf",
+        "/usr/share/fonts/TTF/DejaVuSans.ttf",
+        "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/liberation/LiberationSansNarrow-Regular.ttf",
+        "/usr/share/fonts/google-noto/NotoSans-Regular.ttf",
+        "/usr/share/fonts/google-noto/NotoSansUI-Regular.ttf",
+        "/usr/local/share/fonts/DejaVuSans.ttf",
+        "/Library/Fonts/Arial.ttf",
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "C:/Windows/Fonts/arial.ttf",
+        "C:/Windows/Fonts/segoeui.ttf"
+    };
+
+    static const std::vector<std::string> fontDirectories = {
+        "/usr/share/fonts",
+        "/usr/local/share/fonts",
+        "/usr/share/fonts/truetype",
+        "/usr/share/fonts/opentype",
+        "/usr/share/fonts/TTF",
+        "/usr/share/fonts/dejavu",
+        "/usr/share/fonts/liberation",
+        "/usr/share/fonts/google-noto",
+        "/usr/share/fonts/gnu-free",
+        "/usr/share/fonts/freefont",
+        "/usr/share/fonts/cantarell",
+        "/usr/share/fonts/roboto",
+        "/usr/share/fonts/adobe-source-sans-pro",
+        "/usr/share/fonts/adobe-source-code-pro",
+        "/usr/share/fonts/fedora",
+        "/usr/share/fonts/OfL",
+        "/usr/share/fonts/truetype/msttcorefonts",
+        "/usr/share/fonts/truetype/droid",
+        "/usr/share/fonts/truetype/nimbus",
+        "/usr/share/fonts/truetype/abyssinica",
+        "/usr/share/fonts/truetype/source-sans-pro",
+        "/usr/share/fonts/truetype/hack",
+        "/usr/share/fonts/truetype/fira",
+        "/usr/share/fonts/truetype/cantarell"
+    };
+
+    std::vector<std::string> candidates;
+    candidates.reserve(priorityFonts.size());
+    std::unordered_set<std::string> seen;
+    seen.reserve(priorityFonts.size() * 2);
+
+    auto pushUnique = [&](const std::string& path) {
+        if (path.empty()) {
+            return;
+        }
+        if (seen.insert(path).second) {
+            candidates.push_back(path);
+        }
+    };
+
+    for (const auto& path : priorityFonts) {
+        pushUnique(path);
+    }
+
+    const char* homeEnv = std::getenv("HOME");
+    if (homeEnv) {
+        fs::path homePath(homeEnv);
+        pushUnique((homePath / ".fonts/DejaVuSans.ttf").string());
+        pushUnique((homePath / ".fonts/Arial.ttf").string());
+        pushUnique((homePath / ".local/share/fonts/DejaVuSans.ttf").string());
+        pushUnique((homePath / ".local/share/fonts/Arial.ttf").string());
+    }
+
+    auto appendFontsFromDirectory = [&](const fs::path& dir) {
+        std::error_code ec;
+        if (!fs::exists(dir, ec) || !fs::is_directory(dir, ec)) {
+            return;
+        }
+        try {
+            for (const auto& entry : fs::recursive_directory_iterator(dir, fs::directory_options::skip_permission_denied)) {
+                if (!entry.is_regular_file()) {
+                    continue;
+                }
+                auto ext = entry.path().extension().string();
+                std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                if (ext == ".ttf" || ext == ".otf" || ext == ".ttc") {
+                    pushUnique(entry.path().string());
+                }
+            }
+        } catch (const std::exception&) {
+            // Ignore directories we cannot traverse
+        }
+    };
+
+    for (const auto& dir : fontDirectories) {
+        appendFontsFromDirectory(dir);
+    }
+
+    if (homeEnv) {
+        appendFontsFromDirectory(fs::path(homeEnv) / ".fonts");
+        appendFontsFromDirectory(fs::path(homeEnv) / ".local/share/fonts");
+    }
+
+    return candidates;
+}
+} // namespace
 
 // Static color definitions (RGB values 0.0-1.0)
 const OpenGLGraphics::Color OpenGLGraphics::COLOR_BACKGROUND(0.08f, 0.08f, 0.12f);  // Dark blue-gray
@@ -415,19 +540,14 @@ bool OpenGLGraphics::initializeFonts() {
         return false;
     }
 
-    // Candidate font paths (prefer neutral sans, avoid DejaVu per request)
-    const char* candidates[] = {
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-        "/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf",
-        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
-        "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
-        "/Library/Fonts/Arial.ttf",
-        "/System/Library/Fonts/Supplemental/Arial.ttf" // macOS fallback
-    };
-
+    const auto fontCandidates = collectFontCandidates();
     bool faceLoaded = false;
-    for (const char* path : candidates) {
-        if (std::filesystem::exists(path) && loadFontFace(path)) {
+
+    for (const auto& path : fontCandidates) {
+        if (!isUsableFontFile(path)) {
+            continue;
+        }
+        if (loadFontFace(path)) {
             faceLoaded = true;
             break;
         }

@@ -5,6 +5,144 @@
 #include <sstream>
 #include <algorithm>
 #include <cstring>
+#include <filesystem>
+#include <vector>
+#include <unordered_set>
+#include <cstdlib>
+#include <cctype>
+
+namespace {
+namespace fs = std::filesystem;
+
+bool isUsableFontFile(const fs::path& path) {
+    std::error_code ec;
+    return fs::exists(path, ec) && fs::is_regular_file(path, ec);
+}
+
+std::vector<std::string> collectFontCandidates() {
+    static const std::vector<std::string> priorityFonts = {
+        // macOS - Arial fonts
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+        "/System/Library/Fonts/Arial.ttf",
+        "/Library/Fonts/Arial.ttf",
+        // macOS - Helvetica as fallback
+        "/System/Library/Fonts/HelveticaNeue.ttc",
+        "/System/Library/Fonts/Geneva.ttf",
+        // Windows
+        "C:/Windows/Fonts/arial.ttf",
+        "C:/Windows/Fonts/Arial.ttf",
+        "C:/Windows/Fonts/segoeui.ttf",
+        // Linux common
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSansNarrow-Regular.ttf",
+        "/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+        "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+        "/usr/share/fonts/truetype/noto/NotoSansUI-Regular.ttf",
+        "/usr/share/fonts/TTF/DejaVuSans.ttf",
+        "/usr/share/fonts/TTF/arial.ttf",
+        "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/liberation/LiberationSansNarrow-Regular.ttf",
+        "/usr/share/fonts/google-noto/NotoSans-Regular.ttf",
+        "/usr/share/fonts/google-noto/NotoSansUI-Regular.ttf",
+        "/usr/local/share/fonts/DejaVuSans.ttf"
+    };
+
+    static const std::vector<std::string> fontDirectories = {
+        "/usr/share/fonts",
+        "/usr/local/share/fonts",
+        "/usr/share/fonts/truetype",
+        "/usr/share/fonts/TTF",
+        "/usr/share/fonts/opentype",
+        "/usr/share/fonts/dejavu",
+        "/usr/share/fonts/liberation",
+        "/usr/share/fonts/google-noto",
+        "/usr/share/fonts/gnu-free",
+        "/usr/share/fonts/freefont",
+        "/usr/share/fonts/cantarell",
+        "/usr/share/fonts/roboto",
+        "/usr/share/fonts/adobe-source-sans-pro",
+        "/usr/share/fonts/adobe-source-code-pro",
+        "/usr/share/fonts/abattis-cantarell",
+        "/usr/share/fonts/fedora",
+        "/usr/share/fonts/dejavu-serif",
+        "/usr/share/fonts/OfL",
+        "/usr/share/fonts/truetype/msttcorefonts",
+        "/usr/share/fonts/truetype/droid",
+        "/usr/share/fonts/truetype/abyssinica",
+        "/usr/share/fonts/truetype/lato",
+        "/usr/share/fonts/truetype/fonts-japanese-gothic",
+        "/usr/share/fonts/truetype/source-sans-pro",
+        "/usr/share/fonts/truetype/hack",
+        "/usr/share/fonts/truetype/fira",
+        "/usr/share/fonts/truetype/cantarell"
+    };
+
+    std::vector<std::string> candidates;
+    candidates.reserve(priorityFonts.size());
+    std::unordered_set<std::string> seen;
+    seen.reserve(priorityFonts.size() * 2);
+
+    auto pushUnique = [&](const std::string& path) {
+        if (path.empty()) {
+            return;
+        }
+        if (seen.insert(path).second) {
+            candidates.push_back(path);
+        }
+    };
+
+    for (const auto& path : priorityFonts) {
+        pushUnique(path);
+    }
+
+    const char* homeEnv = std::getenv("HOME");
+    if (homeEnv) {
+        fs::path homePath(homeEnv);
+        pushUnique((homePath / ".fonts/DejaVuSans.ttf").string());
+        pushUnique((homePath / ".fonts/Arial.ttf").string());
+        pushUnique((homePath / ".local/share/fonts/DejaVuSans.ttf").string());
+        pushUnique((homePath / ".local/share/fonts/Arial.ttf").string());
+    }
+
+    auto appendFontsFromDirectory = [&](const fs::path& dir) {
+        std::error_code ec;
+        if (!fs::exists(dir, ec) || !fs::is_directory(dir, ec)) {
+            return;
+        }
+        try {
+            for (const auto& entry : fs::recursive_directory_iterator(dir, fs::directory_options::skip_permission_denied)) {
+                if (!entry.is_regular_file()) {
+                    continue;
+                }
+                auto ext = entry.path().extension().string();
+                std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                if (ext == ".ttf" || ext == ".otf" || ext == ".ttc") {
+                    pushUnique(entry.path().string());
+                }
+            }
+        } catch (const std::exception&) {
+            // Ignore directories we cannot traverse
+        }
+    };
+
+    for (const auto& dir : fontDirectories) {
+        appendFontsFromDirectory(dir);
+    }
+
+    if (homeEnv) {
+        appendFontsFromDirectory(fs::path(homeEnv) / ".fonts");
+        appendFontsFromDirectory(fs::path(homeEnv) / ".local/share/fonts");
+    }
+
+    return candidates;
+}
+} // namespace
 
 // Static color definitions
 const SDL2Graphics::Color SDL2Graphics::COLOR_BACKGROUND(20, 20, 30);  // Dark blue-gray
@@ -688,48 +826,37 @@ void SDL2Graphics::drawMenuItems(const std::vector<MenuItem>& items, int selecte
 
 // Font implementation methods
 bool SDL2Graphics::initializeFonts() {
-    // Try to load Arial font from common system locations
-    const char* fontPaths[] = {
-        // macOS - Arial fonts
-        "/System/Library/Fonts/Supplemental/Arial.ttf",
-        "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
-        "/System/Library/Fonts/Arial.ttf",
-        "/Library/Fonts/Arial.ttf",
-        // macOS - Helvetica as fallback
-        "/System/Library/Fonts/HelveticaNeue.ttc",
-        "/System/Library/Fonts/Geneva.ttf",
-        // Windows
-        "C:/Windows/Fonts/arial.ttf",
-        // Linux
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-        "/usr/share/fonts/TTF/arial.ttf",
-        // Fallback - try to find any reasonable font
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        nullptr};
+    const auto fontCandidates = collectFontCandidates();
+
+    if (fontCandidates.empty()) {
+        setError("Could not find any suitable font file. Please install Arial, DejaVu Sans, or Liberation Sans fonts.");
+        return false;
+    }
 
     TTF_Font* testFont = nullptr;
-    const char* selectedFontPath = nullptr;
+    std::string selectedFontPath;
 
-    // Find the first available font
-    for (int i = 0; fontPaths[i] != nullptr; ++i) {
-        testFont = TTF_OpenFont(fontPaths[i], 24);
+    for (const auto& path : fontCandidates) {
+        if (!isUsableFontFile(path)) {
+            continue;
+        }
+        testFont = TTF_OpenFont(path.c_str(), 24);
         if (testFont) {
-            selectedFontPath = fontPaths[i];
+            selectedFontPath = path;
             TTF_CloseFont(testFont);
             break;
         }
     }
 
-    if (!selectedFontPath) {
-        setError("Could not find any suitable font file. Please install Arial or DejaVu Sans fonts.");
+    if (selectedFontPath.empty()) {
+        setError("Could not load any TrueType fonts. Please install Arial, DejaVu Sans, Liberation Sans, or Noto Sans fonts.");
         return false;
     }
 
     // Load fonts in different sizes
-    _fontLarge = TTF_OpenFont(selectedFontPath, 32);  // For titles
-    _fontMedium = TTF_OpenFont(selectedFontPath, 20); // For menu items
-    _fontSmall = TTF_OpenFont(selectedFontPath, 16);  // For instructions
+    _fontLarge = TTF_OpenFont(selectedFontPath.c_str(), 32);  // For titles
+    _fontMedium = TTF_OpenFont(selectedFontPath.c_str(), 20); // For menu items
+    _fontSmall = TTF_OpenFont(selectedFontPath.c_str(), 16);  // For instructions
 
     if (!_fontLarge || !_fontMedium || !_fontSmall) {
         setError(std::string("Failed to load font: ") + TTF_GetError());

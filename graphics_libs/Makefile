@@ -50,6 +50,17 @@ ifneq (,$(wildcard $(FREETYPE_BREW_PATH)/ft2build.h))
 OPENGL_CFLAGS += -I$(FREETYPE_BREW_PATH)
 OPENGL_LIBS += -Wl,-rpath,$(HOME)/.brew/opt/freetype/lib
 endif
+
+UNAME_S := $(shell uname -s)
+ifneq ($(UNAME_S),Darwin)
+ifneq (,$(findstring -framework,$(OPENGL_LIBS)))
+# leave macOS frameworks untouched
+else
+ifeq (,$(findstring -lGL,$(OPENGL_LIBS)))
+OPENGL_LIBS += -lGL
+endif
+endif
+endif
 RAYLIB_CFLAGS = $(shell pkg-config --cflags raylib 2>/dev/null || echo "")
 RAYLIB_LIBS = $(shell pkg-config --libs raylib 2>/dev/null || echo "-lraylib")
 
@@ -167,6 +178,15 @@ install-deps-ubuntu:
 	sudo apt-get update
 	sudo apt-get install libncurses5-dev libsdl2-dev libsdl2-ttf-dev libglfw3-dev libgl1-mesa-dev libraylib-dev
 
+# Install dependencies (Fedora/RHEL)
+install-deps-fedora:
+	@echo "Installing dependencies for Fedora/RHEL..."
+	@if command -v dnf >/dev/null 2>&1; then \
+		sudo dnf install -y ncurses-devel SDL2-devel SDL2_ttf-devel SDL2_image-devel glfw glfw-devel freetype freetype-devel mesa-libGL mesa-libGL-devel raylib raylib-devel dejavu-sans-fonts liberation-fonts; \
+	else \
+		echo "dnf not found. Please install packages manually using your distribution's package manager."; \
+	fi
+
 # Clean all libraries
 clean:
 	@echo "Cleaning graphics libraries..."
@@ -189,6 +209,7 @@ help:
 	@echo "  check-deps       - Check for required dependencies"
 	@echo "  install-deps-macos   - Install dependencies on macOS"
 	@echo "  install-deps-ubuntu  - Install dependencies on Ubuntu/Debian"
+	@echo "  install-deps-fedora  - Install dependencies on Fedora/RHEL"
 	@echo "  clean            - Remove all built libraries"
 	@echo "  rebuild          - Clean and rebuild all libraries"
 	@echo "  help             - Show this help message"
@@ -206,6 +227,8 @@ install-deps-ncurses:
 		brew install ncurses; \
 	elif command -v apt-get >/dev/null 2>&1; then \
 		sudo apt-get update && sudo apt-get install -y libncurses5-dev; \
+	elif command -v dnf >/dev/null 2>&1; then \
+		sudo dnf install -y ncurses-devel; \
 	else \
 		echo "Please install ncurses (ncurses/ncursesw dev headers) using your package manager."; \
 	fi
@@ -216,6 +239,8 @@ install-deps-sdl2:
 		brew install sdl2 sdl2_ttf; \
 	elif command -v apt-get >/dev/null 2>&1; then \
 		sudo apt-get update && sudo apt-get install -y libsdl2-dev libsdl2-ttf-dev; \
+	elif command -v dnf >/dev/null 2>&1; then \
+		sudo dnf install -y SDL2-devel SDL2_ttf-devel SDL2_image-devel; \
 	else \
 		echo "Please install SDL2 and SDL2_ttf using your package manager."; \
 	fi
@@ -226,6 +251,8 @@ install-deps-opengl:
 		brew install glfw freetype; \
 	elif command -v apt-get >/dev/null 2>&1; then \
 		sudo apt-get update && sudo apt-get install -y libglfw3-dev libgl1-mesa-dev libfreetype6-dev; \
+	elif command -v dnf >/dev/null 2>&1; then \
+		sudo dnf install -y glfw-devel mesa-libGL-devel freetype-devel; \
 	else \
 		echo "Please install GLFW, OpenGL (Mesa) and FreeType using your package manager."; \
 	fi
@@ -236,10 +263,12 @@ install-deps-raylib:
 		brew install raylib; \
 	elif command -v apt-get >/dev/null 2>&1; then \
 		sudo apt-get update && sudo apt-get install -y libraylib-dev; \
+	elif command -v dnf >/dev/null 2>&1; then \
+		sudo dnf install -y raylib raylib-devel; \
 	else \
 		echo "Please install raylib using your package manager."; \
 	fi
 
 install-deps-all: install-deps-ncurses install-deps-sdl2 install-deps-opengl install-deps-raylib
 
-.PHONY: all ncurses sdl2 opengl raylib check-deps install-deps-macos install-deps-ubuntu clean rebuild help
+.PHONY: all ncurses sdl2 opengl raylib check-deps install-deps-macos install-deps-ubuntu install-deps-fedora clean rebuild help
