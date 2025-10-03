@@ -5,6 +5,9 @@
 #include "IGraphicsLibrary.hpp"
 #include "MenuSystem.hpp"
 #include <string>
+#include <optional>
+
+#include "file_utils.hpp"
 
 class GameEngine {
   public:
@@ -39,6 +42,9 @@ class GameEngine {
     int loadDefaultLibraries();
     void switchGraphicsLibrary(int libraryIndex);
     void performIntermediateSwitch(int intermediateIndex, int finalIndex);
+    void handleGameOver();
     void setError(const std::string& error);
     void clearError();
+
+    std::optional<game_rules> _cachedBonusRules;
 };
