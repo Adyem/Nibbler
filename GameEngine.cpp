@@ -18,7 +18,8 @@ static const char* slotName(int slot) {
 }
 
 GameEngine::GameEngine(int width, int height)
-    : _gameData(width, height), _initialized(false), _gameStarted(false), _usingBonusMap(false) {
+    : _gameData(width, height), _initialized(false), _gameStarted(false), _usingBonusMap(false),
+      _cachedBonusRules(std::nullopt) {
     clearError();
 
     // Init library key mapping to missing
@@ -59,6 +60,8 @@ int GameEngine::loadBonusMap(const char* path) {
         setError(std::string("Failed to apply bonus map rules for '") + path + "'");
         return 1;
     }
+
+    _cachedBonusRules = rules;
     
     // Sync menu settings to reflect the loaded map so the UI shows correct state
     GameSettings settings = _menuSystem.getSettings();
@@ -361,18 +364,41 @@ void GameEngine::updateGame(bool& /* shouldQuit */, double deltaTime) {
     double scaledDelta = deltaTime * speedMultiplier;
     int updateResult = _gameData.update_game_map(scaledDelta);
     if (updateResult != 0) {
-        int finalScore = _gameData.get_snake_length(0);
-        std::cout << "Game Over! Snake collided. Final length: " << finalScore << std::endl;
-        std::cout << "Showing game over screen..." << std::endl;
-
-        // Set the final score and go to game over screen
-        _menuSystem.setGameOverScore(finalScore);
-        _menuSystem.setState(MenuState::GAME_OVER);
-
-        // Reset game state for next game
-        _gameStarted = false;
-        _gameData.reset_board();
+        handleGameOver();
     }
+}
+
+void GameEngine::handleGameOver() {
+    int finalScore = _gameData.get_snake_length(0);
+    std::cout << "Game Over! Snake collided. Final length: " << finalScore << std::endl;
+    std::cout << "Showing game over screen..." << std::endl;
+
+    _menuSystem.setGameOverScore(finalScore);
+    _menuSystem.setState(MenuState::GAME_OVER);
+    _gameStarted = false;
+
+    if (_usingBonusMap && _cachedBonusRules.has_value()) {
+        if (load_rules_into_game_data(_gameData, *_cachedBonusRules) == 0) {
+            GameSettings settings = _menuSystem.getSettings();
+            settings.wrapAroundEdges = (_cachedBonusRules->wrap_around_edges != 0);
+            settings.additionalFoodItems = (_cachedBonusRules->additional_fruits != 0);
+            if (!_cachedBonusRules->custom_map.empty()) {
+                settings.boardWidth = static_cast<int>(_cachedBonusRules->custom_map[0].size());
+                settings.boardHeight = static_cast<int>(_cachedBonusRules->custom_map.size());
+            }
+            _menuSystem.updateSettings(settings);
+            _menuSystem.setBonusFeaturesAvailable(true);
+            std::cout << "Bonus map reloaded for next attempt." << std::endl;
+            return;
+        }
+
+        print_error("Failed to reload bonus map rules; reverting to default board.");
+        _cachedBonusRules.reset();
+        _usingBonusMap = false;
+        _menuSystem.setBonusFeaturesAvailable(false);
+    }
+
+    _gameData.reset_board();
 }
 
 void GameEngine::renderGame() {
