@@ -17,7 +17,7 @@ t_coordinates game_data::get_head_coordinate(int head_to_find) {
 }
 
 int game_data::determine_player_number(int player_head) {
-    return ((player_head % 1000000) - 1);
+    return ((player_head / 1000000) - 1);
 }
 
 bool game_data::advance_wrap_target(int direction, int &target_x, int &target_y) const {
@@ -131,7 +131,7 @@ int game_data::is_valid_move(int player_head) {
     }
 
     int target_val = this->_map.get(target_x, target_y, 2);
-    int offset = (player_head / 1000000) * 1000000;
+    int offset = (player_number + 1) * 1000000;
     int tail_value = offset + this->_snake_length[player_number];
     if (target_val != 0 && target_val != FOOD && target_val != FIRE_FOOD && target_val != FROSTY_FOOD && target_val != tail_value)
         return (1);
@@ -302,7 +302,7 @@ int game_data::update_snake_position(int player_head) {
         if (this->_frosty_steps[player_number] == 0 && !on_ice_next)
             this->_direction_moving_ice[player_number] = 0;
     }
-    int offset = (player_head / 1000000) * 1000000;
+    int offset = (player_number + 1) * 1000000;
     int tile_val = this->_map.get(target_x, target_y, 2);
     bool ate_food = (tile_val == FOOD || tile_val == FIRE_FOOD || tile_val == FROSTY_FOOD);
     bool target_is_tail = (tile_val == offset + this->_snake_length[player_number]);

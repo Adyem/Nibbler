@@ -52,6 +52,7 @@ DLLIBS_DIR      = ./dllibs
 
 TEST_DIR        = Test
 TEST_BIN        = $(TEST_DIR)/map_parsing_tests
+TEST_MOVEMENT_BIN = $(TEST_DIR)/movement_tests
 
 # Export absolute paths to sub-makes so graphics_libs can use correct paths
 export OBJ_DIR := $(abspath $(OBJ_DIR))
@@ -153,9 +154,15 @@ both: all debug
 
 re_both: re both
 
-tests: $(TEST_DIR)/map_parsing_tests.cpp map_validation.cpp
+tests: $(LIBFT) $(TEST_DIR)/map_parsing_tests.cpp map_validation.cpp $(TEST_DIR)/movement_tests.cpp \
+game_data_core.cpp game_data_board.cpp game_data_movement.cpp game_data_io.cpp
 	$(CC) $(CFLAGS) $(TEST_DIR)/map_parsing_tests.cpp -o $(TEST_BIN)
 	./$(TEST_BIN)
 	$(RM) $(TEST_BIN)
+	$(CC) $(CFLAGS) $(TEST_DIR)/movement_tests.cpp game_data_core.cpp \
+	game_data_board.cpp game_data_movement.cpp game_data_io.cpp \
+	-o $(TEST_MOVEMENT_BIN) $(LIBFT)
+	./$(TEST_MOVEMENT_BIN)
+	$(RM) $(TEST_MOVEMENT_BIN)
 
 .PHONY: all dirs clean fclean re debug both re_both graphics_libs graphics_re tests
