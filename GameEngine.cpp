@@ -4,6 +4,7 @@
 #include <chrono>
 #include <thread>
 #include <cstdlib>
+#include <algorithm>
 #include "file_utils.hpp" // for game_rules & rule loading
 
 static const char* slotName(int slot) {
