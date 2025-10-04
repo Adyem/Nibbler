@@ -137,7 +137,7 @@ void MenuSystem::goBack() {
             setState(MenuState::MAIN_MENU);
             break;
         case MenuState::GAME_OVER:
-            setState(MenuState::EXIT_REQUESTED);
+            setState(MenuState::MAIN_MENU);
             break;
         default:
             break;
