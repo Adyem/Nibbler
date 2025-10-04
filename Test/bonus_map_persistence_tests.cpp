@@ -5,6 +5,9 @@
 #include <cassert>
 #include <iostream>
 #include <cmath>
+#include <filesystem>
+#include <fstream>
+#include <vector>
 
 static void verify_tile(const game_data &data, int x, int y, int expected, const char *label) {
     int value = data.get_map_value(x, y, 0);
@@ -120,9 +123,61 @@ static void test_status_effects_reset_after_bonus_reload() {
     std::cout << "Status effects reset regression test passed" << std::endl;
 }
 
+static void test_oversized_snake_length_loads_cleanly() {
+    const std::filesystem::path saveDir = "save_data";
+    std::filesystem::create_directories(saveDir);
+
+    const std::filesystem::path savePath = saveDir / "oversized_length.json";
+    {
+        std::ofstream saveFile(savePath);
+        assert(saveFile.is_open());
+        saveFile << "{\"game\": {\"snake_length\": 999999}}";
+    }
+
+    game_data data(10, 10);
+    data.set_profile_name("oversized_length");
+    int loadResult = data.load_game();
+    assert(loadResult == 0);
+
+    int reportedLength = data.get_snake_length(0);
+    assert(reportedLength >= 1);
+    assert(reportedLength <= MAX_SNAKE_LENGTH);
+
+    data.set_direction_moving(0, DIRECTION_RIGHT);
+    int updateResult = data.update_game_map(1.0);
+    assert(updateResult == 0);
+
+    const int offset = SNAKE_HEAD_PLAYER_1 - 1;
+    std::vector<int> seen(reportedLength + 1, 0);
+    int countedSegments = 0;
+
+    for (size_t y = 0; y < data.get_height(); ++y) {
+        for (size_t x = 0; x < data.get_width(); ++x) {
+            int value = data.get_map_value(static_cast<int>(x), static_cast<int>(y), 2);
+            if (value >= SNAKE_HEAD_PLAYER_1 && value < SNAKE_HEAD_PLAYER_2) {
+                int index = value - offset;
+                assert(index >= 1 && index <= reportedLength);
+                seen[index] += 1;
+                ++countedSegments;
+            }
+        }
+    }
+
+    for (int i = 1; i <= reportedLength; ++i) {
+        assert(seen[i] == 1);
+    }
+    assert(countedSegments == reportedLength);
+    assert(data.get_snake_length(0) == reportedLength);
+
+    std::filesystem::remove(savePath);
+
+    std::cout << "Oversized snake length load regression test passed" << std::endl;
+}
+
 int main() {
     test_bonus_map_persists_across_game_over();
     test_snake_length_resets_after_game_over();
     test_status_effects_reset_after_bonus_reload();
+    test_oversized_snake_length_loads_cleanly();
     return 0;
 }
