@@ -1,4 +1,5 @@
 #include "SDL2Graphics.hpp"
+#include "FontCache.hpp"
 #include "../../game_data.hpp"
 #include "../../MenuSystem.hpp"
 #include <iostream>
@@ -8,6 +9,7 @@
 #include <filesystem>
 #include <vector>
 #include <unordered_set>
+#include <optional>
 #include <cstdlib>
 #include <cctype>
 
@@ -19,7 +21,8 @@ bool isUsableFontFile(const fs::path& path) {
     return fs::exists(path, ec) && fs::is_regular_file(path, ec);
 }
 
-std::vector<std::string> collectFontCandidates() {
+template <typename TryLoad>
+std::optional<std::string> resolveFontPath(TryLoad&& tryLoad) {
     static const std::vector<std::string> priorityFonts = {
         // macOS - Arial fonts
         "/System/Library/Fonts/Supplemental/Arial.ttf",
@@ -83,37 +86,29 @@ std::vector<std::string> collectFontCandidates() {
         "/usr/share/fonts/truetype/cantarell"
     };
 
-    std::vector<std::string> candidates;
-    candidates.reserve(priorityFonts.size());
     std::unordered_set<std::string> seen;
     seen.reserve(priorityFonts.size() * 2);
 
-    auto pushUnique = [&](const std::string& path) {
+    auto considerCandidate = [&](const std::string& path) -> std::optional<std::string> {
         if (path.empty()) {
-            return;
+            return std::nullopt;
         }
-        if (seen.insert(path).second) {
-            candidates.push_back(path);
+        if (!seen.insert(path).second) {
+            return std::nullopt;
         }
+        if (!isUsableFontFile(path)) {
+            return std::nullopt;
+        }
+        if (tryLoad(path)) {
+            return path;
+        }
+        return std::nullopt;
     };
 
-    for (const auto& path : priorityFonts) {
-        pushUnique(path);
-    }
-
-    const char* homeEnv = std::getenv("HOME");
-    if (homeEnv) {
-        fs::path homePath(homeEnv);
-        pushUnique((homePath / ".fonts/DejaVuSans.ttf").string());
-        pushUnique((homePath / ".fonts/Arial.ttf").string());
-        pushUnique((homePath / ".local/share/fonts/DejaVuSans.ttf").string());
-        pushUnique((homePath / ".local/share/fonts/Arial.ttf").string());
-    }
-
-    auto appendFontsFromDirectory = [&](const fs::path& dir) {
+    auto searchDirectory = [&](const fs::path& dir) -> std::optional<std::string> {
         std::error_code ec;
         if (!fs::exists(dir, ec) || !fs::is_directory(dir, ec)) {
-            return;
+            return std::nullopt;
         }
         try {
             for (const auto& entry : fs::recursive_directory_iterator(dir, fs::directory_options::skip_permission_denied)) {
@@ -121,26 +116,60 @@ std::vector<std::string> collectFontCandidates() {
                     continue;
                 }
                 auto ext = entry.path().extension().string();
-                std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) {
+                    return static_cast<char>(std::tolower(c));
+                });
                 if (ext == ".ttf" || ext == ".otf" || ext == ".ttc") {
-                    pushUnique(entry.path().string());
+                    if (auto chosen = considerCandidate(entry.path().string())) {
+                        return chosen;
+                    }
                 }
             }
         } catch (const std::exception&) {
             // Ignore directories we cannot traverse
         }
+        return std::nullopt;
     };
 
+    for (const auto& path : priorityFonts) {
+        if (auto chosen = considerCandidate(path)) {
+            return chosen;
+        }
+    }
+
+    const char* homeEnv = std::getenv("HOME");
+    if (homeEnv) {
+        fs::path homePath(homeEnv);
+        if (auto chosen = considerCandidate((homePath / ".fonts/DejaVuSans.ttf").string())) {
+            return chosen;
+        }
+        if (auto chosen = considerCandidate((homePath / ".fonts/Arial.ttf").string())) {
+            return chosen;
+        }
+        if (auto chosen = considerCandidate((homePath / ".local/share/fonts/DejaVuSans.ttf").string())) {
+            return chosen;
+        }
+        if (auto chosen = considerCandidate((homePath / ".local/share/fonts/Arial.ttf").string())) {
+            return chosen;
+        }
+    }
+
     for (const auto& dir : fontDirectories) {
-        appendFontsFromDirectory(dir);
+        if (auto chosen = searchDirectory(dir)) {
+            return chosen;
+        }
     }
 
     if (homeEnv) {
-        appendFontsFromDirectory(fs::path(homeEnv) / ".fonts");
-        appendFontsFromDirectory(fs::path(homeEnv) / ".local/share/fonts");
+        if (auto chosen = searchDirectory(fs::path(homeEnv) / ".fonts")) {
+            return chosen;
+        }
+        if (auto chosen = searchDirectory(fs::path(homeEnv) / ".local/share/fonts")) {
+            return chosen;
+        }
     }
 
-    return candidates;
+    return std::nullopt;
 }
 } // namespace
 
@@ -842,30 +871,30 @@ void SDL2Graphics::drawMenuItems(const std::vector<MenuItem>& items, int selecte
 
 // Font implementation methods
 bool SDL2Graphics::initializeFonts() {
-    const auto fontCandidates = collectFontCandidates();
+    auto tryLoadFont = [](const std::string& path) {
+        TTF_Font* testFont = TTF_OpenFont(path.c_str(), 24);
+        if (!testFont) {
+            return false;
+        }
+        TTF_CloseFont(testFont);
+        return true;
+    };
 
-    if (fontCandidates.empty()) {
-        setError("Could not find any suitable font file. Please install Arial, DejaVu Sans, or Liberation Sans fonts.");
-        return false;
-    }
-
-    TTF_Font* testFont = nullptr;
     std::string selectedFontPath;
 
-    for (const auto& path : fontCandidates) {
-        if (!isUsableFontFile(path)) {
-            continue;
-        }
-        testFont = TTF_OpenFont(path.c_str(), 24);
-        if (testFont) {
-            selectedFontPath = path;
-            TTF_CloseFont(testFont);
-            break;
+    const auto& cachedPath = graphics::font_cache::get();
+    if (cachedPath && isUsableFontFile(*cachedPath) && tryLoadFont(*cachedPath)) {
+        selectedFontPath = *cachedPath;
+    } else {
+        auto resolved = resolveFontPath(tryLoadFont);
+        if (resolved) {
+            selectedFontPath = *resolved;
         }
     }
 
     if (selectedFontPath.empty()) {
         setError("Could not load any TrueType fonts. Please install Arial, DejaVu Sans, Liberation Sans, or Noto Sans fonts.");
+        graphics::font_cache::reset();
         return false;
     }
 
@@ -877,9 +906,11 @@ bool SDL2Graphics::initializeFonts() {
     if (!_fontLarge || !_fontMedium || !_fontSmall) {
         setError(std::string("Failed to load font: ") + TTF_GetError());
         shutdownFonts();
+        graphics::font_cache::reset();
         return false;
     }
 
+    graphics::font_cache::set(selectedFontPath);
     return true;
 }
 

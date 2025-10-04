@@ -20,9 +20,10 @@ RAYLIB_LIB = $(OUT_DIR)/lib_raylib.so
 ALL_LIBS = $(NCURSES_LIB) $(SDL2_LIB) $(OPENGL_LIB) $(RAYLIB_LIB)
 
 # Sources (moved to src/)
-SDL2_SOURCES = src/SDL2Graphics.cpp
+COMMON_SOURCES = src/FontCache.cpp
+SDL2_SOURCES = src/SDL2Graphics.cpp $(COMMON_SOURCES)
 NCURSES_SOURCES = src/NCursesGraphics.cpp
-OPENGL_SOURCES = src/OpenGLGraphics.cpp
+OPENGL_SOURCES = src/OpenGLGraphics.cpp $(COMMON_SOURCES)
 RAYLIB_SOURCES = src/RaylibGraphics.cpp
 
 # Headers (moved to include/)

@@ -1,4 +1,5 @@
 #include "OpenGLGraphics.hpp"
+#include "FontCache.hpp"
 #include "../../game_data.hpp"
 #include "../../MenuSystem.hpp"
 #include <GL/gl.h>
@@ -11,6 +12,7 @@
 #include <vector>
 #include <unordered_set>
 #include <algorithm>
+#include <optional>
 #include <cstdlib>
 #include <cctype>
 
@@ -30,7 +32,8 @@ bool isUsableFontFile(const fs::path& path) {
     return fs::exists(path, ec) && fs::is_regular_file(path, ec);
 }
 
-std::vector<std::string> collectFontCandidates() {
+template <typename TryLoad>
+std::optional<std::string> resolveFontPath(TryLoad&& tryLoad) {
     static const std::vector<std::string> priorityFonts = {
         "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSansNarrow-Regular.ttf",
@@ -81,37 +84,29 @@ std::vector<std::string> collectFontCandidates() {
         "/usr/share/fonts/truetype/cantarell"
     };
 
-    std::vector<std::string> candidates;
-    candidates.reserve(priorityFonts.size());
     std::unordered_set<std::string> seen;
     seen.reserve(priorityFonts.size() * 2);
 
-    auto pushUnique = [&](const std::string& path) {
+    auto considerCandidate = [&](const std::string& path) -> std::optional<std::string> {
         if (path.empty()) {
-            return;
+            return std::nullopt;
         }
-        if (seen.insert(path).second) {
-            candidates.push_back(path);
+        if (!seen.insert(path).second) {
+            return std::nullopt;
         }
+        if (!isUsableFontFile(path)) {
+            return std::nullopt;
+        }
+        if (tryLoad(path)) {
+            return path;
+        }
+        return std::nullopt;
     };
 
-    for (const auto& path : priorityFonts) {
-        pushUnique(path);
-    }
-
-    const char* homeEnv = std::getenv("HOME");
-    if (homeEnv) {
-        fs::path homePath(homeEnv);
-        pushUnique((homePath / ".fonts/DejaVuSans.ttf").string());
-        pushUnique((homePath / ".fonts/Arial.ttf").string());
-        pushUnique((homePath / ".local/share/fonts/DejaVuSans.ttf").string());
-        pushUnique((homePath / ".local/share/fonts/Arial.ttf").string());
-    }
-
-    auto appendFontsFromDirectory = [&](const fs::path& dir) {
+    auto searchDirectory = [&](const fs::path& dir) -> std::optional<std::string> {
         std::error_code ec;
         if (!fs::exists(dir, ec) || !fs::is_directory(dir, ec)) {
-            return;
+            return std::nullopt;
         }
         try {
             for (const auto& entry : fs::recursive_directory_iterator(dir, fs::directory_options::skip_permission_denied)) {
@@ -119,26 +114,60 @@ std::vector<std::string> collectFontCandidates() {
                     continue;
                 }
                 auto ext = entry.path().extension().string();
-                std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) {
+                    return static_cast<char>(std::tolower(c));
+                });
                 if (ext == ".ttf" || ext == ".otf" || ext == ".ttc") {
-                    pushUnique(entry.path().string());
+                    if (auto chosen = considerCandidate(entry.path().string())) {
+                        return chosen;
+                    }
                 }
             }
         } catch (const std::exception&) {
             // Ignore directories we cannot traverse
         }
+        return std::nullopt;
     };
 
+    for (const auto& path : priorityFonts) {
+        if (auto chosen = considerCandidate(path)) {
+            return chosen;
+        }
+    }
+
+    const char* homeEnv = std::getenv("HOME");
+    if (homeEnv) {
+        fs::path homePath(homeEnv);
+        if (auto chosen = considerCandidate((homePath / ".fonts/DejaVuSans.ttf").string())) {
+            return chosen;
+        }
+        if (auto chosen = considerCandidate((homePath / ".fonts/Arial.ttf").string())) {
+            return chosen;
+        }
+        if (auto chosen = considerCandidate((homePath / ".local/share/fonts/DejaVuSans.ttf").string())) {
+            return chosen;
+        }
+        if (auto chosen = considerCandidate((homePath / ".local/share/fonts/Arial.ttf").string())) {
+            return chosen;
+        }
+    }
+
     for (const auto& dir : fontDirectories) {
-        appendFontsFromDirectory(dir);
+        if (auto chosen = searchDirectory(dir)) {
+            return chosen;
+        }
     }
 
     if (homeEnv) {
-        appendFontsFromDirectory(fs::path(homeEnv) / ".fonts");
-        appendFontsFromDirectory(fs::path(homeEnv) / ".local/share/fonts");
+        if (auto chosen = searchDirectory(fs::path(homeEnv) / ".fonts")) {
+            return chosen;
+        }
+        if (auto chosen = searchDirectory(fs::path(homeEnv) / ".local/share/fonts")) {
+            return chosen;
+        }
     }
 
-    return candidates;
+    return std::nullopt;
 }
 } // namespace
 
@@ -560,16 +589,22 @@ bool OpenGLGraphics::initializeFonts() {
         return false;
     }
 
-    const auto fontCandidates = collectFontCandidates();
+    auto tryLoadFont = [&](const std::string& path) {
+        return loadFontFace(path);
+    };
+
+    std::string selectedFontPath;
     bool faceLoaded = false;
 
-    for (const auto& path : fontCandidates) {
-        if (!isUsableFontFile(path)) {
-            continue;
-        }
-        if (loadFontFace(path)) {
+    const auto& cachedPath = graphics::font_cache::get();
+    if (cachedPath && isUsableFontFile(*cachedPath) && tryLoadFont(*cachedPath)) {
+        selectedFontPath = *cachedPath;
+        faceLoaded = true;
+    } else {
+        auto resolved = resolveFontPath(tryLoadFont);
+        if (resolved) {
+            selectedFontPath = *resolved;
             faceLoaded = true;
-            break;
         }
     }
 
@@ -577,15 +612,18 @@ bool OpenGLGraphics::initializeFonts() {
         std::cerr << "[OpenGLGraphics] No suitable font file found" << std::endl;
         FT_Done_FreeType(_ftLibrary);
         _ftLibrary = nullptr;
+        graphics::font_cache::reset();
         return false;
     }
 
     if (!buildGlyphCache()) {
         std::cerr << "[OpenGLGraphics] Failed building glyph cache" << std::endl;
         shutdownFonts();
+        graphics::font_cache::reset();
         return false;
     }
 
+    graphics::font_cache::set(selectedFontPath);
     _fontInitialized = true;
     return true;
 }
