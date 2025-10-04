@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <fstream>
 #include <vector>
+#include <limits>
 
 static void verify_tile(const game_data &data, int x, int y, int expected, const char *label) {
     int value = data.get_map_value(x, y, 0);
@@ -131,7 +132,14 @@ static void test_oversized_snake_length_loads_cleanly() {
     {
         std::ofstream saveFile(savePath);
         assert(saveFile.is_open());
-        saveFile << "{\"game\": {\"snake_length\": 999999}}";
+        saveFile << R"({"game": {"snake_length": 999999,
+                                 "apples_eaten": "9999999999999999999999999999",
+                                 "apples_normal_eaten": "-25",
+                                 "apples_frosty_eaten": "abc",
+                                 "apples_fire_eaten": "  42  ",
+                                 "steps_normal": "2147483648",
+                                 "steps_frosty": "-10",
+                                 "steps_fire": "100xyz"}})";
     }
 
     game_data data(10, 10);
@@ -142,6 +150,14 @@ static void test_oversized_snake_length_loads_cleanly() {
     int reportedLength = data.get_snake_length(0);
     assert(reportedLength >= 1);
     assert(reportedLength <= MAX_SNAKE_LENGTH);
+
+    assert(data.get_apples_eaten() == std::numeric_limits<int>::max());
+    assert(data.get_apples_normal_eaten() == 0);
+    assert(data.get_apples_frosty_eaten() == 0);
+    assert(data.get_apples_fire_eaten() == 42);
+    assert(data.get_tile_normal_steps() == std::numeric_limits<int>::max());
+    assert(data.get_tile_frosty_steps() == 0);
+    assert(data.get_tile_fire_steps() == 0);
 
     data.set_direction_moving(0, DIRECTION_RIGHT);
     int updateResult = data.update_game_map(1.0);
@@ -169,9 +185,46 @@ static void test_oversized_snake_length_loads_cleanly() {
     assert(countedSegments == reportedLength);
     assert(data.get_snake_length(0) == reportedLength);
 
+    {
+        std::ofstream saveFile(savePath);
+        assert(saveFile.is_open());
+        saveFile << R"({"game": {"snake_length": "-7"}})";
+    }
+
+    int secondLoad = data.load_game();
+    assert(secondLoad == 0);
+    assert(data.get_snake_length(0) == 1);
+
     std::filesystem::remove(savePath);
 
     std::cout << "Oversized snake length load regression test passed" << std::endl;
+}
+
+static void test_corner_tile_map_is_rejected() {
+    const std::filesystem::path mapPath = std::filesystem::path("Test/maps") / "corner_dead_end.nib";
+    {
+        std::ofstream mapFile(mapPath);
+        assert(mapFile.is_open());
+        mapFile << "WRAP_AROUND_EDGES=0\n";
+        mapFile << "ADDITIONAL_FRUITS=0\n";
+        mapFile << "CUSTOM_MAP=\n";
+        mapFile << "1111111\n";
+        mapFile << "1456701\n";
+        mapFile << "1011101\n";
+        mapFile << "1010001\n";
+        mapFile << "1110111\n";
+        mapFile << "1000001\n";
+        mapFile << "1111111\n";
+    }
+
+    GameEngine engine(10, 10);
+    int loadResult = engine.loadBonusMap(mapPath.string().c_str());
+    assert(loadResult != 0);
+    assert(engine._usingBonusMap == false);
+
+    std::filesystem::remove(mapPath);
+
+    std::cout << "Corner dead-end map rejection test passed" << std::endl;
 }
 
 int main() {
@@ -179,5 +232,6 @@ int main() {
     test_snake_length_resets_after_game_over();
     test_status_effects_reset_after_bonus_reload();
     test_oversized_snake_length_loads_cleanly();
+    test_corner_tile_map_is_rejected();
     return 0;
 }

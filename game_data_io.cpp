@@ -5,6 +5,86 @@
 #include <string>
 #include <cstring>
 #include <limits>
+#include <cerrno>
+#include <charconv>
+#include <string_view>
+#include <cctype>
+
+namespace {
+
+bool parse_clamped_int(const char *valueStr, int minValue, int maxValue, int &out)
+{
+    if (!valueStr)
+        return false;
+
+    std::string_view view(valueStr);
+    auto trim = [](std::string_view &sv) {
+        while (!sv.empty() && std::isspace(static_cast<unsigned char>(sv.front())))
+            sv.remove_prefix(1);
+        while (!sv.empty() && std::isspace(static_cast<unsigned char>(sv.back())))
+            sv.remove_suffix(1);
+    };
+    trim(view);
+    if (view.empty())
+        return false;
+
+    long long parsed = 0;
+    bool parsedSuccessfully = false;
+
+    const char *begin = view.data();
+    const char *end = begin + view.size();
+    auto fcResult = std::from_chars(begin, end, parsed);
+    if (fcResult.ec == std::errc() && fcResult.ptr == end)
+    {
+        parsedSuccessfully = true;
+    }
+    else if (fcResult.ec == std::errc::result_out_of_range)
+    {
+        parsed = (view.front() == '-') ? std::numeric_limits<long long>::min()
+                                       : std::numeric_limits<long long>::max();
+        parsedSuccessfully = true;
+    }
+    else
+    {
+        errno = 0;
+        std::string buffer(view);
+        char *endptr = nullptr;
+        long long value = std::strtoll(buffer.c_str(), &endptr, 10);
+        if (endptr != buffer.c_str() && endptr)
+        {
+            while (*endptr != '\0')
+            {
+                if (!std::isspace(static_cast<unsigned char>(*endptr)))
+                    break;
+                ++endptr;
+            }
+            if (*endptr == '\0')
+            {
+                parsed = value;
+                parsedSuccessfully = true;
+            }
+        }
+        if (errno == ERANGE && parsedSuccessfully)
+        {
+            parsed = (view.front() == '-') ? std::numeric_limits<long long>::min()
+                                           : std::numeric_limits<long long>::max();
+            parsedSuccessfully = true;
+        }
+    }
+
+    if (!parsedSuccessfully)
+        return false;
+
+    if (parsed < static_cast<long long>(minValue))
+        parsed = static_cast<long long>(minValue);
+    else if (parsed > static_cast<long long>(maxValue))
+        parsed = static_cast<long long>(maxValue);
+
+    out = static_cast<int>(parsed);
+    return true;
+}
+
+} // anonymous namespace
 
 static std::filesystem::path get_save_dir() {
     return (std::filesystem::current_path() / "save_data");
@@ -168,16 +248,9 @@ int game_data::load_game() {
     json_item* len = json_find_item(group, "snake_length");
     if (len)
     {
-        char *endptr = nullptr;
-        long long parsed = std::strtoll(len->value, &endptr, 10);
-        if (endptr != len->value)
-        {
-            if (parsed < 1)
-                parsed = 1;
-            else if (parsed > MAX_SNAKE_LENGTH)
-                parsed = MAX_SNAKE_LENGTH;
-            desiredSnakeLength = static_cast<int>(parsed);
-        }
+        int parsed = 0;
+        if (parse_clamped_int(len->value, 1, MAX_SNAKE_LENGTH, parsed))
+            desiredSnakeLength = parsed;
     }
     json_item* ach = json_find_item(group, "achievement_snake50");
     if (ach)
@@ -191,88 +264,62 @@ int game_data::load_game() {
         else
             a.set_progress(ACH_GOAL_PRIMARY, 0);
     }
+    auto parse_counter = [](json_item *item, int minValue, int maxValue, int defaultValue) {
+        int parsed = 0;
+        if (item && parse_clamped_int(item->value, minValue, maxValue, parsed))
+            return parsed;
+        return defaultValue;
+    };
+
+    const int maxCounter = std::numeric_limits<int>::max();
+
     json_item *apples = json_find_item(group, "apples_eaten");
-    if (apples)
     {
-        int value = std::atoi(apples->value);
-        if (value < 0)
-            value = 0;
+        int value = parse_counter(apples, 0, maxCounter, 0);
         ft_achievement &a =
             this->_character.get_achievements().at(ACH_APPLES_EATEN);
-        if (value > std::numeric_limits<int>::max())
-            value = std::numeric_limits<int>::max();
         a.set_progress(ACH_GOAL_PRIMARY, value);
     }
     json_item *apples_normal = json_find_item(group, "apples_normal_eaten");
-    if (apples_normal)
     {
-        int value = std::atoi(apples_normal->value);
-        if (value < 0)
-            value = 0;
+        int value = parse_counter(apples_normal, 0, maxCounter, 0);
         ft_achievement &a =
             this->_character.get_achievements().at(ACH_APPLES_NORMAL_EATEN);
-        if (value > std::numeric_limits<int>::max())
-            value = std::numeric_limits<int>::max();
         a.set_progress(ACH_GOAL_PRIMARY, value);
     }
     json_item *apples_frosty = json_find_item(group, "apples_frosty_eaten");
-    if (apples_frosty)
     {
-        int value = std::atoi(apples_frosty->value);
-        if (value < 0)
-            value = 0;
+        int value = parse_counter(apples_frosty, 0, maxCounter, 0);
         ft_achievement &a =
             this->_character.get_achievements().at(ACH_APPLES_FROSTY_EATEN);
-        if (value > std::numeric_limits<int>::max())
-            value = std::numeric_limits<int>::max();
         a.set_progress(ACH_GOAL_PRIMARY, value);
     }
     json_item *apples_fire = json_find_item(group, "apples_fire_eaten");
-    if (apples_fire)
     {
-        int value = std::atoi(apples_fire->value);
-        if (value < 0)
-            value = 0;
+        int value = parse_counter(apples_fire, 0, maxCounter, 0);
         ft_achievement &a =
             this->_character.get_achievements().at(ACH_APPLES_FIRE_EATEN);
-        if (value > std::numeric_limits<int>::max())
-            value = std::numeric_limits<int>::max();
         a.set_progress(ACH_GOAL_PRIMARY, value);
     }
     json_item *steps_normal = json_find_item(group, "steps_normal");
-    if (steps_normal)
     {
-        int value = std::atoi(steps_normal->value);
-        if (value < 0)
-            value = 0;
+        int value = parse_counter(steps_normal, 0, maxCounter, 0);
         ft_achievement &a =
             this->_character.get_achievements().at(ACH_TILE_NORMAL_STEPS);
-        if (value > std::numeric_limits<int>::max())
-            value = std::numeric_limits<int>::max();
         a.set_progress(ACH_GOAL_PRIMARY, value);
     }
     json_item *steps_frosty = json_find_item(group, "steps_frosty");
-    if (steps_frosty)
     {
-        int value = std::atoi(steps_frosty->value);
-        if (value < 0)
-            value = 0;
+        int value = parse_counter(steps_frosty, 0, maxCounter, 0);
         ft_achievement &a =
             this->_character.get_achievements().at(ACH_TILE_FROSTY_STEPS);
-        if (value > std::numeric_limits<int>::max())
-            value = std::numeric_limits<int>::max();
         a.set_progress(ACH_GOAL_PRIMARY, value);
     }
     json_item *steps_fire = json_find_item(group, "steps_fire");
-    if (steps_fire)
     {
-        int value = std::atoi(steps_fire->value);
-        if (value < 0)
-            value = 0;
+        int value = parse_counter(steps_fire, 0, maxCounter, 0);
         ft_achievement &a =
             this->_character.get_achievements().at(ACH_TILE_FIRE_STEPS);
-        if (value > std::numeric_limits<int>::max())
-            value = std::numeric_limits<int>::max();
         a.set_progress(ACH_GOAL_PRIMARY, value);
     }
     this->reset_board();

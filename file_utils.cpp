@@ -148,6 +148,42 @@ static int parse_game_rules_lines(const std::vector<std::string> &lines,
         const size_t MIN_DIM = 10;
         const size_t MAX_DIM = 30;
         size_t map_height = rules.custom_map.size();
+        if (map_height > 0) {
+            auto tile_at = [&](int x, int y) -> char {
+                if (rules.wrap_around_edges) {
+                    int width = static_cast<int>(map_width);
+                    int height = static_cast<int>(map_height);
+                    x = (x % width + width) % width;
+                    y = (y % height + height) % height;
+                    return rules.custom_map[static_cast<size_t>(y)][static_cast<size_t>(x)];
+                }
+                if (x < 0 || y < 0 ||
+                    x >= static_cast<int>(map_width) ||
+                    y >= static_cast<int>(map_height)) {
+                    return MAP_TILE_WALL;
+                }
+                return rules.custom_map[static_cast<size_t>(y)][static_cast<size_t>(x)];
+            };
+            for (size_t y = 0; y < map_height; ++y) {
+                for (size_t x = 0; x < map_width; ++x) {
+                    char c = rules.custom_map[y][x];
+                    if (c == MAP_TILE_WALL)
+                        continue;
+                    int surrounding_walls = 0;
+                    if (tile_at(static_cast<int>(x) - 1, static_cast<int>(y)) == MAP_TILE_WALL)
+                        ++surrounding_walls;
+                    if (tile_at(static_cast<int>(x) + 1, static_cast<int>(y)) == MAP_TILE_WALL)
+                        ++surrounding_walls;
+                    if (tile_at(static_cast<int>(x), static_cast<int>(y) - 1) == MAP_TILE_WALL)
+                        ++surrounding_walls;
+                    if (tile_at(static_cast<int>(x), static_cast<int>(y) + 1) == MAP_TILE_WALL)
+                        ++surrounding_walls;
+                    if (surrounding_walls >= 3) {
+                        return fail("Custom map contains a tile enclosed by walls on three sides");
+                    }
+                }
+            }
+        }
         if (map_width < MIN_DIM || map_width > MAX_DIM ||
             map_height < MIN_DIM || map_height > MAX_DIM ||
             head_count != 1 ||
