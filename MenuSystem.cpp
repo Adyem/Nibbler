@@ -320,7 +320,7 @@ std::vector<std::string> MenuSystem::getInstructionsContent() const {
         " Arrow Keys - Navigate menu items",
         " ENTER/SPACE - Select menu item",
         " ESC - Go back to previous menu",
-        " Keys 1,2,3 - Switch graphics libraries anytime",
+        " Keys 1,2,3,4 - Switch graphics libraries anytime",
         "",
         "GAME OBJECTIVE:",
         " Control your snake to eat food and grow longer.",
