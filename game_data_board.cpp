@@ -1,5 +1,6 @@
 #include "game_data.hpp"
 #include "libft/RNG/RNG.hpp"
+#include <algorithm>
 
 void game_data::set_map_value(int x, int y, int layer, int value) {
     int prev_val = this->_map.get(x, y, layer);
@@ -32,6 +33,85 @@ void game_data::set_player_snake_length(int player, int length) {
     else if (length > MAX_SNAKE_LENGTH)
         length = MAX_SNAKE_LENGTH;
     this->_snake_length[player] = length;
+}
+
+void game_data::apply_snake_segments(int player, const std::vector<t_coordinates> &segments) {
+    if (player < 0 || player >= 4)
+        return;
+
+    this->_snake_segments[player].clear();
+
+    size_t limit = std::min<size_t>(segments.size(), static_cast<size_t>(MAX_SNAKE_LENGTH));
+    for (size_t i = 0; i < limit; ++i)
+        this->_snake_segments[player].push_back(segments[i]);
+
+    this->_snake_length[player] = static_cast<int>(this->_snake_segments[player].size());
+
+    this->write_snake_to_map(player);
+
+    for (const t_coordinates &coord : this->_snake_segments[player])
+        this->remove_empty_cell(coord.x, coord.y);
+}
+
+void game_data::rebuild_snake_segments_from_map(int player) {
+    if (player < 0 || player >= 4)
+        return;
+
+    std::deque<t_coordinates> rebuilt;
+    int offset = (player + 1) * 1000000;
+    int max_value = offset + MAX_SNAKE_LENGTH;
+
+    size_t width = this->_map.get_width();
+    size_t height = this->_map.get_height();
+
+    std::vector<std::pair<int, t_coordinates>> found;
+    found.reserve(static_cast<size_t>(this->_snake_length[player]));
+
+    for (size_t y = 0; y < height; ++y)
+    {
+        for (size_t x = 0; x < width; ++x)
+        {
+            int value = this->_map.get(x, y, 2);
+            if (value >= offset + 1 && value <= max_value)
+            {
+                found.emplace_back(value, t_coordinates{static_cast<int>(x), static_cast<int>(y)});
+            }
+        }
+    }
+
+    std::sort(found.begin(), found.end(), [](const std::pair<int, t_coordinates> &lhs,
+                                            const std::pair<int, t_coordinates> &rhs) {
+        return lhs.first < rhs.first;
+    });
+
+    for (const auto &entry : found)
+    {
+        rebuilt.push_back(entry.second);
+        if (rebuilt.size() >= static_cast<size_t>(MAX_SNAKE_LENGTH))
+            break;
+    }
+
+    this->_snake_segments[player].swap(rebuilt);
+    this->_snake_length[player] = static_cast<int>(this->_snake_segments[player].size());
+    this->write_snake_to_map(player);
+}
+
+void game_data::sync_snake_segments_from_map() {
+    for (int player = 0; player < 4; ++player)
+        this->rebuild_snake_segments_from_map(player);
+}
+
+void game_data::write_snake_to_map(int player) {
+    if (player < 0 || player >= 4)
+        return;
+
+    int offset = (player + 1) * 1000000;
+    int index = 1;
+    for (const t_coordinates &coord : this->_snake_segments[player])
+    {
+        this->_map.set(coord.x, coord.y, 2, offset + index);
+        ++index;
+    }
 }
 
 void game_data::reset_player_status_effects(int player) {
@@ -127,8 +207,8 @@ void game_data::reset_board() {
     int i = 0;
     while (i < 4) {
         this->reset_player_status_effects(i);
-        // Only initialize Player 1 snake, others are inactive (length 0)
-        this->_snake_length[i] = (i == 0) ? 4 : 0;
+        this->_snake_segments[i].clear();
+        this->_snake_length[i] = 0;
         ++i;
     }
     this->_amount_players_dead = 0;
@@ -137,18 +217,14 @@ void game_data::reset_board() {
     int mid_y = static_cast<int>(this->_map.get_height() / 2);
 
     // Initialize snake with 4 segments in the middle
-    this->_map.set(mid_x, mid_y, 2, SNAKE_HEAD_PLAYER_1);
-    this->remove_empty_cell(mid_x, mid_y);
-
-    // Add 3 body segments to the left of the head
-    // Snake segments are numbered: head=1000001, body=1000002, 1000003, 1000004, etc.
+    std::vector<t_coordinates> initial_segments;
+    initial_segments.push_back((t_coordinates){mid_x, mid_y});
     for (int j = 1; j < 4; j++) {
         int body_x = mid_x - j;
-        if (body_x >= 0) {
-            this->_map.set(body_x, mid_y, 2, SNAKE_HEAD_PLAYER_1 + j);
-            this->remove_empty_cell(body_x, mid_y);
-        }
+        if (body_x >= 0)
+            initial_segments.push_back((t_coordinates){body_x, mid_y});
     }
+    this->apply_snake_segments(0, initial_segments);
 
     this->spawn_food();
     if (this->_additional_food_items)
