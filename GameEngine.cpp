@@ -496,6 +496,8 @@ void GameEngine::switchGraphicsLibrary(int librarySlot) {
         std::this_thread::yield();
     }
 
+    std::string failureReason;
+
     // Switch to new library
     if (_libraryManager.switchToLibrary(actualIndex) == 0) {
         IGraphicsLibrary* newLib = _libraryManager.getCurrentLibrary();
@@ -531,6 +533,7 @@ void GameEngine::switchGraphicsLibrary(int librarySlot) {
             } else {
                 std::string errorMsg = "Failed to initialize new graphics library: ";
                 errorMsg += (newLib->getError() ? newLib->getError() : "Unknown error");
+                std::cerr << errorMsg << std::endl;
 
                 // Switch back to the previous library
                 const char* previousLibName = _libraryManager.getLibraryName(previousIndex);
@@ -541,30 +544,88 @@ void GameEngine::switchGraphicsLibrary(int librarySlot) {
                         restoredLib->setMenuSystem(&_menuSystem);
                         std::string restoredMessage = std::string("Restored previous graphics library: ") +
                                                         (previousLibName ? previousLibName : "Unknown");
+                        restoredMessage += ". Reason: " + errorMsg;
                         restoredLib->setSwitchMessage(restoredMessage, 120);
                     } else if (restoredLib) {
                         std::string failureMessage = std::string("Failed to reinitialize previous graphics library: ") +
                                                      (previousLibName ? previousLibName : "Unknown");
+                        failureMessage += ". Reason: " + errorMsg;
                         restoredLib->setSwitchMessage(failureMessage, 180);
                     }
                 } else if (newLib) {
                     // If we can't restore, show error in the failed new library
                     std::string failureMessage = std::string("Failed to restore previous graphics library: ") +
                                                  (previousLibName ? previousLibName : "Unknown");
+                    failureMessage += ". Reason: " + errorMsg;
                     newLib->setSwitchMessage(failureMessage, 180);
                 }
             }
         } else {
-            // Show error in current library if we can't get new library instance
-            if (currentLib) {
-                currentLib->setSwitchMessage("Failed to get new graphics library instance", 180);
+            // Couldn't get the new library instance; restore previous library immediately
+            failureReason = "Failed to get new graphics library instance";
+            std::cerr << failureReason << std::endl;
+            if (previousIndex >= 0 && _libraryManager.switchToLibrary(previousIndex) == 0) {
+                IGraphicsLibrary* restoredLib = _libraryManager.getCurrentLibrary();
+                if (restoredLib && restoredLib->initialize() == 0) {
+                    restoredLib->setFrameRate(60);
+                    restoredLib->setMenuSystem(&_menuSystem);
+                    std::string restoredMessage = std::string("Restored previous graphics library: ") +
+                                                    (currentLibName ? currentLibName : "Unknown");
+                    if (!failureReason.empty()) {
+                        restoredMessage += ". Reason: " + failureReason;
+                    }
+                    restoredLib->setSwitchMessage(restoredMessage, 180);
+                } else if (restoredLib) {
+                    std::string failureMessage = std::string("Failed to reinitialize previous graphics library: ") +
+                                                 (currentLibName ? currentLibName : "Unknown");
+                    if (!failureReason.empty()) {
+                        failureMessage += ". Reason: " + failureReason;
+                    }
+                    restoredLib->setSwitchMessage(failureMessage, 180);
+                }
+            } else if (currentLib) {
+                if (currentLib->initialize() == 0) {
+                    currentLib->setFrameRate(60);
+                    currentLib->setMenuSystem(&_menuSystem);
+                    std::string restoredMessage = std::string("Restored previous graphics library: ") +
+                                                  (currentLibName ? currentLibName : "Unknown");
+                    if (!failureReason.empty()) {
+                        restoredMessage += ". Reason: " + failureReason;
+                    }
+                    currentLib->setSwitchMessage(restoredMessage, 180);
+                } else {
+                    std::string message = failureReason.empty() ?
+                                            "Failed to switch graphics library" :
+                                            failureReason;
+                    currentLib->setSwitchMessage(message, 180);
+                }
             }
         }
     } else {
+        failureReason = _libraryManager.getError() ? _libraryManager.getError() : "Unknown error";
+        if (!failureReason.empty()) {
+            std::cerr << "Failed to switch graphics library: " << failureReason << std::endl;
+        }
         // Show error in current library if switching failed
         if (currentLib) {
-            std::string message = std::string("Failed to switch to library: ") + _libraryManager.getError();
+            std::string message = std::string("Failed to switch to library: ") + failureReason;
             currentLib->setSwitchMessage(message, 180);
+
+            // Reinitialize the previous library so the renderer remains usable
+            if (currentLib->initialize() == 0) {
+                currentLib->setFrameRate(60);
+                currentLib->setMenuSystem(&_menuSystem);
+                std::string restoreMessage = std::string("Restored previous graphics library: ") +
+                                             (currentLibName ? currentLibName : "Unknown");
+                if (!failureReason.empty()) {
+                    restoreMessage += ". Reason: " + failureReason;
+                }
+                currentLib->setSwitchMessage(restoreMessage, 180);
+            } else {
+                std::string failureMessage = std::string("Failed to reinitialize previous graphics library: ") +
+                                             (currentLibName ? currentLibName : "Unknown");
+                currentLib->setSwitchMessage(failureMessage, 180);
+            }
         }
     }
 }
