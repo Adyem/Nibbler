@@ -19,7 +19,8 @@ static const char* slotName(int slot) {
 
 GameEngine::GameEngine(int width, int height)
     : _gameData(width, height), _initialized(false), _gameStarted(false), _usingBonusMap(false),
-      _cachedBonusRules(std::nullopt) {
+      _baselineBoardWidth(width), _baselineBoardHeight(height), _baselineWrapAroundEdges(false),
+      _baselineAdditionalFoodItems(false), _cachedBonusRules(std::nullopt) {
     clearError();
 
     // Init library key mapping to missing
@@ -29,6 +30,8 @@ GameEngine::GameEngine(int width, int height)
 
     // Initialize menu system with the actual board dimensions from command line
     GameSettings settings = _menuSystem.getSettings();
+    _baselineWrapAroundEdges = settings.wrapAroundEdges;
+    _baselineAdditionalFoodItems = settings.additionalFoodItems;
     settings.boardWidth = width;
     settings.boardHeight = height;
     _menuSystem.updateSettings(settings);
@@ -395,7 +398,18 @@ void GameEngine::handleGameOver() {
         print_error("Failed to reload bonus map rules; reverting to default board.");
         _cachedBonusRules.reset();
         _usingBonusMap = false;
+
+        GameSettings restoredSettings = _menuSystem.getSettings();
+        restoredSettings.boardWidth = _baselineBoardWidth;
+        restoredSettings.boardHeight = _baselineBoardHeight;
+        restoredSettings.wrapAroundEdges = _baselineWrapAroundEdges;
+        restoredSettings.additionalFoodItems = _baselineAdditionalFoodItems;
+        _menuSystem.updateSettings(restoredSettings);
         _menuSystem.setBonusFeaturesAvailable(false);
+
+        _gameData.resize_board(_baselineBoardWidth, _baselineBoardHeight);
+        _gameData.set_wrap_around_edges(_baselineWrapAroundEdges ? 1 : 0);
+        _gameData.set_additional_food_items(_baselineAdditionalFoodItems ? 1 : 0);
     }
 
     _gameData.reset_board();
