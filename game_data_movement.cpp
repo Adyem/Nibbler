@@ -1,6 +1,11 @@
 #include "game_data.hpp"
 #include <limits>
 
+namespace
+{
+constexpr int FIRE_BOOST_STEPS = 5;
+}
+
 t_coordinates game_data::get_head_coordinate(int head_to_find) {
     size_t index_y = 0;
     while (index_y < this->_map.get_height()) {
@@ -373,7 +378,7 @@ int game_data::update_snake_position(int player_head) {
         if (tile_val == FIRE_FOOD)
         {
             this->_fire_boost_active[player_number] = true;
-            this->_speed_boost_steps[player_number] = 0;
+            this->_speed_boost_steps[player_number] = FIRE_BOOST_STEPS;
             ft_achievement &fire =
                 this->_character.get_achievements().at(ACH_APPLES_FIRE_EATEN);
             int progress_fire = fire.get_progress(ACH_GOAL_PRIMARY);
@@ -417,7 +422,7 @@ int game_data::update_snake_position(int player_head) {
     if (on_fire_next)
     {
         this->_fire_boost_active[player_number] = true;
-        this->_speed_boost_steps[player_number] = 0;
+        this->_speed_boost_steps[player_number] = FIRE_BOOST_STEPS;
         this->_map.set(target_x, target_y, 0, GAME_TILE_EMPTY);
         if (this->_additional_food_items)
             this->spawn_fire_tile();
@@ -446,11 +451,17 @@ int game_data::update_game_map(double deltaTime)
             while (this->_update_timer[i] >= interval)
             {
                 this->_update_timer[i] -= interval;
-                bool boosted = (this->_fire_boost_active[i] || this->_speed_boost_steps[i] > 0);
                 if (this->update_snake_position(heads[i]))
                     ret = 1;
-                if (boosted && this->_speed_boost_steps[i] > 0 && !this->_fire_boost_active[i])
-                    this->_speed_boost_steps[i]--;
+                if (this->_speed_boost_steps[i] > 0)
+                {
+                    --this->_speed_boost_steps[i];
+                    if (this->_speed_boost_steps[i] <= 0)
+                    {
+                        this->_speed_boost_steps[i] = 0;
+                        this->_fire_boost_active[i] = false;
+                    }
+                }
                 interval = baseInterval;
                 if (this->_fire_boost_active[i] || this->_speed_boost_steps[i] > 0)
                     interval /= 1.5;
