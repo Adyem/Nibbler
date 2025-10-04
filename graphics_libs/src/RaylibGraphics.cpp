@@ -66,9 +66,9 @@ int RaylibGraphics::initialize() {
         SetExitKey(KEY_NULL);
 
         // Clear any potential OpenGL errors from context switch
+        BeginDrawing();
         ClearBackground({0, 0, 0, 255}); // Use explicit Color struct
         EndDrawing(); // Force a frame to initialize graphics state
-        BeginDrawing();
 
     } catch (...) {
         setError("Exception during Raylib window initialization - likely OpenGL context conflict");
