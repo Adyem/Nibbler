@@ -32,6 +32,10 @@ class GameEngine {
     int _defaultLibIndex;
     bool _libSlotAvailable[4];
     int _lastAppliedFPS;
+    int _baselineBoardWidth;
+    int _baselineBoardHeight;
+    bool _baselineWrapAroundEdges;
+    bool _baselineAdditionalFoodItems;
 
     void gameLoop();
     void handleInput(GameKey key, bool& shouldQuit);
