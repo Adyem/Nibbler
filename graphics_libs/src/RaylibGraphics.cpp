@@ -134,7 +134,7 @@ void RaylibGraphics::render(const game_data& game) {
                 DrawRectangle(px, py, cellSize, cellSize, {COLOR_FIRE_FOOD.r, COLOR_FIRE_FOOD.g, COLOR_FIRE_FOOD.b, COLOR_FIRE_FOOD.a});
             } else if (l2 == FROSTY_FOOD) {
                 DrawRectangle(px, py, cellSize, cellSize, {COLOR_FROSTY_FOOD.r, COLOR_FROSTY_FOOD.g, COLOR_FROSTY_FOOD.b, COLOR_FROSTY_FOOD.a});
-            } else if (l2 >= SNAKE_HEAD_PLAYER_1 && l2 < SNAKE_HEAD_PLAYER_1 + 1000000) {
+            } else if (l2 >= SNAKE_HEAD_PLAYER_1) {
                 bool headTile = (l2 % 1000000 == 1);
                 auto c = headTile ? head : body;
                 DrawRectangle(px, py, cellSize, cellSize, {c.r, c.g, c.b, c.a});
