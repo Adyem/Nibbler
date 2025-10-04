@@ -164,9 +164,21 @@ int game_data::load_game() {
         json_free_groups(root);
         return (1);
     }
+    int desiredSnakeLength = -1;
     json_item* len = json_find_item(group, "snake_length");
     if (len)
-        this->_snake_length[0] = std::atoi(len->value);
+    {
+        char *endptr = nullptr;
+        long long parsed = std::strtoll(len->value, &endptr, 10);
+        if (endptr != len->value)
+        {
+            if (parsed < 1)
+                parsed = 1;
+            else if (parsed > MAX_SNAKE_LENGTH)
+                parsed = MAX_SNAKE_LENGTH;
+            desiredSnakeLength = static_cast<int>(parsed);
+        }
+    }
     json_item* ach = json_find_item(group, "achievement_snake50");
     if (ach)
     {
@@ -263,6 +275,103 @@ int game_data::load_game() {
             value = std::numeric_limits<int>::max();
         a.set_progress(ACH_GOAL_PRIMARY, value);
     }
+    this->reset_board();
+
+    auto count_player_one_segments = [&]() -> int {
+        int count = 0;
+        size_t width = this->_map.get_width();
+        size_t height = this->_map.get_height();
+        for (size_t y = 0; y < height; ++y)
+        {
+            for (size_t x = 0; x < width; ++x)
+            {
+                int value = this->_map.get(x, y, 2);
+                if (value >= SNAKE_HEAD_PLAYER_1 && value < SNAKE_HEAD_PLAYER_2)
+                    ++count;
+            }
+        }
+        return count;
+    };
+
+    auto find_segment_coordinates = [&](int segmentValue, t_coordinates &out) -> bool {
+        size_t width = this->_map.get_width();
+        size_t height = this->_map.get_height();
+        for (size_t y = 0; y < height; ++y)
+        {
+            for (size_t x = 0; x < width; ++x)
+            {
+                if (this->_map.get(x, y, 2) == segmentValue)
+                {
+                    out.x = static_cast<int>(x);
+                    out.y = static_cast<int>(y);
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+
+    const int segmentOffset = SNAKE_HEAD_PLAYER_1 - 1;
+    int currentSegmentCount = count_player_one_segments();
+
+    if (desiredSnakeLength != -1)
+    {
+        if (desiredSnakeLength < currentSegmentCount)
+        {
+            while (currentSegmentCount > desiredSnakeLength)
+            {
+                t_coordinates tail;
+                if (!find_segment_coordinates(segmentOffset + currentSegmentCount, tail))
+                    break;
+                this->set_map_value(tail.x, tail.y, 2, 0);
+                --currentSegmentCount;
+            }
+        }
+        else if (desiredSnakeLength > currentSegmentCount)
+        {
+            t_coordinates tail;
+            if (find_segment_coordinates(segmentOffset + currentSegmentCount, tail))
+            {
+                int dx = -1;
+                int dy = 0;
+                if (currentSegmentCount > 1)
+                {
+                    t_coordinates beforeTail;
+                    if (find_segment_coordinates(segmentOffset + currentSegmentCount - 1, beforeTail))
+                    {
+                        dx = tail.x - beforeTail.x;
+                        dy = tail.y - beforeTail.y;
+                    }
+                }
+                if (dx == 0 && dy == 0)
+                {
+                    dx = -1;
+                    dy = 0;
+                }
+                int width = static_cast<int>(this->_map.get_width());
+                int height = static_cast<int>(this->_map.get_height());
+                while (currentSegmentCount < desiredSnakeLength)
+                {
+                    int nextX = tail.x + dx;
+                    int nextY = tail.y + dy;
+                    if (nextX < 0 || nextX >= width || nextY < 0 || nextY >= height)
+                        break;
+                    if (this->_map.get(nextX, nextY, 0) == GAME_TILE_WALL)
+                        break;
+                    if (this->_map.get(nextX, nextY, 2) != 0)
+                        break;
+                    ++currentSegmentCount;
+                    tail.x = nextX;
+                    tail.y = nextY;
+                    this->set_map_value(nextX, nextY, 2, segmentOffset + currentSegmentCount);
+                }
+            }
+        }
+    }
+
+    int actualCountPlaced = count_player_one_segments();
+    this->set_player_snake_length(0, actualCountPlaced);
+
     json_free_groups(root);
     return (0);
 }
