@@ -63,6 +63,9 @@ class SFMLGraphics : public IGraphicsLibrary {
     static const Color COLOR_SNAKE_BODY;
     static const Color COLOR_FOOD;
     static const Color COLOR_TEXT;
+    static const Color COLOR_FIRE_FOOD;
+    static const Color COLOR_FROSTY_FOOD;
+    static const Color COLOR_FIRE_TILE;
     static const Color COLOR_SELECTOR_BG;
     static const Color COLOR_SELECTED_TEXT;
 
@@ -73,6 +76,9 @@ class SFMLGraphics : public IGraphicsLibrary {
     static const Color ALT_COLOR_SNAKE_BODY;
     static const Color ALT_COLOR_FOOD;
     static const Color ALT_COLOR_TEXT;
+    static const Color ALT_COLOR_FIRE_FOOD;
+    static const Color ALT_COLOR_FROSTY_FOOD;
+    static const Color ALT_COLOR_FIRE_TILE;
 
     // Helper methods
     void setError(const std::string& error);

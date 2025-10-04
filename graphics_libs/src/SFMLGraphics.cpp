@@ -13,8 +13,11 @@ const SFMLGraphics::Color SFMLGraphics::COLOR_BACKGROUND(20, 20, 30);  // Dark b
 const SFMLGraphics::Color SFMLGraphics::COLOR_BORDER(100, 100, 120);   // Light gray
 const SFMLGraphics::Color SFMLGraphics::COLOR_SNAKE_HEAD(50, 200, 50); // Bright green
 const SFMLGraphics::Color SFMLGraphics::COLOR_SNAKE_BODY(30, 150, 30); // Dark green
-const SFMLGraphics::Color SFMLGraphics::COLOR_FOOD(200, 50, 50);       // Red
-const SFMLGraphics::Color SFMLGraphics::COLOR_TEXT(255, 255, 255);     // White
+const SFMLGraphics::Color SFMLGraphics::COLOR_FOOD(200, 50, 50);        // Red
+const SFMLGraphics::Color SFMLGraphics::COLOR_TEXT(255, 255, 255);      // White
+const SFMLGraphics::Color SFMLGraphics::COLOR_FIRE_FOOD(255, 140, 0);   // Bright orange
+const SFMLGraphics::Color SFMLGraphics::COLOR_FROSTY_FOOD(80, 200, 235); // Cyan for frosty food
+const SFMLGraphics::Color SFMLGraphics::COLOR_FIRE_TILE(200, 60, 40);   // Deep red for fire tiles
 
 // Alternative palette
 const SFMLGraphics::Color SFMLGraphics::ALT_COLOR_BACKGROUND(15, 15, 18);
@@ -23,6 +26,9 @@ const SFMLGraphics::Color SFMLGraphics::ALT_COLOR_SNAKE_HEAD(80, 180, 220);
 const SFMLGraphics::Color SFMLGraphics::ALT_COLOR_SNAKE_BODY(40, 120, 180);
 const SFMLGraphics::Color SFMLGraphics::ALT_COLOR_FOOD(235, 130, 35);
 const SFMLGraphics::Color SFMLGraphics::ALT_COLOR_TEXT(240, 240, 240);
+const SFMLGraphics::Color SFMLGraphics::ALT_COLOR_FIRE_FOOD(255, 165, 70);
+const SFMLGraphics::Color SFMLGraphics::ALT_COLOR_FROSTY_FOOD(110, 210, 245);
+const SFMLGraphics::Color SFMLGraphics::ALT_COLOR_FIRE_TILE(220, 80, 55);
 
 // Additional colors for better UI
 const SFMLGraphics::Color SFMLGraphics::COLOR_SELECTOR_BG(70, 130, 180);    // Steel blue for selector
@@ -152,6 +158,9 @@ void SFMLGraphics::render(const game_data& game) {
     const Color& head = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
     const Color& body = useAlt ? ALT_COLOR_SNAKE_BODY : COLOR_SNAKE_BODY;
     const Color& food = useAlt ? ALT_COLOR_FOOD : COLOR_FOOD;
+    const Color& fireFood = useAlt ? ALT_COLOR_FIRE_FOOD : COLOR_FIRE_FOOD;
+    const Color& frostyFood = useAlt ? ALT_COLOR_FROSTY_FOOD : COLOR_FROSTY_FOOD;
+    const Color& fireTile = useAlt ? ALT_COLOR_FIRE_TILE : COLOR_FIRE_TILE;
     const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
 
     // Clear screen with background color
@@ -186,6 +195,10 @@ void SFMLGraphics::render(const game_data& game) {
 
                 if (layer2Value == FOOD) {
                     drawRect(pixelX, pixelY, cellSize, cellSize, food);
+                } else if (layer2Value == FIRE_FOOD) {
+                    drawRect(pixelX, pixelY, cellSize, cellSize, fireFood);
+                } else if (layer2Value == FROSTY_FOOD) {
+                    drawRect(pixelX, pixelY, cellSize, cellSize, frostyFood);
                 } else if (layer2Value >= SNAKE_HEAD_PLAYER_1 && layer2Value < SNAKE_HEAD_PLAYER_1 + 1000000) {
                     // Snake head or body
                     if (layer2Value % 1000000 == 1) {
@@ -198,6 +211,8 @@ void SFMLGraphics::render(const game_data& game) {
                     int layer0Value = game.get_map_value(static_cast<int>(x), static_cast<int>(y), 0);
                     if (layer0Value == GAME_TILE_WALL) {
                         drawRect(pixelX, pixelY, cellSize, cellSize, border);
+                    } else if (layer0Value == GAME_TILE_FIRE) {
+                        drawRect(pixelX, pixelY, cellSize, cellSize, fireTile);
                     } else if (layer0Value == GAME_TILE_ICE) {
                         drawRect(pixelX, pixelY, cellSize, cellSize, bg);
                     }
