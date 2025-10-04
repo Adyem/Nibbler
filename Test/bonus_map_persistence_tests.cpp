@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <cmath>
 
 static void verify_tile(const game_data &data, int x, int y, int expected, const char *label) {
     int value = data.get_map_value(x, y, 0);
@@ -76,8 +77,52 @@ static void test_snake_length_resets_after_game_over() {
     std::cout << "Snake length reset regression test passed" << std::endl;
 }
 
+static void test_status_effects_reset_after_bonus_reload() {
+    GameEngine engine(10, 10);
+    int loadResult = engine.loadBonusMap("Test/maps/persistence_bonus.nib");
+    assert(loadResult == 0);
+
+    // Simulate ongoing status effects for all players
+    engine._gameData._direction_moving[0] = DIRECTION_UP;
+    engine._gameData._direction_moving_ice[0] = DIRECTION_LEFT;
+    engine._gameData._speed_boost_steps[0] = 5;
+    engine._gameData._fire_boost_active[0] = true;
+    engine._gameData._frosty_steps[0] = 2;
+    engine._gameData._update_timer[0] = 0.5;
+
+    for (int player = 1; player < 4; ++player) {
+        engine._gameData._direction_moving[player] = DIRECTION_RIGHT;
+        engine._gameData._direction_moving_ice[player] = DIRECTION_DOWN;
+        engine._gameData._speed_boost_steps[player] = 3;
+        engine._gameData._fire_boost_active[player] = true;
+        engine._gameData._frosty_steps[player] = 1;
+        engine._gameData._update_timer[player] = 0.25 * player;
+    }
+
+    engine.handleGameOver();
+
+    assert(engine._gameData.get_direction_moving(0) == DIRECTION_NONE);
+    assert(engine._gameData._direction_moving_ice[0] == 0);
+    assert(engine._gameData._speed_boost_steps[0] == 0);
+    assert(engine._gameData._fire_boost_active[0] == false);
+    assert(engine._gameData._frosty_steps[0] == 0);
+    assert(std::fabs(engine._gameData._update_timer[0]) < 1e-9);
+
+    for (int player = 1; player < 4; ++player) {
+        assert(engine._gameData.get_direction_moving(player) == DIRECTION_NONE);
+        assert(engine._gameData._direction_moving_ice[player] == 0);
+        assert(engine._gameData._speed_boost_steps[player] == 0);
+        assert(engine._gameData._fire_boost_active[player] == false);
+        assert(engine._gameData._frosty_steps[player] == 0);
+        assert(std::fabs(engine._gameData._update_timer[player]) < 1e-9);
+    }
+
+    std::cout << "Status effects reset regression test passed" << std::endl;
+}
+
 int main() {
     test_bonus_map_persists_across_game_over();
     test_snake_length_resets_after_game_over();
+    test_status_effects_reset_after_bonus_reload();
     return 0;
 }

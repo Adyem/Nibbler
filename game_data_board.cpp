@@ -34,6 +34,17 @@ void game_data::set_player_snake_length(int player, int length) {
     this->_snake_length[player] = length;
 }
 
+void game_data::reset_player_status_effects(int player) {
+    if (player < 0 || player >= 4)
+        return;
+    this->_direction_moving[player] = DIRECTION_NONE;
+    this->_direction_moving_ice[player] = 0;
+    this->_speed_boost_steps[player] = 0;
+    this->_fire_boost_active[player] = false;
+    this->_frosty_steps[player] = 0;
+    this->_update_timer[player] = 0.0;
+}
+
 void game_data::add_empty_cell(int x, int y) {
     size_t width = this->_map.get_width();
     int flat = y * static_cast<int>(width) + x;
@@ -115,14 +126,9 @@ void game_data::reset_board() {
     }
     int i = 0;
     while (i < 4) {
-        this->_direction_moving[i] = DIRECTION_NONE;
-        this->_direction_moving_ice[i] = 0;
-        this->_speed_boost_steps[i] = 0;
-        this->_fire_boost_active[i] = false;
-        this->_frosty_steps[i] = 0;
+        this->reset_player_status_effects(i);
         // Only initialize Player 1 snake, others are inactive (length 0)
         this->_snake_length[i] = (i == 0) ? 4 : 0;
-        this->_update_timer[i] = 0.0;
         ++i;
     }
     this->_amount_players_dead = 0;

@@ -80,6 +80,8 @@ class game_data
         size_t get_width() const;
         size_t get_height() const;
 
+        void reset_player_status_effects(int player);
+
         t_coordinates get_head_coordinate(int head_to_find);
 
         int         update_game_map(double deltaTime);

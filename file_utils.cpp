@@ -233,6 +233,9 @@ int load_rules_into_game_data(game_data &data, const game_rules &rules) {
         for (int player = 1; player < 4; ++player)
             data.set_player_snake_length(player, 0);
 
+        for (int player = 0; player < 4; ++player)
+            data.reset_player_status_effects(player);
+
         // After applying the map, ensure at least one food spawns at a random empty cell
         std::vector<std::pair<int,int>> empties;
         for (size_t y = 0; y < height; ++y) {
