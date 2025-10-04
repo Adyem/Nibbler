@@ -338,10 +338,9 @@ void OpenGLGraphics::render(const game_data& game) {
                             drawRectangle(drawX + 2, drawY + 2, cellSize - 4, cellSize - 4, COLOR_FIRE_FOOD);
                         } else if (layer2Value == FROSTY_FOOD) {
                             drawRectangle(drawX + 2, drawY + 2, cellSize - 4, cellSize - 4, COLOR_FROSTY_FOOD);
-                        } else if (layer2Value == SNAKE_HEAD_PLAYER_1) {
-                            drawRectangle(drawX, drawY, cellSize, cellSize, head);
-                        } else if (layer2Value > SNAKE_HEAD_PLAYER_1) {
-                            drawRectangle(drawX, drawY, cellSize, cellSize, body);
+                        } else if (layer2Value >= SNAKE_HEAD_PLAYER_1) {
+                            const Color& color = (layer2Value % 1000000 == 1) ? head : body;
+                            drawRectangle(drawX, drawY, cellSize, cellSize, color);
                         } else {
                             // Check layer 0 (terrain)
                             int layer0Value = game.get_map_value(static_cast<int>(x), static_cast<int>(y), 0);

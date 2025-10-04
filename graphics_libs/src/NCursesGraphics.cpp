@@ -375,10 +375,8 @@ char NCursesGraphics::getCharFromGameTile(int x, int y, const game_data& game) {
         return 'F';  // Fire food
     } else if (layer2Value == FROSTY_FOOD) {
         return 'I';  // Frosty food
-    } else if (layer2Value == SNAKE_HEAD_PLAYER_1) {
-        return '@'; // Snake head
-    } else if (layer2Value > SNAKE_HEAD_PLAYER_1) {
-        return 'o'; // Snake body
+    } else if (layer2Value >= SNAKE_HEAD_PLAYER_1) {
+        return (layer2Value % 1000000 == 1) ? '@' : 'o';
     }
 
     // Check layer 0 (terrain)
@@ -403,10 +401,8 @@ int NCursesGraphics::getColorFromGameTile(int x, int y, const game_data& game) {
         return COLOR_FIRE_FOOD;
     } else if (layer2Value == FROSTY_FOOD) {
         return COLOR_FROSTY_FOOD;
-    } else if (layer2Value == SNAKE_HEAD_PLAYER_1) {
-        return COLOR_SNAKE_HEAD;
-    } else if (layer2Value > SNAKE_HEAD_PLAYER_1) {
-        return COLOR_SNAKE_BODY;
+    } else if (layer2Value >= SNAKE_HEAD_PLAYER_1) {
+        return (layer2Value % 1000000 == 1) ? COLOR_SNAKE_HEAD : COLOR_SNAKE_BODY;
     }
 
     // Check layer 0 (terrain)
