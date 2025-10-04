@@ -1,6 +1,4 @@
 #include "game_data.hpp"
-#include <cstring>
-
 int game_data::get_error() const {
     return (this->_error);
 }
@@ -106,15 +104,14 @@ const ft_string& game_data::get_profile_name() const {
 
 void game_data::set_map_name(const char *name) {
     if (!name) {
-        this->_map_name[0] = '\0';
+        this->_map_name.clear();
         return;
     }
-    std::strncpy(this->_map_name, name, sizeof(this->_map_name) - 1);
-    this->_map_name[sizeof(this->_map_name) - 1] = '\0';
+    this->_map_name = name;
 }
 
 const char *game_data::get_map_name() const {
-    return this->_map_name;
+    return this->_map_name.c_str();
 }
 
 int game_data::get_snake_length(int player) const {
