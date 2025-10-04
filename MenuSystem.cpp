@@ -345,7 +345,7 @@ std::vector<std::string> MenuSystem::getInstructionsContent() const {
 std::vector<std::string> MenuSystem::getAchievementsContent(const game_data& game) const {
     std::vector<std::string> content = {
         "PLAYER ACHIEVEMENTS",
-        ""
+        ""  // blank spacer to separate the header from stats
     };
 
     content.push_back(std::string("Reach length 50: ") + (game.get_achievement_snake50() ? "Unlocked" : "Locked"));
