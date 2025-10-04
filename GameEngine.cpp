@@ -481,10 +481,11 @@ void GameEngine::switchGraphicsLibrary(int librarySlot) {
     std::cout << "Switching graphics library from "
               << (currentLibName ? currentLibName : "none")
               << " to " << (targetLibName ? targetLibName : "unknown") << std::endl;
-    if (remapped && currentLib) {
-        std::string message = std::string("Requested ") + slotName(librarySlot) +
-                              " not available; using " + (targetLibName ? targetLibName : "Unknown") + "";
-        currentLib->setSwitchMessage(message, 180);
+    std::string remapMessage;
+    if (remapped) {
+        remapMessage = std::string("Requested ") + slotName(librarySlot) +
+                       " not available; using " + (targetLibName ? targetLibName : "Unknown") + "";
+        std::cout << remapMessage << std::endl;
     }
 
     // Shutdown current library
@@ -528,8 +529,12 @@ void GameEngine::switchGraphicsLibrary(int librarySlot) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(50));
                 }
 
-                std::string message = std::string("Switched to: ") + (newLibName ? newLibName : "Unknown Library");
-                newLib->setSwitchMessage(message, 120); // Show for 2 seconds at 60 FPS
+                if (remapped && !remapMessage.empty()) {
+                    newLib->setSwitchMessage(remapMessage, 180);
+                } else {
+                    std::string message = std::string("Switched to: ") + (newLibName ? newLibName : "Unknown Library");
+                    newLib->setSwitchMessage(message, 120); // Show for 2 seconds at 60 FPS
+                }
             } else {
                 std::string errorMsg = "Failed to initialize new graphics library: ";
                 errorMsg += (newLib->getError() ? newLib->getError() : "Unknown error");
