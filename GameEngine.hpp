@@ -47,6 +47,7 @@ class GameEngine {
     void switchGraphicsLibrary(int libraryIndex);
     void performIntermediateSwitch(int intermediateIndex, int finalIndex);
     void handleGameOver();
+    void prepareBoardForNextGame();
     void setError(const std::string& error);
     void clearError();
 

@@ -340,6 +340,8 @@ void GameEngine::handleInput(GameKey key, bool& shouldQuit) {
         case GameKey::QUIT:
             // Go back to main menu instead of quitting directly
             _menuSystem.setState(MenuState::MAIN_MENU);
+            _gameStarted = false;
+            prepareBoardForNextGame();
             break;
         case GameKey::NONE:
         default:
@@ -380,6 +382,10 @@ void GameEngine::handleGameOver() {
     _menuSystem.setState(MenuState::GAME_OVER);
     _gameStarted = false;
 
+    prepareBoardForNextGame();
+}
+
+void GameEngine::prepareBoardForNextGame() {
     if (_usingBonusMap && _cachedBonusRules.has_value()) {
         if (load_rules_into_game_data(_gameData, *_cachedBonusRules) == 0) {
             GameSettings settings = _menuSystem.getSettings();
@@ -414,7 +420,6 @@ void GameEngine::handleGameOver() {
 
     _gameData.reset_board();
 }
-
 void GameEngine::renderGame() {
     IGraphicsLibrary* currentLib = _libraryManager.getCurrentLibrary();
     if (currentLib) {
