@@ -200,6 +200,7 @@ int load_rules_into_game_data(game_data &data, const game_rules &rules) {
     if (!rules.custom_map.empty()) {
         size_t width = rules.custom_map[0].size();
         size_t height = rules.custom_map.size();
+        int player1Segments = 0;
         for (size_t y = 0; y < height; ++y) {
             for (size_t x = 0; x < width; ++x) {
                 char c = rules.custom_map[y][x];
@@ -223,8 +224,14 @@ int load_rules_into_game_data(game_data &data, const game_rules &rules) {
                     snake = SNAKE_HEAD_PLAYER_1 + 3;
                 data.set_map_value(static_cast<int>(x), static_cast<int>(y), 2,
                                     snake);
+                if (snake >= SNAKE_HEAD_PLAYER_1 && snake < SNAKE_HEAD_PLAYER_2)
+                    ++player1Segments;
             }
         }
+
+        data.set_player_snake_length(0, player1Segments);
+        for (int player = 1; player < 4; ++player)
+            data.set_player_snake_length(player, 0);
 
         // After applying the map, ensure at least one food spawns at a random empty cell
         std::vector<std::pair<int,int>> empties;

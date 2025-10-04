@@ -24,6 +24,16 @@ int game_data::get_map_value(int x, int y, int layer) const {
     return (this->_map.get(x, y, layer));
 }
 
+void game_data::set_player_snake_length(int player, int length) {
+    if (player < 0 || player >= 4)
+        return;
+    if (length < 0)
+        length = 0;
+    else if (length > MAX_SNAKE_LENGTH)
+        length = MAX_SNAKE_LENGTH;
+    this->_snake_length[player] = length;
+}
+
 void game_data::add_empty_cell(int x, int y) {
     size_t width = this->_map.get_width();
     int flat = y * static_cast<int>(width) + x;

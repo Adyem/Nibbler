@@ -49,7 +49,35 @@ static void test_bonus_map_persists_across_game_over() {
     std::cout << "Bonus map persistence regression test passed" << std::endl;
 }
 
+static void test_snake_length_resets_after_game_over() {
+    GameEngine engine(10, 10);
+    int loadResult = engine.loadBonusMap("Test/maps/persistence_bonus.nib");
+    assert(loadResult == 0);
+    int startingLength = engine._gameData.get_snake_length(0);
+    assert(startingLength > 0);
+
+    engine._gameData.set_player_snake_length(0, startingLength + 5);
+    engine._gameData.set_player_snake_length(1, 3);
+    engine._gameData.set_player_snake_length(2, 2);
+    engine._gameData.set_player_snake_length(3, 1);
+
+    assert(engine._gameData.get_snake_length(0) == startingLength + 5);
+    assert(engine._gameData.get_snake_length(1) == 3);
+    assert(engine._gameData.get_snake_length(2) == 2);
+    assert(engine._gameData.get_snake_length(3) == 1);
+
+    engine.handleGameOver();
+
+    assert(engine._gameData.get_snake_length(0) == startingLength);
+    assert(engine._gameData.get_snake_length(1) == 0);
+    assert(engine._gameData.get_snake_length(2) == 0);
+    assert(engine._gameData.get_snake_length(3) == 0);
+
+    std::cout << "Snake length reset regression test passed" << std::endl;
+}
+
 int main() {
     test_bonus_map_persists_across_game_over();
+    test_snake_length_resets_after_game_over();
     return 0;
 }
