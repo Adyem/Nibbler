@@ -322,81 +322,93 @@ void SDL2Graphics::render(const game_data& game) {
     setDrawColor(bg);
     SDL_RenderClear(_renderer);
 
-    // Check if we should render menu instead of game
-    if (_menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME) {
+    bool menuActive = _menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME;
+    if (menuActive) {
         renderMenu(game);
-        SDL_RenderPresent(_renderer);
-        return;
-    }
+    } else {
+        // Calculate game area positioning
+        int offsetX, offsetY, cellSize;
+        calculateGameArea(game, offsetX, offsetY, cellSize);
 
-    // Calculate game area positioning
-    int offsetX, offsetY, cellSize;
-    calculateGameArea(game, offsetX, offsetY, cellSize);
+        size_t width = game.get_width();
+        size_t height = game.get_height();
 
-    size_t width = game.get_width();
-    size_t height = game.get_height();
+        // Draw border (toggleable)
+        bool showBorders = _menuSystem && _menuSystem->getSettings().showBorders;
+        if (showBorders) {
+            setDrawColor(border);
+            drawRect(offsetX - 2, offsetY - 2, width * cellSize + 4, height * cellSize + 4, false);
+        }
 
-    // Draw border (toggleable)
-    bool showBorders = _menuSystem && _menuSystem->getSettings().showBorders;
-    if (showBorders) {
-        setDrawColor(border);
-        drawRect(offsetX - 2, offsetY - 2, width * cellSize + 4, height * cellSize + 4, false);
-    }
+        // Draw game tiles
+        for (size_t y = 0; y < height; ++y) {
+            for (size_t x = 0; x < width; ++x) {
+                int pixelX = offsetX + x * cellSize;
+                int pixelY = offsetY + y * cellSize;
 
-    // Draw game tiles
-    for (size_t y = 0; y < height; ++y) {
-        for (size_t x = 0; x < width; ++x) {
-            int pixelX = offsetX + x * cellSize;
-            int pixelY = offsetY + y * cellSize;
-
-            // Check layer 2 first (snake and food)
-            int layer2Value = game.get_map_value(static_cast<int>(x), static_cast<int>(y), 2);
-            if (layer2Value == FOOD) {
-                setDrawColor(food);
-                drawRect(pixelX + 2, pixelY + 2, cellSize - 4, cellSize - 4);
-            } else if (layer2Value == FIRE_FOOD) {
-                setDrawColor(COLOR_FIRE_FOOD);
-                drawRect(pixelX + 2, pixelY + 2, cellSize - 4, cellSize - 4);
-            } else if (layer2Value == FROSTY_FOOD) {
-                setDrawColor(COLOR_FROSTY_FOOD);
-                drawRect(pixelX + 2, pixelY + 2, cellSize - 4, cellSize - 4);
-            } else if (layer2Value >= SNAKE_HEAD_PLAYER_1) {
-                if (layer2Value % 1000000 == 1) {
-                    setDrawColor(head);
+                // Check layer 2 first (snake and food)
+                int layer2Value = game.get_map_value(static_cast<int>(x), static_cast<int>(y), 2);
+                if (layer2Value == FOOD) {
+                    setDrawColor(food);
+                    drawRect(pixelX + 2, pixelY + 2, cellSize - 4, cellSize - 4);
+                } else if (layer2Value == FIRE_FOOD) {
+                    setDrawColor(COLOR_FIRE_FOOD);
+                    drawRect(pixelX + 2, pixelY + 2, cellSize - 4, cellSize - 4);
+                } else if (layer2Value == FROSTY_FOOD) {
+                    setDrawColor(COLOR_FROSTY_FOOD);
+                    drawRect(pixelX + 2, pixelY + 2, cellSize - 4, cellSize - 4);
+                } else if (layer2Value >= SNAKE_HEAD_PLAYER_1) {
+                    if (layer2Value % 1000000 == 1) {
+                        setDrawColor(head);
+                    } else {
+                        setDrawColor(body);
+                    }
+                    drawRect(pixelX, pixelY, cellSize, cellSize);
                 } else {
-                    setDrawColor(body);
+                    // Check layer 0 (terrain)
+                    int layer0Value = game.get_map_value(static_cast<int>(x), static_cast<int>(y), 0);
+                    if (layer0Value == GAME_TILE_WALL) {
+                        setDrawColor(border);
+                        drawRect(pixelX, pixelY, cellSize, cellSize);
+                    } else if (layer0Value == GAME_TILE_ICE) {
+                        setDrawColor(ice);
+                        drawRect(pixelX, pixelY, cellSize, cellSize);
+                    } else if (layer0Value == GAME_TILE_FIRE) {
+                        setDrawColor(COLOR_FIRE_TILE);
+                        drawRect(pixelX, pixelY, cellSize, cellSize);
+                    }
+                    // Empty space - no drawing needed
                 }
-                drawRect(pixelX, pixelY, cellSize, cellSize);
-            } else {
-                // Check layer 0 (terrain)
-                int layer0Value = game.get_map_value(static_cast<int>(x), static_cast<int>(y), 0);
-                if (layer0Value == GAME_TILE_WALL) {
-                    setDrawColor(border);
-                    drawRect(pixelX, pixelY, cellSize, cellSize);
-                } else if (layer0Value == GAME_TILE_ICE) {
-                    setDrawColor(ice);
-                    drawRect(pixelX, pixelY, cellSize, cellSize);
-                } else if (layer0Value == GAME_TILE_FIRE) {
-                    setDrawColor(COLOR_FIRE_TILE);
-                    drawRect(pixelX, pixelY, cellSize, cellSize);
-                }
-                // Empty space - no drawing needed
+            }
+        }
+
+        // HUD: show snake length and optional FPS in top-left
+        {
+            std::string scoreText = "Length: " + std::to_string(game.get_snake_length(0));
+            drawTextWithFont(scoreText, 10, 10, _fontMedium, text);
+            if (_menuSystem && _menuSystem->getSettings().showFPS) {
+                drawTextWithFont(std::string("FPS: ") + std::to_string(_targetFPS), 10, 35, _fontSmall, text);
             }
         }
     }
 
-    // HUD: show snake length and optional FPS in top-left
-    {
-        std::string scoreText = "Length: " + std::to_string(game.get_snake_length(0));
-        drawTextWithFont(scoreText, 10, 10, _fontMedium, text);
-        if (_menuSystem && _menuSystem->getSettings().showFPS) {
-            drawTextWithFont(std::string("FPS: ") + std::to_string(_targetFPS), 10, 35, _fontSmall, text);
-        }
-    }
-
-    // Remove green switch bar; only decrement timer silently
     if (_switchMessageTimer > 0) {
-        _switchMessageTimer--;
+        if (!_switchMessage.empty()) {
+            int bannerHeight = 100;
+            int bannerY = WINDOW_HEIGHT / 2 - bannerHeight / 2;
+            drawTransparentRect(0, bannerY, WINDOW_WIDTH, bannerHeight, Color(0, 0, 0), 200);
+
+            TTF_Font* overlayFont = _fontLarge ? _fontLarge : (_fontMedium ? _fontMedium : _fontSmall);
+            if (overlayFont) {
+                int textWidth = getTextWidth(_switchMessage, overlayFont);
+                int textHeight = getTextHeight(overlayFont);
+                int textX = (WINDOW_WIDTH - textWidth) / 2;
+                int textY = bannerY + (bannerHeight - textHeight) / 2;
+                drawTextWithFont(_switchMessage, textX, textY, overlayFont, text);
+            }
+        }
+
+        _switchMessageTimer = std::max(0, _switchMessageTimer - 1);
     }
 
     // Present the rendered frame

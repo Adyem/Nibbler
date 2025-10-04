@@ -108,58 +108,71 @@ void RaylibGraphics::render(const game_data& game) {
     BeginDrawing();
     ClearBackground({bg.r, bg.g, bg.b, bg.a});
 
-    if (_menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME) {
+    bool menuActive = _menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME;
+    if (menuActive) {
         renderMenu(game);
-        EndDrawing();
-        return;
-    }
+    } else {
+        int offsetX, offsetY, cellSize;
+        calculateGameArea(game, offsetX, offsetY, cellSize);
 
-    int offsetX, offsetY, cellSize;
-    calculateGameArea(game, offsetX, offsetY, cellSize);
+        size_t width = game.get_width();
+        size_t height = game.get_height();
 
-    size_t width = game.get_width();
-    size_t height = game.get_height();
+        // Border (toggleable)
+        bool showBorders = _menuSystem && _menuSystem->getSettings().showBorders;
+        if (showBorders) {
+            DrawRectangleLinesEx({(float)offsetX - 2, (float)offsetY - 2, (float)width * cellSize + 4, (float)height * cellSize + 4}, 2, {border.r, border.g, border.b, border.a});
+        }
 
-    // Border (toggleable)
-    bool showBorders = _menuSystem && _menuSystem->getSettings().showBorders;
-    if (showBorders) {
-        DrawRectangleLinesEx({(float)offsetX - 2, (float)offsetY - 2, (float)width * cellSize + 4, (float)height * cellSize + 4}, 2, {border.r, border.g, border.b, border.a});
-    }
-
-    for (size_t y = 0; y < height; ++y) {
-        for (size_t x = 0; x < width; ++x) {
-            int px = offsetX + (int)x * cellSize;
-            int py = offsetY + (int)y * cellSize;
-            int l2 = game.get_map_value((int)x, (int)y, 2);
-            if (l2 == FOOD) {
-                DrawRectangle(px, py, cellSize, cellSize, {food.r, food.g, food.b, food.a});
-            } else if (l2 == FIRE_FOOD) {
-                DrawRectangle(px, py, cellSize, cellSize, {COLOR_FIRE_FOOD.r, COLOR_FIRE_FOOD.g, COLOR_FIRE_FOOD.b, COLOR_FIRE_FOOD.a});
-            } else if (l2 == FROSTY_FOOD) {
-                DrawRectangle(px, py, cellSize, cellSize, {COLOR_FROSTY_FOOD.r, COLOR_FROSTY_FOOD.g, COLOR_FROSTY_FOOD.b, COLOR_FROSTY_FOOD.a});
-            } else if (l2 >= SNAKE_HEAD_PLAYER_1) {
-                bool headTile = (l2 % 1000000 == 1);
-                auto c = headTile ? head : body;
-                DrawRectangle(px, py, cellSize, cellSize, {c.r, c.g, c.b, c.a});
-            } else {
-                int l0 = game.get_map_value((int)x, (int)y, 0);
-                if (l0 == GAME_TILE_WALL)
-                    DrawRectangle(px, py, cellSize, cellSize, {border.r, border.g, border.b, border.a});
-                else if (l0 == GAME_TILE_ICE)
-                    DrawRectangle(px, py, cellSize, cellSize, {ice.r, ice.g, ice.b, ice.a});
-                else if (l0 == GAME_TILE_FIRE)
-                    DrawRectangle(px, py, cellSize, cellSize, {COLOR_FIRE_TILE.r, COLOR_FIRE_TILE.g, COLOR_FIRE_TILE.b, COLOR_FIRE_TILE.a});
+        for (size_t y = 0; y < height; ++y) {
+            for (size_t x = 0; x < width; ++x) {
+                int px = offsetX + (int)x * cellSize;
+                int py = offsetY + (int)y * cellSize;
+                int l2 = game.get_map_value((int)x, (int)y, 2);
+                if (l2 == FOOD) {
+                    DrawRectangle(px, py, cellSize, cellSize, {food.r, food.g, food.b, food.a});
+                } else if (l2 == FIRE_FOOD) {
+                    DrawRectangle(px, py, cellSize, cellSize, {COLOR_FIRE_FOOD.r, COLOR_FIRE_FOOD.g, COLOR_FIRE_FOOD.b, COLOR_FIRE_FOOD.a});
+                } else if (l2 == FROSTY_FOOD) {
+                    DrawRectangle(px, py, cellSize, cellSize, {COLOR_FROSTY_FOOD.r, COLOR_FROSTY_FOOD.g, COLOR_FROSTY_FOOD.b, COLOR_FROSTY_FOOD.a});
+                } else if (l2 >= SNAKE_HEAD_PLAYER_1) {
+                    bool headTile = (l2 % 1000000 == 1);
+                    auto c = headTile ? head : body;
+                    DrawRectangle(px, py, cellSize, cellSize, {c.r, c.g, c.b, c.a});
+                } else {
+                    int l0 = game.get_map_value((int)x, (int)y, 0);
+                    if (l0 == GAME_TILE_WALL)
+                        DrawRectangle(px, py, cellSize, cellSize, {border.r, border.g, border.b, border.a});
+                    else if (l0 == GAME_TILE_ICE)
+                        DrawRectangle(px, py, cellSize, cellSize, {ice.r, ice.g, ice.b, ice.a});
+                    else if (l0 == GAME_TILE_FIRE)
+                        DrawRectangle(px, py, cellSize, cellSize, {COLOR_FIRE_TILE.r, COLOR_FIRE_TILE.g, COLOR_FIRE_TILE.b, COLOR_FIRE_TILE.a});
+                }
             }
+        }
+
+        // HUD: score/length top-left and optional FPS
+        DrawText(TextFormat("Length: %d", game.get_snake_length(0)), 10, 10, 20, {text.r, text.g, text.b, text.a});
+        if (_menuSystem && _menuSystem->getSettings().showFPS) {
+            DrawText(TextFormat("FPS: %d", _targetFPS), 10, 34, 16, {text.r, text.g, text.b, text.a});
         }
     }
 
-    // HUD: score/length top-left and optional FPS
-    DrawText(TextFormat("Length: %d", game.get_snake_length(0)), 10, 10, 20, {text.r, text.g, text.b, text.a});
-    if (_menuSystem && _menuSystem->getSettings().showFPS) {
-        DrawText(TextFormat("FPS: %d", _targetFPS), 10, 34, 16, {text.r, text.g, text.b, text.a});
-    }
+    if (_switchMessageTimer > 0) {
+        if (!_switchMessage.empty()) {
+            int bannerHeight = 90;
+            int bannerY = WINDOW_HEIGHT / 2 - bannerHeight / 2;
+            DrawRectangle(0, bannerY, WINDOW_WIDTH, bannerHeight, {0, 0, 0, 200});
 
-    // Do not display any library switch message per requirements
+            int fontSize = 30;
+            int textWidth = MeasureText(_switchMessage.c_str(), fontSize);
+            int textX = (WINDOW_WIDTH - textWidth) / 2;
+            int textY = bannerY + (bannerHeight - fontSize) / 2;
+            DrawText(_switchMessage.c_str(), textX, textY, fontSize, {text.r, text.g, text.b, 255});
+        }
+
+        _switchMessageTimer = std::max(0, _switchMessageTimer - 1);
+    }
 
     EndDrawing();
 }

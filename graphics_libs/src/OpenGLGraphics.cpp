@@ -275,8 +275,9 @@ void OpenGLGraphics::render(const game_data& game) {
     }
 
     // Clear the screen (respect alt palette if set in settings)
-    bool useAltBg = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
-    const Color& bgc = useAltBg ? ALT_COLOR_BACKGROUND : COLOR_BACKGROUND;
+    bool useAltPalette = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+    const Color& bgc = useAltPalette ? ALT_COLOR_BACKGROUND : COLOR_BACKGROUND;
+    const Color& textColor = useAltPalette ? ALT_COLOR_TEXT : COLOR_TEXT;
     glClearColor(bgc.r, bgc.g, bgc.b, bgc.a);
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -311,7 +312,7 @@ void OpenGLGraphics::render(const game_data& game) {
                 calculateGameArea(game, offsetX, offsetY, cellSize);
 
                 // Pick palette
-                bool useAlt = _menuSystem && _menuSystem->getSettings().useAlternativeColors;
+                bool useAlt = useAltPalette;
                 const Color& border = useAlt ? ALT_COLOR_BORDER : COLOR_BORDER;
                 const Color& head   = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
                 const Color& body   = useAlt ? ALT_COLOR_SNAKE_BODY : COLOR_SNAKE_BODY;
@@ -361,17 +362,32 @@ void OpenGLGraphics::render(const game_data& game) {
 
                 // Draw score and optional FPS
                 std::string scoreText = "Length: " + std::to_string(game.get_snake_length(0));
-                drawText(scoreText, 20, 20, COLOR_TEXT);
+                drawText(scoreText, 20, 20, textColor);
                 if (_menuSystem && _menuSystem->getSettings().showFPS) {
-                    drawText(std::string("FPS: ") + std::to_string(_targetFPS), 20, 44, COLOR_TEXT, 0.8f);
+                    drawText(std::string("FPS: ") + std::to_string(_targetFPS), 20, 44, textColor, 0.8f);
                 }
             }
             break;
         }
     }
 
-    // Draw switch message if active
-    // Do not display any library switch message per requirements
+    if (_switchMessageTimer > 0) {
+        if (!_switchMessage.empty()) {
+            int bannerHeight = 120;
+            int bannerY = WINDOW_HEIGHT / 2 - bannerHeight / 2;
+            drawRectangle(0, bannerY, WINDOW_WIDTH, bannerHeight, Color(0.f, 0.f, 0.f, 0.75f));
+
+            float overlayScale = 1.2f;
+            if (_fontInitialized) {
+                int textWidth = measureTextWidth(_switchMessage, overlayScale);
+                int textX = (WINDOW_WIDTH - textWidth) / 2;
+                int textY = bannerY + bannerHeight / 2 - static_cast<int>((_fontPixelSize * overlayScale) / 2.0f);
+                drawText(_switchMessage, textX, textY, textColor, overlayScale);
+            }
+        }
+
+        _switchMessageTimer = std::max(0, _switchMessageTimer - 1);
+    }
 
     // Swap buffers and poll events
     glfwSwapBuffers(_window);
