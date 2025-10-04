@@ -91,6 +91,7 @@ class game_data
         int         save_game() const;
         int         load_game();
         int         get_snake_length(int player) const;
+        void        set_player_snake_length(int player, int length);
         bool        get_achievement_snake50() const;
         int         get_apples_eaten() const;
         int         get_apples_normal_eaten() const;
