@@ -166,8 +166,10 @@ void SFMLGraphics::render(const game_data& game) {
     // Clear screen with background color
     _window->clear(bg.toSFColor());
 
+    bool menuActive = _menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME;
+
     // Check if we're in menu mode or game mode
-    if (_menuSystem && _menuSystem->getCurrentState() != MenuState::IN_GAME) {
+    if (menuActive) {
         renderMenu();
     } else {
         // Render game
@@ -226,6 +228,27 @@ void SFMLGraphics::render(const game_data& game) {
         if (_menuSystem && _menuSystem->getSettings().showFPS) {
             drawText(std::string("FPS: ") + std::to_string(_targetFPS), 10, 34, text, 16);
         }
+    }
+
+    if (_switchMessageTimer > 0) {
+        if (!_switchMessage.empty()) {
+            int bannerHeight = 110;
+            int bannerY = WINDOW_HEIGHT / 2 - bannerHeight / 2;
+
+            sf::RectangleShape banner(sf::Vector2f(static_cast<float>(WINDOW_WIDTH), static_cast<float>(bannerHeight)));
+            banner.setPosition(0.f, static_cast<float>(bannerY));
+            banner.setFillColor(sf::Color(0, 0, 0, 200));
+            _window->draw(banner);
+
+            int fontSize = 30;
+            int textWidth = getTextWidth(_switchMessage, fontSize);
+            int textHeight = getTextHeight(fontSize);
+            int textX = (WINDOW_WIDTH - textWidth) / 2;
+            int textY = bannerY + (bannerHeight - textHeight) / 2;
+            drawText(_switchMessage, textX, textY, text, fontSize);
+        }
+
+        _switchMessageTimer = std::max(0, _switchMessageTimer - 1);
     }
 
     // Present the back buffer
