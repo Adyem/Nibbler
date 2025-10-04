@@ -6,6 +6,7 @@
 #include "libft/CPP_class/string_class.hpp"
 #include <vector>
 #include <string>
+#include <deque>
 
 #define GAME_TILE_EMPTY 0
 #define GAME_TILE_WALL 1
@@ -104,6 +105,8 @@ class game_data
         int         get_tile_frosty_steps() const;
         int         get_tile_fire_steps() const;
 
+        void        sync_snake_segments_from_map();
+
     // Testing method - exposes private is_valid_move for unit tests
     int test_is_valid_move(int player_head);
 
@@ -113,6 +116,9 @@ class game_data
         void        add_empty_cell(int x, int y);
         void        remove_empty_cell(int x, int y);
         void        initialize_empty_cells();
+        void        apply_snake_segments(int player, const std::vector<t_coordinates> &segments);
+        void        rebuild_snake_segments_from_map(int player);
+        void        write_snake_to_map(int player);
 
         int         is_valid_move(int player_head);
         bool        advance_wrap_target(int direction, int &target_x, int &target_y) const;
@@ -139,6 +145,7 @@ class game_data
         ft_character                            _character;
         std::vector<t_coordinates>      _empty_cells;
         std::vector<int>                _empty_cell_indices;
+        std::deque<t_coordinates>       _snake_segments[4];
 };
 
 #endif // GAME_DATA_HPP

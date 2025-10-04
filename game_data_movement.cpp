@@ -7,6 +7,14 @@ constexpr int FIRE_BOOST_STEPS = 5;
 }
 
 t_coordinates game_data::get_head_coordinate(int head_to_find) {
+    int player = this->determine_player_number(head_to_find);
+    if (player >= 0 && player < 4)
+    {
+        const std::deque<t_coordinates> &segments = this->_snake_segments[player];
+        if (!segments.empty())
+            return segments.front();
+    }
+
     size_t index_y = 0;
     while (index_y < this->_map.get_height()) {
         size_t index_x = 0;
@@ -152,66 +160,33 @@ int game_data::test_is_valid_move(int player_head) {
 }
 
 t_coordinates game_data::get_next_piece(t_coordinates current_coordinate, int piece_id) {
-    int next_id = piece_id + 1;
-    size_t width = this->_map.get_width();
-    size_t height = this->_map.get_height();
+    (void)current_coordinate;
+    int player = this->determine_player_number(piece_id);
+    if (player < 0 || player >= 4)
+        return ((t_coordinates){-1, -1});
 
-    const int dirs[4][2] = {
-        {0, 1},
-        {1, 0},
-        {0, -1},
-        {-1, 0}};
+    const std::deque<t_coordinates> &segments = this->_snake_segments[player];
+    if (segments.empty())
+        return ((t_coordinates){-1, -1});
 
-    int i = 0;
-    while (i < 4) {
-        int nx = current_coordinate.x + dirs[i][0];
-        int ny = current_coordinate.y + dirs[i][1];
+    int offset = (player + 1) * 1000000;
+    int index = piece_id - offset - 1;
+    if (index < 0 || index + 1 >= static_cast<int>(segments.size()))
+        return ((t_coordinates){-1, -1});
 
-        if (nx < 0) {
-            if (this->_wrap_around_edges)
-                nx = static_cast<int>(width) - 1;
-            else {
-                ++i;
-                continue;
-            }
-        }
-        if (nx >= static_cast<int>(width)) {
-            if (this->_wrap_around_edges)
-                nx = 0;
-            else {
-                ++i;
-                continue;
-            }
-        }
-        if (ny < 0) {
-            if (this->_wrap_around_edges)
-                ny = static_cast<int>(height) - 1;
-            else {
-                ++i;
-                continue;
-            }
-        }
-        if (ny >= static_cast<int>(height)) {
-            if (this->_wrap_around_edges)
-                ny = 0;
-            else {
-                ++i;
-                continue;
-            }
-        }
-
-        if (this->_map.get(static_cast<size_t>(nx),
-                           static_cast<size_t>(ny), 2) == next_id)
-            return ((t_coordinates){nx, ny});
-        ++i;
-    }
-
-    return ((t_coordinates){-1, -1});
+    return segments[index + 1];
 }
 
 int game_data::update_snake_position(int player_head) {
-    t_coordinates current_coords = this->get_head_coordinate(player_head);
     int player_number = this->determine_player_number(player_head);
+    if (player_number < 0 || player_number >= 4)
+        return (1);
+
+    std::deque<t_coordinates> &segments = this->_snake_segments[player_number];
+    if (segments.empty())
+        return (1);
+
+    t_coordinates current_coords = segments.front();
 
     // Check if no direction is set - if so, don't move but don't game over either
     if (this->_direction_moving[player_number] == DIRECTION_NONE)
@@ -307,57 +282,31 @@ int game_data::update_snake_position(int player_head) {
         if (this->_frosty_steps[player_number] == 0 && !on_ice_next)
             this->_direction_moving_ice[player_number] = 0;
     }
-    int offset = (player_number + 1) * 1000000;
     int tile_val = this->_map.get(target_x, target_y, 2);
     bool ate_food = (tile_val == FOOD || tile_val == FIRE_FOOD || tile_val == FROSTY_FOOD);
-    bool target_is_tail = (tile_val == offset + this->_snake_length[player_number]);
+    bool grow_snake = ate_food && this->_snake_length[player_number] < MAX_SNAKE_LENGTH;
 
-    // When stepping onto the current tail, remove that tail segment first so
-    // the new head can occupy its cell without overwriting data that still
-    // needs to be shifted forward.
-    if (target_is_tail && !ate_food)
-    {
-        this->_map.set(target_x, target_y, 2, 0);
-    }
+    this->remove_empty_cell(target_x, target_y);
 
-    // Move existing segments forward by incrementing their values. If the
-    // target is the tail, we can skip that tile since it was cleared above.
-    int start_value = offset + this->_snake_length[player_number] -
-                      (target_is_tail && !ate_food ? 1 : 0);
-    for (int segment_value = start_value; segment_value >= offset + 1; --segment_value)
+    segments.push_front((t_coordinates){target_x, target_y});
+
+    if (!grow_snake)
     {
-        for (int y = 0; y < height; ++y)
+        t_coordinates removed = segments.back();
+        segments.pop_back();
+        if (!(removed.x == target_x && removed.y == target_y))
         {
-            for (int x = 0; x < width; ++x)
-            {
-                if (this->_map.get(x, y, 2) == segment_value)
-                    this->_map.set(x, y, 2, segment_value + 1);
-            }
+            this->_map.set(removed.x, removed.y, 2, 0);
+            this->add_empty_cell(removed.x, removed.y);
         }
     }
 
-    // Place new head at target position
-    if (!target_is_tail || ate_food)
-        this->remove_empty_cell(target_x, target_y);
-    this->_map.set(target_x, target_y, 2, offset + 1);
+    this->write_snake_to_map(player_number);
 
-    // Remove the tail if no food was eaten and we didn't move into it
-    if (!ate_food && !target_is_tail)
-    {
-        int tail_value = offset + this->_snake_length[player_number] + 1;
-        for (int y = 0; y < height; ++y)
-        {
-            for (int x = 0; x < width; ++x)
-            {
-                if (this->_map.get(x, y, 2) == tail_value)
-                {
-                    this->_map.set(x, y, 2, 0);
-                    this->add_empty_cell(x, y);
-                    break;
-                }
-            }
-        }
-    }
+    int previous_length = this->_snake_length[player_number];
+    int new_length = static_cast<int>(segments.size());
+    this->_snake_length[player_number] = new_length;
+    bool length_increased = (new_length > previous_length);
 
     // Update tile stepping achievements
     {
@@ -408,8 +357,7 @@ int game_data::update_snake_position(int player_head) {
         int progress = apple.get_progress(ACH_GOAL_PRIMARY);
         if (progress < std::numeric_limits<int>::max())
             apple.set_progress(ACH_GOAL_PRIMARY, progress + 1);
-        if (this->_snake_length[player_number] < MAX_SNAKE_LENGTH) {
-            this->_snake_length[player_number]++;
+        if (length_increased) {
             ft_achievement &snake =
                 this->_character.get_achievements().at(ACH_SNAKE_50);
             int goal = snake.get_goal(ACH_GOAL_PRIMARY);

@@ -307,6 +307,7 @@ int load_rules_into_game_data(game_data &data, const game_rules &rules) {
                 data.set_map_value(fx2, fy2, 0, GAME_TILE_FIRE);
             }
         }
+        data.sync_snake_segments_from_map();
     }
     return 0;
 }

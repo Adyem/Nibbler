@@ -418,6 +418,7 @@ int game_data::load_game() {
 
     int actualCountPlaced = count_player_one_segments();
     this->set_player_snake_length(0, actualCountPlaced);
+    this->sync_snake_segments_from_map();
 
     json_free_groups(root);
     return (0);
