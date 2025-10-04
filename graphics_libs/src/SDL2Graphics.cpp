@@ -154,6 +154,7 @@ const SDL2Graphics::Color SDL2Graphics::COLOR_TEXT(255, 255, 255);     // White
 // Extra tiles/foods
 const SDL2Graphics::Color SDL2Graphics::COLOR_FIRE_FOOD(255, 140, 0);   // Bright orange for fire food
 const SDL2Graphics::Color SDL2Graphics::COLOR_FROSTY_FOOD(80, 200, 235);// Cyan for frosty food
+const SDL2Graphics::Color SDL2Graphics::COLOR_ICE_TILE(140, 200, 240);   // Pale blue for ice tile
 const SDL2Graphics::Color SDL2Graphics::COLOR_FIRE_TILE(200, 60, 40);    // Red for fire tile
 
 // Alternative palette
@@ -162,6 +163,7 @@ const SDL2Graphics::Color SDL2Graphics::ALT_COLOR_BORDER(180, 160, 90);    // Sa
 const SDL2Graphics::Color SDL2Graphics::ALT_COLOR_SNAKE_HEAD(80, 180, 220); // Cyan head
 const SDL2Graphics::Color SDL2Graphics::ALT_COLOR_SNAKE_BODY(40, 120, 180); // Blue body
 const SDL2Graphics::Color SDL2Graphics::ALT_COLOR_FOOD(235, 130, 35);      // Orange
+const SDL2Graphics::Color SDL2Graphics::ALT_COLOR_ICE_TILE(110, 175, 225);  // Muted blue for ice tile
 const SDL2Graphics::Color SDL2Graphics::ALT_COLOR_TEXT(240, 240, 240);     // Near white
 
 // Additional colors for better UI
@@ -313,6 +315,7 @@ void SDL2Graphics::render(const game_data& game) {
     const Color& head = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
     const Color& body = useAlt ? ALT_COLOR_SNAKE_BODY : COLOR_SNAKE_BODY;
     const Color& food = useAlt ? ALT_COLOR_FOOD : COLOR_FOOD;
+    const Color& ice = useAlt ? ALT_COLOR_ICE_TILE : COLOR_ICE_TILE;
     const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
 
     // Clear screen with background color
@@ -371,7 +374,7 @@ void SDL2Graphics::render(const game_data& game) {
                     setDrawColor(border);
                     drawRect(pixelX, pixelY, cellSize, cellSize);
                 } else if (layer0Value == GAME_TILE_ICE) {
-                    setDrawColor(bg);
+                    setDrawColor(ice);
                     drawRect(pixelX, pixelY, cellSize, cellSize);
                 } else if (layer0Value == GAME_TILE_FIRE) {
                     setDrawColor(COLOR_FIRE_TILE);

@@ -17,6 +17,7 @@ const RaylibGraphics::Color RaylibGraphics::COLOR_SELECTOR_BG(70, 130, 180, 255)
 const RaylibGraphics::Color RaylibGraphics::COLOR_SELECTED_TEXT(255, 255, 255, 255);
 const RaylibGraphics::Color RaylibGraphics::COLOR_FIRE_FOOD(255, 140, 0, 255);
 const RaylibGraphics::Color RaylibGraphics::COLOR_FROSTY_FOOD(80, 200, 235, 255);
+const RaylibGraphics::Color RaylibGraphics::COLOR_ICE_TILE(140, 200, 240, 255);
 const RaylibGraphics::Color RaylibGraphics::COLOR_FIRE_TILE(200, 60, 40, 255);
 
 // Alternative palette
@@ -25,6 +26,7 @@ const RaylibGraphics::Color RaylibGraphics::ALT_COLOR_BORDER(180, 160, 90, 255);
 const RaylibGraphics::Color RaylibGraphics::ALT_COLOR_SNAKE_HEAD(80, 180, 220, 255);
 const RaylibGraphics::Color RaylibGraphics::ALT_COLOR_SNAKE_BODY(40, 120, 180, 255);
 const RaylibGraphics::Color RaylibGraphics::ALT_COLOR_FOOD(235, 130, 35, 255);
+const RaylibGraphics::Color RaylibGraphics::ALT_COLOR_ICE_TILE(110, 175, 225, 255);
 const RaylibGraphics::Color RaylibGraphics::ALT_COLOR_TEXT(240, 240, 240, 255);
 
 RaylibGraphics::RaylibGraphics()
@@ -100,6 +102,7 @@ void RaylibGraphics::render(const game_data& game) {
     const Color& head = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
     const Color& body = useAlt ? ALT_COLOR_SNAKE_BODY : COLOR_SNAKE_BODY;
     const Color& food = useAlt ? ALT_COLOR_FOOD : COLOR_FOOD;
+    const Color& ice = useAlt ? ALT_COLOR_ICE_TILE : COLOR_ICE_TILE;
     const Color& text = useAlt ? ALT_COLOR_TEXT : COLOR_TEXT;
 
     BeginDrawing();
@@ -143,7 +146,7 @@ void RaylibGraphics::render(const game_data& game) {
                 if (l0 == GAME_TILE_WALL)
                     DrawRectangle(px, py, cellSize, cellSize, {border.r, border.g, border.b, border.a});
                 else if (l0 == GAME_TILE_ICE)
-                    DrawRectangle(px, py, cellSize, cellSize, {bg.r, bg.g, bg.b, bg.a});
+                    DrawRectangle(px, py, cellSize, cellSize, {ice.r, ice.g, ice.b, ice.a});
                 else if (l0 == GAME_TILE_FIRE)
                     DrawRectangle(px, py, cellSize, cellSize, {COLOR_FIRE_TILE.r, COLOR_FIRE_TILE.g, COLOR_FIRE_TILE.b, COLOR_FIRE_TILE.a});
             }

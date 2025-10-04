@@ -153,6 +153,7 @@ const OpenGLGraphics::Color OpenGLGraphics::COLOR_SELECTOR_BG(0.27f, 0.51f, 0.71
 const OpenGLGraphics::Color OpenGLGraphics::COLOR_SELECTED_TEXT(1.0f, 1.0f, 1.0f);  // White
 const OpenGLGraphics::Color OpenGLGraphics::COLOR_FIRE_FOOD(0.98f, 0.55f, 0.05f);
 const OpenGLGraphics::Color OpenGLGraphics::COLOR_FROSTY_FOOD(0.31f, 0.78f, 0.92f);
+const OpenGLGraphics::Color OpenGLGraphics::COLOR_ICE_TILE(0.55f, 0.78f, 0.94f);
 const OpenGLGraphics::Color OpenGLGraphics::COLOR_FIRE_TILE(0.78f, 0.20f, 0.20f);
 
 // Alternative palette
@@ -161,6 +162,7 @@ const OpenGLGraphics::Color OpenGLGraphics::ALT_COLOR_BORDER(0.70f, 0.63f, 0.35f
 const OpenGLGraphics::Color OpenGLGraphics::ALT_COLOR_SNAKE_HEAD(0.31f, 0.71f, 0.86f);
 const OpenGLGraphics::Color OpenGLGraphics::ALT_COLOR_SNAKE_BODY(0.16f, 0.47f, 0.71f);
 const OpenGLGraphics::Color OpenGLGraphics::ALT_COLOR_FOOD(0.92f, 0.51f, 0.14f);
+const OpenGLGraphics::Color OpenGLGraphics::ALT_COLOR_ICE_TILE(0.43f, 0.69f, 0.88f);
 const OpenGLGraphics::Color OpenGLGraphics::ALT_COLOR_TEXT(0.94f, 0.94f, 0.94f);
 
 OpenGLGraphics::OpenGLGraphics()
@@ -314,6 +316,7 @@ void OpenGLGraphics::render(const game_data& game) {
                 const Color& head   = useAlt ? ALT_COLOR_SNAKE_HEAD : COLOR_SNAKE_HEAD;
                 const Color& body   = useAlt ? ALT_COLOR_SNAKE_BODY : COLOR_SNAKE_BODY;
                 const Color& food   = useAlt ? ALT_COLOR_FOOD : COLOR_FOOD;
+                const Color& ice    = useAlt ? ALT_COLOR_ICE_TILE : COLOR_ICE_TILE;
 
                 // Draw game border (toggleable)
                 bool showBorders = _menuSystem && _menuSystem->getSettings().showBorders;
@@ -346,10 +349,12 @@ void OpenGLGraphics::render(const game_data& game) {
                             int layer0Value = game.get_map_value(static_cast<int>(x), static_cast<int>(y), 0);
                             if (layer0Value == GAME_TILE_WALL) {
                                 drawRectangle(drawX, drawY, cellSize, cellSize, border);
+                            } else if (layer0Value == GAME_TILE_ICE) {
+                                drawRectangle(drawX, drawY, cellSize, cellSize, ice);
                             } else if (layer0Value == GAME_TILE_FIRE) {
                                 drawRectangle(drawX, drawY, cellSize, cellSize, COLOR_FIRE_TILE);
                             }
-                            // Empty space and ice - no drawing needed (background already drawn)
+                            // Empty space - background already drawn
                         }
                     }
                 }

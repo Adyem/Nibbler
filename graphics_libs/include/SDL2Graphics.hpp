@@ -67,6 +67,7 @@ class SDL2Graphics : public IGraphicsLibrary {
     static const Color COLOR_FOOD;
     static const Color COLOR_FIRE_FOOD;
     static const Color COLOR_FROSTY_FOOD;
+    static const Color COLOR_ICE_TILE;
     static const Color COLOR_FIRE_TILE;
     static const Color COLOR_TEXT;
     static const Color COLOR_SELECTOR_BG;
@@ -78,6 +79,7 @@ class SDL2Graphics : public IGraphicsLibrary {
     static const Color ALT_COLOR_SNAKE_HEAD;
     static const Color ALT_COLOR_SNAKE_BODY;
     static const Color ALT_COLOR_FOOD;
+    static const Color ALT_COLOR_ICE_TILE;
     static const Color ALT_COLOR_TEXT;
 
     // Helper methods
