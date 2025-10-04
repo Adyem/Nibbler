@@ -357,11 +357,12 @@ void SDL2Graphics::render(const game_data& game) {
             } else if (layer2Value == FROSTY_FOOD) {
                 setDrawColor(COLOR_FROSTY_FOOD);
                 drawRect(pixelX + 2, pixelY + 2, cellSize - 4, cellSize - 4);
-            } else if (layer2Value == SNAKE_HEAD_PLAYER_1) {
-                setDrawColor(head);
-                drawRect(pixelX, pixelY, cellSize, cellSize);
-            } else if (layer2Value > SNAKE_HEAD_PLAYER_1) {
-                setDrawColor(body);
+            } else if (layer2Value >= SNAKE_HEAD_PLAYER_1) {
+                if (layer2Value % 1000000 == 1) {
+                    setDrawColor(head);
+                } else {
+                    setDrawColor(body);
+                }
                 drawRect(pixelX, pixelY, cellSize, cellSize);
             } else {
                 // Check layer 0 (terrain)
